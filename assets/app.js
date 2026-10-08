@@ -135,7 +135,35 @@
       p[pk].forEach(x => { if (x.tiros >= 10 && (!por || x.pct > por.pct)) por = Object.assign({}, x, { equipo: p[s], rival: p[o] }); });
       p[g].forEach(x => { if (!fig || x.g > fig.g || (x.g === fig.g && x.a > fig.a)) fig = Object.assign({}, x, { equipo: p[s], rival: p[o] }); });
     }); });
+    // Más asistencias y más sancionado del club en la semana (sumando si un jugador juega más de un partido)
+    const tot = {};
+    mids.forEach(mid => { const p = A.partidos[mid]; [['local', 'alin_l', 'visitante'], ['visitante', 'alin_v', 'local']].forEach(([s, al, o]) => {
+      if (!ours(p[s])) return;
+      (p[al] || []).forEach(x => { const t = tot[x.k] || (tot[x.k] = Object.assign({}, x, { g: 0, a: 0, pim: 0, faltas: 0, equipo: p[s], rivales: [] }));
+        t.g += x.g || 0; t.a += x.a || 0; t.pim += x.pim || 0; t.rivales.push(p[o]);
+        t.faltas += (p.ev || []).filter(e => e.tipo === 'falta' && e.jugador && e.jugador.k === x.k).length; });
+    }); });
+    const asis = Object.values(tot).filter(x => x.a).sort((a, b) => b.a - a.a || b.g - a.g)[0];
+    const sanc = Object.values(tot).filter(x => x.pim).sort((a, b) => b.pim - a.pim || b.faltas - a.faltas)[0];
+    const empatan = (x, igual) => { const o = Object.values(tot).filter(y => y.k !== x.k && igual(y)).map(y => esc(corto(y)));
+      return o.length ? `<br><span style="font-size:13px;font-weight:500;color:#A6A6AD">Empata con ${o.join(', ')}</span>` : ''; };
     const pf = x => x && (x.foto || (A.jugadores[x.k] && A.jugadores[x.k].foto));
+    const statCard = (x, titulo, valor, color, detalle) => box(hP(x.k), 'background:#18181B;border-radius:12px;overflow:hidden;display:grid;grid-template-columns:130px minmax(0,1fr);min-height:250px', `
+        <div class="ini" style="background:#26262A;font-size:52px;color:#A6A6AD">${esc(ini(x.nombre, x.apellidos))}${photo(pf(x), 'grayscale(1)', '50% 20%')}</div>
+        <div style="padding:20px 22px;display:flex;flex-direction:column">
+          <div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:#A6A6AD">${titulo}</div>
+          <div style="${BS}font-weight:800;font-size:30px;line-height:1;margin-top:10px">${esc(corto(x))}</div>
+          <div style="font-size:15px;color:#C9C9CE;margin-top:4px">#${esc(x.dorsal)} · ${esc(x.equipo)}</div>
+          <div style="margin-top:auto;padding-top:16px;display:flex;align-items:end;gap:14px">
+            <div style="${BS}font-weight:900;font-size:88px;line-height:.85;color:${color}">${valor}</div>
+            <div style="font-size:15px;font-weight:600;padding-bottom:4px">${detalle}</div>
+          </div>
+        </div>`);
+    const asisCard = asis ? statCard(asis, 'MÁS ASISTENCIAS DEL CLUB', asis.a, '#F4F4F5',
+      `${asis.a === 1 ? 'asistencia' : 'asistencias'} · ${asis.g} ${asis.g === 1 ? 'gol' : 'goles'}<br>vs ${esc([...new Set(asis.rivales)].join(', '))}${empatan(asis, y => y.a === asis.a && y.g === asis.g)}`) : '';
+    const sancCard = sanc ? statCard(sanc, 'MÁS SANCIONADO DEL CLUB', fmin(sanc.pim), '#FF8A3D',
+      `de sanción · ${sanc.faltas} ${sanc.faltas === 1 ? 'falta' : 'faltas'}<br>vs ${esc([...new Set(sanc.rivales)].join(', '))}${empatan(sanc, y => y.pim === sanc.pim && y.faltas === sanc.faltas)}`)
+      : (mids.length ? `<div class="card" style="padding:20px 22px;display:flex;flex-direction:column;justify-content:center;min-height:250px"><div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:#A6A6AD">MÁS SANCIONADO DEL CLUB</div><div style="${BS}font-weight:900;font-size:44px;line-height:1;margin-top:12px;color:#3DD27E">SEMANA SIN SANCIONES</div><div style="font-size:15px;color:#C9C9CE;margin-top:6px">Ningún jugador nuestro vio una falta.</div></div>` : '');
     const seen = {};
     const label = (n, e) => abr(n) === 'MP' ? 'MP ' + letraOf(e) : abr(n);
     const proximos = nexts.map(({ e, nx }) => { const local = nx.casa ? e.nombre : nx.rival, vis = nx.casa ? nx.rival : e.nombre;
@@ -201,7 +229,7 @@
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px">${cards}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px;margin-top:12px">
-        ${porCard}${figCard}
+        ${porCard}${figCard}${asisCard}${sancCard}
         <div class="card" style="padding:20px 22px">${lab('PRÓXIMOS PARTIDOS')}<div style="display:flex;flex-direction:column;margin-top:8px">${proxHtml}</div></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:12px">${tablas}</div>`;
