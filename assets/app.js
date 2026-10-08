@@ -377,15 +377,82 @@
       <div style="display:flex;gap:4px;margin-top:18px;border-bottom:1px solid #26262A">${subs}</div>
       ${body}`;
   }
+  // ── Pretemporada · nuestro club: todos los movimientos de MADRIDPATINA en las ligas en las que jugamos ──
+  const mpLbl = (nombre, liga) => { if (!ours(nombre)) return nombre; const l = (liga || '').toLowerCase();
+    if (nombre !== 'MADRIDPATINA') return 'MP ' + nombre.split(' ').pop(); return /alev/.test(l) ? 'MP Alevín' : /infant/.test(l) ? 'MP Infantil' : 'MP'; };
+  const mpRango = l => ({ 'MP A': 1, 'MP B': 2, 'MP C': 3, 'MP D': 4, 'MP Infantil': 5, 'MP Alevín': 6 })[l] || 9;
+  // tipo de alta: cambio dentro del club (sube/baja), vuelve, llega de otro club o debuta
+  const tipoAlta = (x, equipo, liga) => {
+    if (x.desde && ours(x.desde) && ours(equipo)) { const de = mpLbl(x.desde, x.desdeLiga), a = mpLbl(equipo, liga); return mpRango(a) < mpRango(de) ? ['sube', '↑ sube de ' + de, '#3DD27E'] : ['baja', '↓ baja de ' + de, '#FF8A3D']; }
+    if (x.desde && x.desde.split(' ')[0] === equipo.split(' ')[0]) return ['club', 'mismo club', '#8A8A8F'];
+    if (/^Vuelve/i.test(x.nota || '')) return ['vuelve', 'vuelve', '#6FB7FF'];
+    if (x.desde) return ['fuera', 'de otro club', '#C9A7F5'];
+    return ['debuta', 'debuta', '#FF6B63'];
+  };
+  function movimientosClub() {
+    const G = { interno: [], vuelven: [], llegan: [], debutan: [], seVan: [], rol: [], pendientes: [] }, vistos = new Set();
+    A.ligas.filter(l => l.pre).forEach(L => L.pre.equipos.filter(e => e.nuestro).forEach(e => {
+      const yo = mpLbl(e.equipo, L.nombre);
+      (e.altas || []).forEach(x => { const t = tipoAlta(x, e.equipo, L.nombre)[0];
+        if (t === 'sube' || t === 'baja') { if (!vistos.has(x.k)) { vistos.add(x.k); G.interno.push({ x, de: mpLbl(x.desde, x.desdeLiga), a: yo, t, nota: x.nota }); } }
+        else if (t === 'vuelve') G.vuelven.push({ x, a: yo });
+        else if (t === 'fuera') G.llegan.push({ x, a: yo });
+        else G.debutan.push({ x, a: yo }); });
+      (e.bajas || []).forEach(x => {
+        if (x.destino && ours(x.destino)) { if (!vistos.has(x.k)) { vistos.add(x.k); const a = mpLbl(x.destino, x.destinoLiga); G.interno.push({ x, de: yo, a, t: mpRango(a) < mpRango(yo) ? 'sube' : 'baja', nota: x.nota }); } }
+        else if (vistos.has(x.k)) return;   // la misma persona en dos equipos nuestros: una sola vez
+        else if (x.destino) { vistos.add(x.k); G.seVan.push({ x, de: yo }); }
+        else if (x.estado === 'otro_rol') { vistos.add(x.k); G.rol.push({ x, de: yo }); }
+        else { vistos.add(x.k); G.pendientes.push({ x, de: yo }); } });
+    }));
+    G.interno.sort((a, b) => mpRango(a.a) - mpRango(b.a));
+    return G;
+  }
+  function vPretemporadaClub(tabs) {
+    const G = movimientosClub();
+    const jn = x => { const t = `${x.dorsal ? '<span style="color:#A6A6AD">#' + esc(x.dorsal) + '</span> ' : ''}${esc(corto(x))}`; return A.jugadores[x.k] ? `<a href="${hP(x.k)}">${t}</a>` : t; };
+    const st = s2 => s2 && s2.pj ? ` · 25/26: ${s2.pj} PJ · ${s2.goles} G ${s2.asistencias} A` : '';
+    const fila = (izq, dcha) => `<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid #26262A"><div style="min-width:0">${izq}</div><div style="text-align:right">${dcha}</div></div>`;
+    const chip = (t, c) => `<span style="font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px;background:${c};color:#0D0D0E;white-space:nowrap">${t}</span>`;
+    const bloque = (titulo, color, filas, nota) => filas.length ? `<div class="card" style="padding:16px 20px">
+        <div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:${color}">${titulo} · ${filas.length}</div>${nota ? `<div style="font-size:13px;color:#A6A6AD;margin-top:2px">${nota}</div>` : ''}${filas.join('')}</div>` : '';
+    const interno = G.interno.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc(m.nota || '')}${st(m.x.stats)}</div>`,
+      `<span style="${BS}font-weight:800;font-size:18px;white-space:nowrap">${esc(m.de)} <span style="color:${m.t === 'sube' ? '#3DD27E' : '#FF8A3D'}">${m.t === 'sube' ? '↑' : '↓'}</span> ${esc(m.a)}</span>`));
+    const vuelven = G.vuelven.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc((m.x.nota || '').replace(/^Vuelve:\s*/, 'Su última temporada: '))}</div>`, chip(m.a, '#6FB7FF')));
+    const llegan = G.llegan.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">de ${esc(m.x.desde)}${m.x.desdeLiga ? ' · ' + esc(m.x.desdeLiga) : ''}${st(m.x.stats)}</div>`, chip(m.a, '#C9A7F5')));
+    const debutan = G.debutan.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc(m.x.nota || 'Primer año')}</div>`, chip(m.a, '#FF6B63')));
+    const seVan = G.seVan.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">→ ${esc(m.x.destino)}${m.x.destinoLiga ? ' · ' + esc(m.x.destinoLiga) : ''}</div>`, chip(m.de, '#3A3A40').replace('color:#0D0D0E', 'color:#F4F4F5')));
+    const rol = G.rol.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc(m.x.nota || '')}</div>`, chip(m.de, '#3A3A40').replace('color:#0D0D0E', 'color:#F4F4F5')));
+    const pend = G.pendientes.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div>`, chip(m.de, '#3A3A40').replace('color:#0D0D0E', 'color:#F4F4F5')));
+    const kpis = [['Cambian de equipo', G.interno.length, '#3DD27E'], ['Vuelven', G.vuelven.length, '#6FB7FF'], ['Llegan de otros clubes', G.llegan.length, '#C9A7F5'],
+      ['Debutan', G.debutan.length, '#FF6B63'], ['Se van a otros clubes', G.seVan.length, '#A6A6AD']]
+      .map(([k, v, ink]) => `<div style="padding:14px 18px;background:#18181B;border-radius:10px;min-width:120px"><div style="font-size:14px;color:#A6A6AD;font-weight:600">${k}</div><div style="${BS}font-weight:800;font-size:48px;line-height:1;color:${ink}">${v}</div></div>`).join('');
+    return `<div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:28px">${tabs}</div>
+      <div style="margin-top:24px"><div class="lab" style="color:#FF6B63">PRETEMPORADA ${esc(A.temporada)}</div><div style="${BS}font-weight:900;font-size:clamp(44px,6.5vw,80px);line-height:.9;margin-top:6px">Nuestro club</div></div>
+      <div style="font-size:15px;line-height:1.5;color:#C9C9CE;margin-top:12px;max-width:860px">Quién sube o baja entre nuestros equipos, quién vuelve, quién llega de otro club y quién debuta, en todas las ligas en las que jugamos.</div>
+      <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">${kpis}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:24px;align-items:start">
+        ${bloque('CAMBIAN DE EQUIPO DENTRO DEL CLUB', '#3DD27E', interno, '↑ sube a un equipo de más nivel · ↓ baja')}
+        ${bloque('VUELVEN', '#6FB7FF', vuelven, 'No jugaron la temporada pasada y vuelven este año')}
+        ${bloque('LLEGAN DE OTROS CLUBES', '#C9A7F5', llegan)}
+        ${bloque('DEBUTAN', '#FF6B63', debutan, 'Su primer año en la competición')}
+        ${bloque('SE VAN A OTROS CLUBES', '#A6A6AD', seVan)}
+        ${bloque('CAMBIAN DE PAPEL', '#A6A6AD', rol)}
+        ${bloque('AÚN NO HAN JUGADO ESTA TEMPORADA', '#55555B', pend, 'Estaban la temporada pasada; pueden volver en cualquier jornada')}
+      </div>`;
+  }
+
   /* ── Pretemporada: cómo llega cada liga en la que jugamos (todos los equipos y jugadores) ── */
   function vPretemporada(id) {
     const ls = A.ligas.filter(l => l.pre);
     if (!ls.length) return '<div class="loading">Sin datos de pretemporada.</div>';
-    const L = ls.find(l => l.id === id) || ls.find(l => l.id === S.lg) || ls[0];
+    const tabClub = `<a class="blk" href="${hPre('club')}" style="padding:10px 18px;border-radius:8px;background:${!id || id === 'club' ? RED : '#18181B'};color:${!id || id === 'club' ? '#FFFFFF' : '#C9C9CE'};font-weight:700;font-size:15px;white-space:nowrap">MADRIDPATINA</a>`;
+    if (!id || id === 'club') return vPretemporadaClub(tabClub + ls.map(l => `<a class="blk" href="${hPre(l.id)}" style="padding:10px 18px;border-radius:8px;background:#18181B;color:#C9C9CE;font-weight:700;font-size:15px;white-space:nowrap">${esc(l.nombre)}</a>`).join(''));
+    const L = ls.find(l => l.id === id) || ls[0];
     S.lg = L.id;
     const P = L.pre;
     const T = { baja: ['↓', '#FF8A3D', 'BAJA'], sube: ['↑', '#3DD27E', 'SUBE'], nuevo: ['★', RED, 'NUEVO'], viene: ['→', '#6B6B70', 'VIENE'], sigue: ['', '#3A3A40', 'SIGUE'] };
-    const tabs = ls.map(l => `<a class="blk" href="${hPre(l.id)}" style="padding:10px 18px;border-radius:8px;background:${l.id === L.id ? RED : '#18181B'};color:${l.id === L.id ? '#FFFFFF' : '#C9C9CE'};font-weight:700;font-size:15px;white-space:nowrap">${esc(l.nombre)}</a>`).join('');
+    const tabs = tabClub + ls.map(l => `<a class="blk" href="${hPre(l.id)}" style="padding:10px 18px;border-radius:8px;background:${l.id === L.id ? RED : '#18181B'};color:${l.id === L.id ? '#FFFFFF' : '#C9C9CE'};font-weight:700;font-size:15px;white-space:nowrap">${esc(l.nombre)}</a>`).join('');
     // jugador: enlace a su ficha si es de los nuestros
     const jn = x => { const t = `${x.dorsal ? '<span style="color:#A6A6AD">#' + esc(x.dorsal) + '</span> ' : ''}${esc(corto(x))}`; return A.jugadores[x.k] ? `<a href="${hP(x.k)}">${t}</a>` : t; };
     const st = s2 => s2 && s2.pj ? `${s2.pj} PJ · ${s2.goles} G ${s2.asistencias} A` : '';
@@ -426,9 +493,9 @@
       + (fuera ? `<div style="display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:14px;align-items:center;padding:10px 0"><div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#55555B">YA NO ESTÁN</div><div style="display:flex;gap:14px;flex-wrap:wrap">${fuera}</div></div>` : '');
     // 4) Altas y bajas, equipo por equipo (los nuestros primero)
     const orden = P.equipos.slice().sort((a, b) => (b.nuestro - a.nuestro) || ((a.fuerza || {}).puesto - (b.fuerza || {}).puesto));
-    const lin = (x, sub) => `<div style="padding:7px 0;border-bottom:1px solid #26262A"><div style="font-weight:600">${jn(x)}${x.portero ? ' <span style="font-size:12px;color:#A6A6AD">· portero</span>' : ''}</div><div style="font-size:12px;color:#A6A6AD">${sub}</div></div>`;
+    const lin = (x, sub) => `<div style="padding:7px 0;border-bottom:1px solid #26262A"><div style="font-weight:600">${jn(x)}${x.portero ? ' <span style="font-size:12px;color:#A6A6AD">· portero</span>' : ''}${x.tag ? ` <span style="font-size:11px;font-weight:700;padding:1px 6px;border-radius:3px;background:${x.tag[2]};color:#0D0D0E;white-space:nowrap">${esc(x.tag[1])}</span>` : ''}</div><div style="font-size:12px;color:#A6A6AD">${sub}</div></div>`;
     const ab = orden.map(e => {
-      const altas = (e.altas || []).map(x => lin(x, (x.desde ? 'de ' + esc(x.desde) + (x.desdeLiga ? ' · ' + esc(x.desdeLiga) : '') : esc(x.nota || 'Nuevo')) + (x.stats ? ' · 25/26: ' + st(x.stats) : ''))).join('') || '<div style="padding:7px 0;color:#A6A6AD;font-size:14px">Ninguna</div>';
+      const altas = (e.altas || []).map(x => { const t = tipoAlta(x, e.equipo, L.nombre); return lin(Object.assign({}, x, { tag: t }), (x.desde ? 'de ' + esc(x.desde) + (x.desdeLiga ? ' · ' + esc(x.desdeLiga) : '') : esc(x.nota || 'Nuevo')) + (x.stats ? ' · 25/26: ' + st(x.stats) : '')); }).join('') || '<div style="padding:7px 0;color:#A6A6AD;font-size:14px">Ninguna</div>';
       const bajas = (e.bajas || []).map(x => lin(x, x.destino ? '→ ' + esc(x.destino) + (x.destinoLiga ? ' · ' + esc(x.destinoLiga) : '') : esc(x.nota || 'Sin partidos esta temporada'))).join('') || '<div style="padding:7px 0;color:#A6A6AD;font-size:14px">Ninguna</div>';
       const gk = (e.porteros || []).map(g => `${jn(g)} <span style="color:#A6A6AD">${g.pct != null ? dec(g.pct) + '%' : 'sin historial'}</span>`).join(' · ');
       const clave = (e.clave || []).slice(0, 3).map(x => `${jn(x)} <span style="color:#A6A6AD">${dec(x.ritmo)}</span>`).join(' · ');
@@ -821,7 +888,7 @@
     if (v === 'jugador' && !A.jugadores[parts[1]]) { history.replaceState(null, '', '#/jugadores'); prevRoute = location.hash; return render(); }
     if (v === 'liga' && parts[2] === 'llega') { history.replaceState(null, '', hPre(parts[1])); prevRoute = location.hash; return render(); }
     if (v === 'partido' && !A.partidos[parts[1]]) { history.replaceState(null, '', '#/jornada'); prevRoute = location.hash; return render(); }
-    const nav = [['jornada', 'Jornada', '#/jornada'], ['equipos', 'Equipos', hEq(S.eq || A.equipos[0].id)], ['ligas', 'Ligas', hLg(S.lg || A.ligas[0].id)], ['pretemporada', 'Pretemporada', hPre(S.lg || A.ligas[0].id)], ['jugadores', 'Jugadores', '#/jugadores'], ['legado', 'Legado', '#/legado']];
+    const nav = [['jornada', 'Jornada', '#/jornada'], ['equipos', 'Equipos', hEq(S.eq || A.equipos[0].id)], ['ligas', 'Ligas', hLg(S.lg || A.ligas[0].id)], ['pretemporada', 'Pretemporada', hPre('club')], ['jugadores', 'Jugadores', '#/jugadores'], ['legado', 'Legado', '#/legado']];
     $('#nav').innerHTML = nav.map(([k, l, h]) => `<a href="${h}" data-nav${TOP[v] === k ? ' aria-current="page"' : ''}>${l}</a>`).join('');
     // móvil: la misma navegación, abajo y con iconos (al alcance del pulgar)
     $('#tabbar').innerHTML = nav.map(([k, l, h]) => `<a href="${h}" data-nav${TOP[v] === k ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICONO[k]}</svg><span>${l}</span></a>`).join('');
