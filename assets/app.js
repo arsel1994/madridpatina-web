@@ -98,7 +98,8 @@
     const cards = A.equipos.map(e => {
       const L = lgOf(e.ligaId);
       const m = e.cal.find(c => c.fecha && c.fecha >= w.desde && c.fecha <= w.hasta && c.resultado);
-      const nx = e.cal.find(c => c.fecha && c.fecha > w.hasta && !c.descanso);
+      const nx = e.cal.filter(c => c.fecha && c.fecha > w.hasta && !c.descanso && !c.resultado)
+        .sort((a, b) => (a.fecha + (a.hora || '')) < (b.fecha + (b.hora || '')) ? -1 : 1)[0];
       const wn = w.nuestros.find(n => n.equipo === e.nombre);
       const lj = L.jornadas.find(j => j.desde && j.desde <= w.hasta && j.hasta >= w.desde);
       const ce = lj && e.cal.find(c => c.j === lj.n);
@@ -207,19 +208,22 @@
   }
 
   /* ── 2. Equipos ─────────────────────────────────────────── */
-  function calTile(c) {
+  function calTile(c, cal) {
     if (c.descanso) return `<div style="background:#18181B;border:1px solid #26262A;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;align-items:center;opacity:.5">
         <div style="display:flex;justify-content:space-between;width:100%;padding:8px 10px 0;font-size:12px;font-weight:700;color:#A6A6AD"><span>J${c.j}</span><span></span></div>
         <div style="width:64px;height:64px;border-radius:50%;background:#26262A;margin:8px 0 6px;box-shadow:0 0 0 2px #26262A"></div>
         <span style="${BS}font-weight:800;font-size:20px;letter-spacing:.04em;line-height:1;white-space:nowrap">DESCANSA</span>
         <div style="margin-top:10px;width:100%;padding:6px 0;text-align:center;background:#26262A;color:#A6A6AD;${BS}font-weight:800;font-size:20px;line-height:1">—</div></div>`;
     const played = !!c.resultado;
-    const col = played ? RES[c.r][1] : (c.derbi ? RED : '#26262A');
+    // aplazado: sin jugar y con fecha posterior a la de una jornada siguiente
+    const aplazado = !played && c.fecha && (cal || []).some(o => o.j > c.j && o.fecha && o.fecha < c.fecha);
+    const col = played ? RES[c.r][1] : (aplazado ? '#FF8A3D' : (c.derbi ? RED : '#26262A'));
     return box(hM(c.mid), `background:#18181B;border:1px solid ${col};border-radius:10px;overflow:hidden;display:flex;flex-direction:column;align-items:center`, `
       <div style="display:flex;justify-content:space-between;width:100%;padding:8px 10px 0;font-size:12px;font-weight:700;color:#A6A6AD"><span>J${c.j}</span><span>${c.casa ? 'CASA' : 'FUERA'}</span></div>
       <div style="width:64px;height:64px;border-radius:50%;margin:8px 0 6px;box-shadow:0 0 0 2px #FFFFFF">${disc(crest(c.rival), 64, 'transparent')}</div>
       <span style="${BS}font-weight:800;font-size:20px;letter-spacing:.04em;line-height:1;white-space:nowrap">${esc(abr(c.rival))}</span>
-      <div style="margin-top:10px;width:100%;padding:6px 0;text-align:center;background:${col};color:#FFFFFF;${BS}font-weight:800;font-size:20px;line-height:1">${played ? c.resultado.replace('-', '–') : fd(c.fecha).replace(/^\S+ /, '')}</div>`);
+      ${aplazado ? '<span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:#FF8A3D;margin-top:3px">APLAZADO</span>' : ''}
+      <div style="margin-top:${aplazado ? 4 : 10}px;width:100%;padding:6px 0;text-align:center;background:${col};color:#FFFFFF;${BS}font-weight:800;font-size:20px;line-height:1">${played ? c.resultado.replace('-', '–') : fd(c.fecha).replace(/^\S+ /, '')}</div>`);
   }
   function playerCard(k) {
     const p = A.jugadores[k]; const t = p.temporadas['2025/26'], t7 = p.temporadas['2026/27'];
@@ -265,7 +269,7 @@
         </div>
       </div>
       ${lab('CALENDARIO · ' + e.cal.length + ' JORNADAS', 'margin:28px 0 10px')}
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px">${e.cal.map(calTile).join('')}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px">${e.cal.map(c => calTile(c, e.cal)).join('')}</div>
       ${(() => { const jug = e.cal.filter(c => c.mid && A.partidos[c.mid]).reverse();
         return jug.length ? `${lab('PARTIDOS JUGADOS · ' + A.temporada + ' · ' + jug.length, 'margin:28px 0 10px')}
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:12px;align-items:start">${jug.map(c => { const r = RES[c.r] || ['', '#2E2E33'];
