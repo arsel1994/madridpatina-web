@@ -73,3 +73,10 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
   .tabbar a[aria-current="page"] svg { stroke: #FF6B63; }
   .tabbar a[aria-current="page"]::before { content: ''; position: absolute; top: -7px; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: #D3202A; }
 }
+
+/* Jornada: las 4 tarjetas de la semana en 2 columnas y «Próximos partidos» a la derecha ocupando sus 2 filas */
+.semana-dest { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 12px; margin-top: 12px; align-items: stretch; }
+.semana-dest.solo { grid-template-columns: minmax(0, 1fr); }
+.semana-dest .cuatro { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; }
+@media (max-width: 1100px) { .semana-dest { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 720px) { .semana-dest .cuatro { grid-template-columns: minmax(0, 1fr); } }

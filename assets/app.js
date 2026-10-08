@@ -228,8 +228,8 @@
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px">${cards}</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px;margin-top:12px">
-        ${porCard}${figCard}${asisCard}${sancCard}
+      <div class="semana-dest${[porCard, figCard, asisCard, sancCard].some(Boolean) ? '' : ' solo'}">
+        ${[porCard, figCard, asisCard, sancCard].some(Boolean) ? `<div class="cuatro">${porCard}${figCard}${asisCard}${sancCard}</div>` : ''}
         <div class="card" style="padding:20px 22px">${lab('PRÓXIMOS PARTIDOS')}<div style="display:flex;flex-direction:column;margin-top:8px">${proxHtml}</div></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:12px">${tablas}</div>`;
