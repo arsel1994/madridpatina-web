@@ -587,8 +587,8 @@
         ${disc(crest(x.rival), 48)}<div style="flex:1;min-width:0"><div style="font-size:13px;color:#A6A6AD">vs</div><span style="${BS}font-weight:800;font-size:22px;letter-spacing:.04em;line-height:1;white-space:nowrap">${esc(abr(x.rival))}</span></div>
         <div style="${BS}font-weight:800;font-size:24px;text-align:right">${x.pct != null ? dec(x.pct) + '%' : x.g + 'G ' + x.a + 'A'}</div>${x.pim ? `<div style="flex-basis:100%;margin-top:-6px;padding-left:60px;font-size:13px;font-weight:600;color:#A6A6AD">${fmin(x.pim)} de sanción</div>` : ''}`)).join('');
     return `<div style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;align-items:stretch">
-        <div class="ini" style="background:${RED};border-radius:14px;overflow:hidden;min-height:380px;font-size:120px;color:#A9161E">
-          ${esc(ini(p.nombre, p.apellidos))}${photo(p.foto, 'grayscale(1) contrast(1.05)', '50% 15%', 'mix-blend-mode:luminosity;')}
+        <div class="ini" style="background:linear-gradient(160deg,#D3202A 0%,#8E1219 100%);border-radius:14px;overflow:hidden;align-self:start;aspect-ratio:4/5;font-size:120px;color:#A9161E">
+          ${esc(ini(p.nombre, p.apellidos))}${photo(p.foto, 'none', '50% 15%')}
           <span style="position:absolute;left:18px;bottom:8px;font-size:150px;line-height:.85;color:#fff;text-shadow:0 4px 18px rgba(0,0,0,.5)">${esc(p.dorsal || '')}</span>
         </div>
         <div style="grid-column:span 2;min-width:0;background:#18181B;border-radius:14px;padding:clamp(20px,3vw,32px);display:flex;flex-direction:column;gap:20px" class="fj">
