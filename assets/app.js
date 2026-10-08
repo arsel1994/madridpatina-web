@@ -41,6 +41,7 @@
   const fmin = m => { m = +m || 0; const e = Math.floor(m), sg = Math.round((m - e) * 60); return e + "'" + (sg ? String(sg).padStart(2, '0') + "''" : ''); };
   const titulo = s => (s || '').toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase());
   // Jugador del acta: enlace a su ficha si es de los nuestros
+  const rolDe = p => p.portero ? 'Portero' : p.capitan ? 'Capitán' : p.asistente ? 'Asistente' : 'Jugador';
   const quienTxt = x => !x ? '' : !x.nombre ? (x.dorsal ? '#' + esc(x.dorsal) : '')
     : (A.jugadores[x.k] ? `<a href="${hP(x.k)}">#${esc(x.dorsal || '')} ${esc(corto(x))}</a>` : `#${esc(x.dorsal || '')} ${esc(corto(x))}`);
   const letraOf = e => e.cantera ? (e.id === 'AL' ? 'AL' : 'IN') : e.id;
@@ -370,7 +371,7 @@
         <div style="${BS}font-weight:800;font-size:24px">${esc(eq)}</div>
         <div style="display:grid;grid-template-columns:minmax(0,1fr) 32px 32px 48px;gap:8px;font-size:13px;font-weight:700;color:#A6A6AD;padding:10px 0 6px;border-bottom:1px solid #26262A"><span>${camp.length ? 'Jugadores · ' + camp.length : 'Puntos'}</span><span style="text-align:center">G</span><span style="text-align:center">A</span><span style="text-align:right">Sanción</span></div>
         ${filas.map(g => box(A.jugadores[g.k] ? hP(g.k) : null, 'display:grid;grid-template-columns:minmax(0,1fr) 32px 32px 48px;gap:8px;align-items:center;width:100%;padding:8px 0;border-bottom:1px solid #26262A', `
-          <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="color:#A6A6AD">#${esc(g.dorsal)}</span>${g.capitan ? ' <span style="font-size:12px;font-weight:700;color:#A6A6AD">(C)</span>' : ''} ${esc(corto(g))}</span>
+          <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="color:#A6A6AD">#${esc(g.dorsal)}</span>${g.capitan || g.asistente ? ` <span style="font-size:12px;font-weight:700;color:#A6A6AD">(${g.capitan ? 'C' : 'A'})</span>` : ''} ${esc(corto(g))}</span>
           <span style="text-align:center;${BS}font-weight:800;font-size:22px;color:${g.g ? '#FF6B63' : '#55555B'}">${g.g || 0}</span>
           <span style="text-align:center;${BS}font-weight:800;font-size:22px;color:${g.a ? '#C9C9CE' : '#55555B'}">${g.a || 0}</span>
           <span style="text-align:right;${BS}font-weight:800;font-size:18px;color:${g.pim ? '#F4F4F5' : '#55555B'}">${g.pim ? fmin(g.pim) : '—'}</span>`)).join('')}
@@ -427,8 +428,7 @@
     const filtros = [['todos', 'Todos', '#/jugadores']].concat(teams.map(e => [e.id, tituloOf(e), '#/jugadores/' + e.id]))
       .map(([k, l, h]) => `<a class="blk" href="${h}" style="padding:8px 16px;border-radius:999px;background:${jf === k ? RED : '#18181B'};color:${jf === k ? '#FFFFFF' : '#C9C9CE'};font-weight:700;font-size:15px">${l}</a>`).join('');
     const jugList = list.filter(p => !fe || enEquipo(p, fe)).sort((a, b) => a.equipo === b.equipo ? pts(b) - pts(a) : (a.equipo < b.equipo ? -1 : 1)).map(p => {
-      const t = p.temporadas['2025/26'], t7 = p.temporadas['2026/27'];
-      const stat = p.portero ? 'Portero' : ('26/27: ' + (t7 ? t7.goles + 'G ' + t7.asistencias + 'A' : '—') + (t ? ' · 25/26: ' + t.goles + 'G ' + t.asistencias + 'A' : ''));
+      const stat = rolDe(p);
       return box(hP(p.k), 'background:#18181B;border-radius:10px;overflow:hidden;display:flex;flex-direction:column', `
         <div class="ini" style="aspect-ratio:4/5;background:#26262A;font-size:48px;color:#55555B">${esc(ini(p.nombre, p.apellidos))}${photo(p.foto)}
           <span style="position:absolute;left:8px;bottom:6px;${BS}font-weight:900;font-size:40px;line-height:1;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)">${esc(p.dorsal || '')}</span>
@@ -488,7 +488,7 @@
     const max = Math.max(1, ...order.map(t => Math.max(TS[t].goles || 0, TS[t].asistencias || 0)));
     const car = hj ? hj.carrera : null;
     const t = equiposDe(p)[0] || teamOf(p.equipo);
-    const tags = [p.portero ? 'PORTERO' : 'JUGADOR', p.edad ? p.edad + ' AÑOS' : null, p.capitan ? 'CAPITÁN' : null, p.rookie ? 'DEBUTANTE' : null].filter(Boolean);
+    const tags = [rolDe(p).toUpperCase(), p.edad ? p.edad + ' AÑOS' : null, p.rookie ? 'DEBUTANTE' : null].filter(Boolean);
     const tile = (k2, v, ink = '') => `<div style="padding:12px 16px;background:#121214;border-radius:8px"><div style="font-size:13px;color:#A6A6AD;font-weight:600">${k2}</div><div style="${BS}font-weight:900;font-size:48px;line-height:1;${ink}">${v}</div></div>`;
     const temps = order.map(kk => { const s = p.temporadas[kk]; const g = s.goles || 0, a = s.asistencias || 0;
       return `<div style="display:grid;grid-template-columns:72px minmax(0,1fr) 120px;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid #26262A">
