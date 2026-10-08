@@ -62,11 +62,11 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
   .brand img { width: 34px; height: 34px; }
   .brand .t { font-size: 22px; }
   .wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
-  .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; gap: 2px;
-    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+  .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; gap: 0;
+    padding: 6px 2px calc(6px + env(safe-area-inset-bottom, 0px));
     background: rgba(13,13,14,.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid #26262A; }
   .tabbar a { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px 5px;
-    border-radius: 10px; color: #A6A6AD; font-size: 11px; font-weight: 700; letter-spacing: .02em; position: relative; }
+    border-radius: 10px; color: #A6A6AD; font-size: 10px; font-weight: 700; letter-spacing: 0; position: relative; }
   .tabbar a span { white-space: nowrap; }
   .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .tabbar a[aria-current="page"] { color: #FFFFFF; }
