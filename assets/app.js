@@ -115,7 +115,6 @@
         <div style="display:flex;align-items:center;gap:10px;padding:0 18px 16px;min-height:52px">
           ${m ? `${disc(crest(m.rival), 32)}<div style="min-width:0"><div style="font-weight:700;font-size:15px;letter-spacing:.02em">${esc(m.rival)}</div><div style="font-size:13px;color:#A6A6AD">${(m.casa ? 'En casa' : 'Fuera') + ' · ' + fd(m.fecha)}</div></div>` : ''}
         </div>
-        ${m && m.mid && A.partidos[m.mid] ? actaMini(A.partidos[m.mid], e.nombre) : ''}
         <div style="padding:14px 18px;border-top:1px solid #26262A">
           <div style="display:flex;justify-content:space-between;font-size:14px;color:#A6A6AD;font-weight:600"><span>Clasificación</span><span style="color:#F4F4F5">${cl.puesto}º de ${cl.de} · ${cl.pts} pts</span></div>
           <div style="display:flex;gap:3px;margin-top:8px">${dots}</div>
