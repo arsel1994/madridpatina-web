@@ -49,3 +49,7 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
   .fila-barra.cinco { grid-template-columns: 24px 26px minmax(0, 1fr) auto !important; row-gap: 4px !important; }
   .fila-barra.cinco > .barra { grid-column: 3 / -1; }
 }
+
+/* Cabecera del partido: en pantallas estrechas el nombre largo («MADRIDPATINA A») no cabe; va la abreviatura («MP A») */
+.nm-corto { display: none; }
+@media (max-width: 520px) { .nm-largo { display: none; } .nm-corto { display: inline; } }
