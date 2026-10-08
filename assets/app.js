@@ -34,6 +34,9 @@
   const abr = n => { if (!n) return ''; const w = n.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().split(' '); const suf = w.length > 1 && /^[A-Z]$/.test(w[w.length - 1]) ? ' ' + w[w.length - 1] : ''; return (w[0] === 'MADRIDPATINA' ? 'MP' : w[0].slice(0, 3)) + suf; };
   const lgOf = id => A.ligas.find(l => l.id === id);
   const teamOf = name => A.equipos.find(e => e.nombre === name);
+  // Alevín e Infantil se llaman igual en la FMP («MADRIDPATINA»): en cantera el equipo sale de la liga de sus partidos
+  const enEquipo = (p, e) => p.equipo === e.nombre && (!e.cantera || (p.partidos || []).some(x => x.mid.startsWith(e.ligaId + '-')));
+  const equiposDe = p => A.equipos.filter(e => enEquipo(p, e));
   const letraOf = e => e.cantera ? (e.id === 'AL' ? 'AL' : 'IN') : e.id;
   const tituloOf = e => e.cantera ? (e.id === 'AL' ? 'Alevín' : 'Infantil') : 'Equipo ' + e.id;
   const ini = (n, a) => ((n || '')[0] || '') + ((a || '')[0] || '');
@@ -388,29 +391,29 @@
   function vJugadores(fid) {
     const J = A.jugadores;
     const list = Object.values(J).filter(p => p.equipo && ours(p.equipo));
-    const teams = A.equipos.filter(e => list.some(p => p.equipo === e.nombre));
+    const teams = A.equipos.filter(e => list.some(p => enEquipo(p, e)));
     const fe = teams.find(e => e.id === fid);
-    const jf = fe ? fe.nombre : 'todos';
+    const jf = fe ? fe.id : 'todos';
     const pts = p => { const t = p.temporadas['2025/26'] || {}, t7 = p.temporadas['2026/27'] || {}; return (t7.goles || 0) * 3 + (t7.asistencias || 0) * 3 + (t.goles || 0) + (t.asistencias || 0); };
-    const filtros = [['todos', 'Todos', '#/jugadores']].concat(teams.map(e => [e.nombre, tituloOf(e), '#/jugadores/' + e.id]))
+    const filtros = [['todos', 'Todos', '#/jugadores']].concat(teams.map(e => [e.id, tituloOf(e), '#/jugadores/' + e.id]))
       .map(([k, l, h]) => `<a class="blk" href="${h}" style="padding:8px 16px;border-radius:999px;background:${jf === k ? RED : '#18181B'};color:${jf === k ? '#FFFFFF' : '#C9C9CE'};font-weight:700;font-size:15px">${l}</a>`).join('');
-    const jugList = list.filter(p => jf === 'todos' || p.equipo === jf).sort((a, b) => a.equipo === b.equipo ? pts(b) - pts(a) : (a.equipo < b.equipo ? -1 : 1)).map(p => {
+    const jugList = list.filter(p => !fe || enEquipo(p, fe)).sort((a, b) => a.equipo === b.equipo ? pts(b) - pts(a) : (a.equipo < b.equipo ? -1 : 1)).map(p => {
       const t = p.temporadas['2025/26'], t7 = p.temporadas['2026/27'];
       const stat = p.portero ? 'Portero' : ('26/27: ' + (t7 ? t7.goles + 'G ' + t7.asistencias + 'A' : '—') + (t ? ' · 25/26: ' + t.goles + 'G ' + t.asistencias + 'A' : ''));
       return box(hP(p.k), 'background:#18181B;border-radius:10px;overflow:hidden;display:flex;flex-direction:column', `
         <div class="ini" style="aspect-ratio:4/5;background:#26262A;font-size:48px;color:#55555B">${esc(ini(p.nombre, p.apellidos))}${photo(p.foto)}
           <span style="position:absolute;left:8px;bottom:6px;${BS}font-weight:900;font-size:40px;line-height:1;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)">${esc(p.dorsal || '')}</span>
-          <span style="position:absolute;right:8px;top:8px;font-size:12px;font-weight:700;padding:3px 7px;border-radius:4px;background:${RED};color:#fff;font-family:'IBM Plex Sans Condensed',sans-serif">${esc(p.equipo.replace('MADRIDPATINA', 'MP').trim() || 'MP')}</span>
+          <span style="position:absolute;right:8px;top:8px;font-size:12px;font-weight:700;padding:3px 7px;border-radius:4px;background:${RED};color:#fff;font-family:'IBM Plex Sans Condensed',sans-serif">${esc('MP ' + (equiposDe(p).map(letraOf).join('·') || p.equipo.replace('MADRIDPATINA', '').trim()))}</span>
         </div>
         <div style="padding:10px 12px"><div style="font-weight:700;font-size:15px;line-height:1.15">${esc(corto(p))}</div><div style="font-size:13px;color:#A6A6AD;margin-top:2px">${stat}</div></div>`);
     }).join('');
     const seen = {};
-    const rook = [].concat(...A.ligas.map(l => l.rookies)).filter(r => r.nuestro && !seen[r.k] && (seen[r.k] = 1)).filter(r => jf === 'todos' || r.equipo === jf);
+    const rook = [].concat(...A.ligas.map(l => l.rookies)).filter(r => r.nuestro && !seen[r.k] && (seen[r.k] = 1)).filter(r => !fe || r.equipo === fe.nombre);
     const rookHtml = rook.map(r => box(hP(r.k), 'flex:none;width:150px;background:#121214;border-radius:10px;overflow:hidden', `
         <div class="ini" style="height:150px;background:#26262A;font-size:40px;color:#55555B">${esc(ini(r.nombre, r.apellidos))}${photo(r.foto || (J[r.k] && J[r.k].foto))}
           <span style="position:absolute;left:8px;top:8px;font-size:11px;font-weight:700;letter-spacing:.1em;padding:3px 6px;border-radius:3px;background:${RED};color:#fff;font-family:'IBM Plex Sans Condensed',sans-serif">ROOKIE</span>
           <span style="position:absolute;right:8px;bottom:4px;${BS}font-weight:900;font-size:34px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)">${esc(r.dorsal ?? '')}</span></div>
-        <div style="padding:8px 10px"><div style="font-weight:700;font-size:14px;line-height:1.15">${esc(corto(r))}</div><div style="font-size:12px;color:#A6A6AD">${esc(abr(r.equipo) === 'MP' ? 'MADRIDPATINA' : abr(r.equipo))} · ${r.edad} años</div></div>`)).join('');
+        <div style="padding:8px 10px"><div style="font-weight:700;font-size:14px;line-height:1.15">${esc(corto(r))}</div><div style="font-size:12px;color:#A6A6AD">${esc(abr(r.equipo) === 'MP' ? 'MADRIDPATINA' : abr(r.equipo))}${r.edad != null ? ' · ' + r.edad + ' años' : ''}</div></div>`)).join('');
     return `<div style="${BS}font-weight:900;font-size:clamp(48px,7vw,84px);line-height:.9;padding-top:32px">PLANTILLAS</div>
       ${rook.length ? `<div class="card" style="margin-top:20px;padding:16px 18px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:14px;font-weight:700;letter-spacing:.12em;color:#FF6B63">ROOKIES 2026/27 · ${rook.length}</span><span style="font-size:13px;color:#A6A6AD">Nuevos en el equipo esta temporada</span></div>
@@ -429,7 +432,7 @@
     const order = Object.keys(TS).sort().filter(t => TS[t] && (TS[t].pj || t === A.temporada));
     const max = Math.max(1, ...order.map(t => Math.max(TS[t].goles || 0, TS[t].asistencias || 0)));
     const car = hj ? hj.carrera : null;
-    const t = teamOf(p.equipo);
+    const t = equiposDe(p)[0] || teamOf(p.equipo);
     const tags = [p.portero ? 'PORTERO' : 'JUGADOR', p.edad ? p.edad + ' AÑOS' : null, p.capitan ? 'CAPITÁN' : null, p.rookie ? 'DEBUTANTE' : null].filter(Boolean);
     const tile = (k2, v, ink = '') => `<div style="padding:12px 16px;background:#121214;border-radius:8px"><div style="font-size:13px;color:#A6A6AD;font-weight:600">${k2}</div><div style="${BS}font-weight:900;font-size:48px;line-height:1;${ink}">${v}</div></div>`;
     const temps = order.map(kk => { const s = p.temporadas[kk]; const g = s.goles || 0, a = s.asistencias || 0;
