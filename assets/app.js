@@ -69,6 +69,26 @@
   const tableRows = (rows, dark = '#2A1416') => { const max = Math.max(3, ...rows.map(r => r.pts)); return rows.map(r => ({ puesto: r.puesto, equipo: r.equipo, crest: crest(r.equipo), pj: r.pj, v: r.v, e: r.e, d: r.d, pts: r.pts, dg: (r.gf - r.gc > 0 ? '+' : '') + (r.gf - r.gc), ptsPct: (r.pts / max * 100) + '%', weight: r.nuestro ? 800 : 500, bg: r.nuestro ? dark : 'transparent', bar: r.nuestro ? RED : '#6B6B70', nuestro: r.nuestro })); };
 
   /* ── 1. Jornada ─────────────────────────────────────────── */
+  // Acta resumida de un partido nuestro (tarjetas de la Jornada); el acta completa está en la página del partido
+  function actaMini(p, nombre) {
+    const s = p.local === nombre ? 'l' : 'v', alin = p['alin_' + s] || [], por = p['por_' + s] || [];
+    const nm = x => `#${esc(x.dorsal || '')} ${esc(corto({ nombre: (x.nombre || '').split(' ')[0], apellidos: x.apellidos }))}`;
+    const goles = alin.filter(x => x.g || x.a).sort((a, b) => b.g - a.g || b.a - a.a)
+      .map(x => nm(x) + ` <span style="color:#A6A6AD">${[x.g ? x.g + ' G' : '', x.a ? x.a + ' A' : ''].filter(Boolean).join(' · ')}</span>`);
+    const sanc = alin.filter(x => x.pim).map(x => nm(x) + ` <span style="color:#A6A6AD">${fmin(x.pim)}</span>`);
+    const fila = (k, v) => `<div style="display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px"><span style="font-size:13px;font-weight:700;color:#A6A6AD">${k}</span><span>${v}</span></div>`;
+    if (!alin.length && !p.ev) return '';
+    return `<div style="padding:12px 18px 14px;border-top:1px solid #26262A;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.4">
+        ${fila('Goles', goles.length ? goles.join('<br>') : '<span style="color:#A6A6AD">Sin goles</span>')}
+        ${alin.length ? fila('Jugaron · ' + alin.length, alin.map(nm).join(', ')) : ''}
+        ${por.length ? fila('Portería', por.map(x => nm(x) + ` <span style="color:#A6A6AD">${x.pct != null ? dec(x.pct) + '% · ' : ''}${x.par}/${x.tiros}</span>`).join('<br>')) : ''}
+        ${sanc.length ? fila('Sanciones', sanc.join('<br>')) : ''}
+        ${p.pista ? fila('Pista', esc(p.pista)) : ''}
+        ${p.arb && p.arb.length ? fila(p.arb.length > 1 ? 'Árbitros' : 'Árbitro', p.arb.map(esc).join(', ')) : ''}
+        ${box(hM(p.mid), 'font-weight:700;color:#FF6B63;margin-top:2px', 'Ver acta completa →')}
+      </div>`;
+  }
+
   function vJornada(weekId) {
     const wi = Math.max(0, A.semanas.findIndex(w => w.id === weekId));
     const w = A.semanas[wi];
@@ -95,6 +115,7 @@
         <div style="display:flex;align-items:center;gap:10px;padding:0 18px 16px;min-height:52px">
           ${m ? `${disc(crest(m.rival), 32)}<div style="min-width:0"><div style="font-weight:700;font-size:15px;letter-spacing:.02em">${esc(m.rival)}</div><div style="font-size:13px;color:#A6A6AD">${(m.casa ? 'En casa' : 'Fuera') + ' · ' + fd(m.fecha)}</div></div>` : ''}
         </div>
+        ${m && m.mid && A.partidos[m.mid] ? actaMini(A.partidos[m.mid], e.nombre) : ''}
         <div style="padding:14px 18px;border-top:1px solid #26262A">
           <div style="display:flex;justify-content:space-between;font-size:14px;color:#A6A6AD;font-weight:600"><span>Clasificación</span><span style="color:#F4F4F5">${cl.puesto}º de ${cl.de} · ${cl.pts} pts</span></div>
           <div style="display:flex;gap:3px;margin-top:8px">${dots}</div>
@@ -245,6 +266,14 @@
       </div>
       ${lab('CALENDARIO · ' + e.cal.length + ' JORNADAS', 'margin:28px 0 10px')}
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px">${e.cal.map(calTile).join('')}</div>
+      ${(() => { const jug = e.cal.filter(c => c.mid && A.partidos[c.mid]).reverse();
+        return jug.length ? `${lab('PARTIDOS JUGADOS · ' + A.temporada + ' · ' + jug.length, 'margin:28px 0 10px')}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:12px;align-items:start">${jug.map(c => { const r = RES[c.r] || ['', '#2E2E33'];
+          return `<div class="card" style="overflow:hidden">
+            ${box(hM(c.mid), 'display:flex;align-items:center;gap:12px;padding:14px 18px', `${disc(crest(c.rival), 36)}
+              <div style="flex:1;min-width:0"><div style="font-size:13px;color:#A6A6AD;font-weight:600">J${c.j} · ${c.casa ? 'En casa' : 'Fuera'} · ${fd(c.fecha)}</div><div style="font-weight:700;font-size:15px">${esc(c.rival)}</div></div>
+              <div style="text-align:right"><div style="${BS}font-weight:800;font-size:32px;line-height:1">${esc((c.resultado || '').replace('-', '–'))}</div><div style="font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:3px;background:${r[1]};color:#fff;margin-top:4px;display:inline-block">${r[0]}</div></div>`)}
+            ${actaMini(A.partidos[c.mid], e.nombre)}</div>`; }).join('')}</div>` : ''; })()}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;margin-top:28px">
         <div>${lab('JUGADORES CLAVE · 2025/26', 'margin-bottom:10px')}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">${clave}</div></div>
         <div style="display:flex;flex-direction:column;gap:12px">
