@@ -1,0 +1,51 @@
+/* MADRIDPATINA · web del club (diseño de Claude Design: design_handoff_madridpatina_web/README.md).
+   Valores exactos del README; lo específico de cada pieza va junto a su plantilla en app.js. */
+html, body { margin: 0; background: #0D0D0E; color: #F4F4F5; }
+* { box-sizing: border-box; }
+body { min-height: 100vh; font-family: 'IBM Plex Sans Condensed', 'Arial Narrow', sans-serif; font-size: 16px; line-height: 1.4;
+  -webkit-text-size-adjust: 100%; }
+a { color: #FF6B63; text-decoration: none; }
+a:hover { color: #fff; }
+/* Bloques navegables: se comportan como los botones del prototipo (sin color de enlace) */
+a.blk, a.blk:hover { color: inherit; }
+a.blk { display: block; cursor: pointer; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; text-align: inherit; }
+::-webkit-scrollbar { height: 6px; width: 8px; }
+::-webkit-scrollbar-thumb { background: #3A3A40; border-radius: 3px; }
+[hidden] { display: none !important; }
+
+.bs { font-family: 'Big Shoulders Display', 'Arial Narrow', sans-serif; }
+.tab { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 40px) 64px; }
+
+/* Cabecera fija */
+.top { position: sticky; top: 0; z-index: 10; background: rgba(13,13,14,.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid #26262A; }
+.top .in { max-width: 1280px; margin: 0 auto; padding: 12px clamp(16px, 3vw, 40px); display: flex; align-items: center; gap: 12px 28px; flex-wrap: wrap; }
+.top .brand { display: flex; align-items: center; gap: 12px; }
+.brand img { width: 40px; height: 40px; object-fit: contain; border-radius: 50%; box-shadow: 0 0 0 2px #FFFFFF; }
+.brand .t { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 26px; line-height: 1; letter-spacing: .04em; }
+.brand .s { font-size: 13px; color: #A6A6AD; font-weight: 600; }
+.nav { display: flex; gap: 4px; flex: 1; overflow-x: auto; min-width: 0; }
+.nav a { flex: none; padding: 9px 14px; border-radius: 6px; font-weight: 700; font-size: 15px; white-space: nowrap; color: #C9C9CE; background: transparent; }
+.nav a[aria-current="page"] { background: #D3202A; color: #FFFFFF; }
+.back { margin-top: 20px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid #3A3A40; border-radius: 6px; font-weight: 600; font-size: 15px; color: #C9C9CE; }
+.back:hover { color: #fff; }
+
+/* Piezas comunes */
+.lab { font-size: 14px; font-weight: 700; letter-spacing: .12em; color: #A6A6AD; }
+.card { background: #18181B; border-radius: 12px; }
+.disc { border-radius: 50%; flex: none; display: block; background-size: contain; background-position: center; background-repeat: no-repeat; }
+.ph { position: absolute; inset: 0; width: 100%; height: 100%; background-size: cover; background-repeat: no-repeat; }
+.ini { position: relative; display: grid; place-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; }
+.loading { padding: 80px 0; text-align: center; color: #A6A6AD; font-size: 15px; }
+
+footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A; font-size: 14px; color: #A6A6AD; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+/* Filas «nombre + barra + cifra» (clasificación de la jornada, cara a cara, histórico).
+   En pantallas estrechas la barra baja a una segunda línea bajo el nombre; si no, el nombre se queda sin sitio. */
+@media (max-width: 720px) {
+  .fila-barra { grid-template-columns: var(--c1, 28px) minmax(0, 1fr) auto !important; row-gap: 6px !important; }
+  .fila-barra > .barra { grid-row: 2; grid-column: 2 / -1; }
+  .fila-barra.cinco { grid-template-columns: 24px 26px minmax(0, 1fr) auto !important; row-gap: 4px !important; }
+  .fila-barra.cinco > .barra { grid-column: 3 / -1; }
+}
