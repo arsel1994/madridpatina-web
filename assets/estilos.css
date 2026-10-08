@@ -19,7 +19,7 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .wrap { max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 40px) 64px; }
 
 /* Cabecera fija */
-.top { position: sticky; top: 0; z-index: 10; background: rgba(13,13,14,.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid #26262A; }
+.top { position: sticky; top: 0; z-index: 10; padding-top: env(safe-area-inset-top, 0px); background: rgba(13,13,14,.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid #26262A; }
 .top .in { max-width: 1280px; margin: 0 auto; padding: 12px clamp(16px, 3vw, 40px); display: flex; align-items: center; gap: 12px 28px; flex-wrap: wrap; }
 .top .brand { display: flex; align-items: center; gap: 12px; }
 .brand img { width: 40px; height: 40px; object-fit: contain; border-radius: 50%; box-shadow: 0 0 0 2px #FFFFFF; }
@@ -53,3 +53,23 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 /* Cabecera del partido: en pantallas estrechas el nombre largo («MADRIDPATINA A») no cabe; va la abreviatura («MP A») */
 .nm-corto { display: none; }
 @media (max-width: 520px) { .nm-largo { display: none; } .nm-corto { display: inline; } }
+
+/* ── Versión móvil: cabecera compacta y las secciones en una barra fija abajo ── */
+.tabbar { display: none; }
+@media (max-width: 720px) {
+  .top .nav { display: none; }
+  .top .in { padding-block: 10px; }
+  .brand img { width: 34px; height: 34px; }
+  .brand .t { font-size: 22px; }
+  .wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: rgba(13,13,14,.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid #26262A; }
+  .tabbar a { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px 5px;
+    border-radius: 10px; color: #A6A6AD; font-size: 11px; font-weight: 700; letter-spacing: .02em; position: relative; }
+  .tabbar a span { white-space: nowrap; }
+  .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tabbar a[aria-current="page"] { color: #FFFFFF; }
+  .tabbar a[aria-current="page"] svg { stroke: #FF6B63; }
+  .tabbar a[aria-current="page"]::before { content: ''; position: absolute; top: -7px; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: #D3202A; }
+}

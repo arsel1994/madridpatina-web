@@ -552,7 +552,10 @@
       const hb = hm.slice().sort((a, b) => (b.n - b.o) - (a.n - a.o))[0], hw = hm.slice().sort((a, b) => (a.n - a.o) - (b.n - b.o))[0];
       const seasonsAll = [].concat(...H.jugadores.map(j => { const ag = {}; j.temporadas.forEach(t => { const a = ag[t.temporada] || (ag[t.temporada] = { temporada: t.temporada, g: 0, a: 0, eq: [] }); a.g += t.g; a.a += t.a; const l = t.equipo.replace('MADRIDPATINA', 'MP'); if (!a.eq.includes(l)) a.eq.push(l); }); return Object.values(ag).map(t => ({ j, t: Object.assign(t, { equipo: t.eq.join(', ') }) })); }));
       const sg = seasonsAll.slice().sort((a, b) => b.t.g - a.t.g)[0], sa = seasonsAll.slice().sort((a, b) => b.t.a - a.t.a)[0];
-      const rv = {}; hm.forEach(m => { const r = rv[m.rival] || (rv[m.rival] = { rival: m.rival, v: 0, e: 0, d: 0 }); r[m.n > m.o ? 'v' : m.n < m.o ? 'd' : 'e']++; });
+      // balance por CLUB (KAMIKAZES B y KAMIKAZES C cuentan juntos); el club de cada equipo viene en historico.json
+      const clubOf = n => (H.clubes && H.clubes[n]) || clubDe(n);
+      const rv = {}; hm.forEach(m => { const c = clubOf(m.rival); const r = rv[c] || (rv[c] = { rival: c, v: 0, e: 0, d: 0 }); r[m.n > m.o ? 'v' : m.n < m.o ? 'd' : 'e']++; });
+      Object.values(rv).forEach(r => { const k = Object.keys(A.crests).find(t => A.crests[t].e && clubOf(t) === r.rival); r.crest = k ? A.crests[k].e : crest(r.rival); });
       const byTeam = {}; H.clasificaciones.forEach(c => { const k = lbl(c.equipo, c.liga); (byTeam[k] = byTeam[k] || []).push(c); });
       A.equipos.forEach(e => { if (e.clas) (byTeam[tituloOf(e)] = byTeam[tituloOf(e)] || []).push({ temporada: A.temporada, liga: e.liga.replace('Liga ', 'LIGA '), puesto: e.clas.puesto, equipo: e.nombre, actual: true, id: e.id }); });
       const ordT = ['Equipo A', 'Equipo B', 'Equipo C', 'Equipo D', 'Alevín', 'Infantil', 'MP'];
@@ -567,7 +570,7 @@
         tray: Object.entries(byTeam).sort((a, b) => ordT.indexOf(a[0]) - ordT.indexOf(b[0])).map(([kk, cs]) => { const eqo = A.equipos.find(e => tituloOf(e) === kk);
           return { letra: kk.replace('Equipo ', '').replace('Alevín', 'AL').replace('Infantil', 'IN'), href: eqo ? hEq(eqo.id) : null,
             steps: cs.sort((a, b) => a.temporada < b.temporada ? -1 : 1).map(c => ({ t: c.temporada.replace('20', ''), p: c.puesto + 'º', c: (c.liga || '').replace(/^(LIGA|TORNEO)\s+/i, '').replace(/PRIMAVERA /i, 'Prim. ').replace(/GRUPO /i, 'gr. ').toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()), bg: c.actual ? '#2A1416' : '#121214' })) }; }),
-        rivales: Object.values(rv).sort((a, b) => (b.v + b.e + b.d) - (a.v + a.e + a.d)).slice(0, 15),
+        rivales: Object.values(rv).sort((a, b) => (b.v + b.e + b.d) - (a.v + a.e + a.d)).slice(0, 20),
         logros: logros(lbl),
         sancion: H.jugadores.filter(j => j.carrera.pim).sort((a, b) => b.carrera.pim - a.carrera.pim).slice(0, 10).map((j, i, arr) => ({ n: i + 1, nombre: j.nombre, temps: j.carrera.temporadas + ' temp. · ' + j.carrera.pj + ' PJ', pim: j.carrera.pim, w: (j.carrera.pim / arr[0].carrera.pim * 100) + '%' })),
         carrera: H.jugadores.slice(0, 10).map((j, i) => ({ n: i + 1, nombre: j.nombre, temps: j.carrera.temporadas + ' temp. · ' + j.carrera.pj + ' PJ', g: j.carrera.g, a: j.carrera.a, w: (j.carrera.g / maxC * 100) + '%' })),
@@ -624,9 +627,9 @@
               <span style="${BS}font-weight:900;font-size:44px;line-height:1;color:${RED}">${esc(tr.letra)}</span>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${tr.steps.map(st => `<div style="padding:8px 12px;border-radius:8px;background:${st.bg};min-width:110px"><div style="font-size:12px;font-weight:700;color:#A6A6AD">${esc(st.t)}</div><div style="display:flex;align-items:baseline;gap:6px"><span style="${BS}font-weight:900;font-size:30px;line-height:1">${st.p}</span><span style="font-size:13px;font-weight:600;color:#C9C9CE">${esc(st.c)}</span></div></div>`).join('')}</div>`)).join('')}</div>
         </div>
-        <div>${lab('BALANCE CONTRA CADA RIVAL', 'margin-bottom:10px')}
+        <div>${lab('BALANCE CONTRA CADA CLUB', 'margin-bottom:10px')}
           <div class="card" style="padding:6px 20px">${hi.rivales.map(h => `<div class="fila-barra" style="--c1:26px;display:grid;grid-template-columns:26px minmax(0,1fr) minmax(60px,180px) 76px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid #26262A">
-              ${disc(crest(h.rival), 24)}<span style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(h.rival)}</span>
+              ${disc(h.crest || crest(h.rival), 24)}<span style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(h.rival)}</span>
               <div class="barra" style="display:flex;height:10px;border-radius:3px;overflow:hidden;background:#26262A"><div style="flex:${h.v};background:#1E8A4C"></div><div style="flex:${h.e};background:#8A8A8F"></div><div style="flex:${h.d};background:#55555B"></div></div>
               <span style="text-align:right;${BS}font-weight:800;font-size:20px">${h.v}-${h.e}-${h.d}</span></div>`).join('')}</div>
         </div>
@@ -680,6 +683,13 @@
 
   /* ── Navegación ─────────────────────────────────────────── */
   const view = $('#view');
+  const ICONO = {
+    jornada: '<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/>',
+    equipos: '<path d="M12 3l8 3v6c0 4.8-3.4 8-8 9-4.6-1-8-4.2-8-9V6l8-3z"/>',
+    ligas: '<path d="M5 20v-7M12 20V5M19 20v-10M3 20h18"/>',
+    jugadores: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.2" cy="9" r="2.6"/><path d="M16.5 14.1c2.8.3 5 2.3 5 5.9"/>',
+    legado: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 6h3a3 3 0 0 1-3 3.5M7 6H4a3 3 0 0 0 3 3.5"/>',
+  };
   const TOP = { jornada: 'jornada', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado' };
   const TITLES = { jornada: 'Jornada', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado' };
   let prevRoute = null, navReset = false, goingBack = false;
@@ -691,6 +701,8 @@
     if (v === 'partido' && !A.partidos[parts[1]]) { history.replaceState(null, '', '#/jornada'); prevRoute = location.hash; return render(); }
     const nav = [['jornada', 'Jornada', '#/jornada'], ['equipos', 'Equipos', hEq(S.eq || A.equipos[0].id)], ['ligas', 'Ligas', hLg(S.lg || A.ligas[0].id)], ['jugadores', 'Jugadores', '#/jugadores'], ['legado', 'Legado', '#/legado']];
     $('#nav').innerHTML = nav.map(([k, l, h]) => `<a href="${h}" data-nav${TOP[v] === k ? ' aria-current="page"' : ''}>${l}</a>`).join('');
+    // móvil: la misma navegación, abajo y con iconos (al alcance del pulgar)
+    $('#tabbar').innerHTML = nav.map(([k, l, h]) => `<a href="${h}" data-nav${TOP[v] === k ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICONO[k]}</svg><span>${l}</span></a>`).join('');
     let html;
     if (v === 'equipo') html = vEquipo(parts[1]);
     else if (v === 'liga') html = vLiga(parts[1], parts[2] === 'llega' ? 'llega' : null, parts[2] === 'j' ? parseInt(parts[3], 10) : null);

@@ -9,10 +9,17 @@
 <!-- Web para jugadores y familias: se comparte por enlace, no en buscadores (hay nombres de menores) -->
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/png" href="escudos/badge/madridpatina.png">
+<!-- Instalable en el móvil («Añadir a pantalla de inicio») -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icono-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MADRIDPATINA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preload" href="assets/fonts/big-shoulders-display-900-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/ibm-plex-sans-condensed-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/fuentes.css">
-<link rel="stylesheet" href="assets/estilos.css?v=2026-10-08p">
+<link rel="stylesheet" href="assets/estilos.css?v=2026-10-08r">
 </head>
 <body>
 <header class="top">
@@ -25,6 +32,7 @@
   </div>
 </header>
 <main class="wrap" id="view"><div class="loading">Cargando…</div></main>
-<script src="assets/app.js?v=2026-10-08p"></script>
+<nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
+<script src="assets/app.js?v=2026-10-08r"></script>
 </body>
 </html>
