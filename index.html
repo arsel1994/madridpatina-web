@@ -19,7 +19,8 @@
 <link rel="preload" href="assets/fonts/big-shoulders-display-900-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/ibm-plex-sans-condensed-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/fuentes.css">
-<link rel="stylesheet" href="assets/estilos.css?v=2026-10-09h">
+<link rel="stylesheet" href="assets/estilos.css?v=2026-10-10d">
+<link rel="stylesheet" href="assets/animaciones.css?v=2026-10-10d">
 </head>
 <body>
 <header class="top">
@@ -31,8 +32,14 @@
     <nav class="nav" id="nav" aria-label="Secciones"></nav>
   </div>
 </header>
-<main class="wrap" id="view"><div class="loading">Cargando…</div></main>
+<main class="wrap" id="view">
+  <div class="carga" role="status" aria-label="Cargando">
+    <div class="carga-cab"><div class="carga-esc"></div><div class="sk" style="height:22px;flex:1;max-width:180px"></div></div>
+    <div class="sk" style="height:64px;width:60%"></div>
+    <div class="carga-tarjetas"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+  </div>
+</main>
 <nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
-<script src="assets/app.js?v=2026-10-09h"></script>
+<script src="assets/app.js?v=2026-10-10d"></script>
 </body>
 </html>

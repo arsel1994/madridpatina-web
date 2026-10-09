@@ -17,6 +17,8 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .bs { font-family: 'Big Shoulders Display', 'Arial Narrow', sans-serif; }
 .tab { font-variant-numeric: tabular-nums; }
 .wrap { max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 40px) 64px; }
+/* lo que entra desde los lados (altas, bajas, escudos…) no ensancha la página mientras se mueve */
+.wrap { overflow-x: clip; }
 
 /* Cabecera fija */
 .top { position: sticky; top: 0; z-index: 10; padding-top: env(safe-area-inset-top, 0px); background: rgba(13,13,14,.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid #26262A; }
@@ -25,9 +27,15 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .brand img { width: 40px; height: 40px; object-fit: contain; border-radius: 50%; box-shadow: 0 0 0 2px #FFFFFF; }
 .brand .t { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 26px; line-height: 1; letter-spacing: .04em; }
 .brand .s { font-size: 13px; color: #A6A6AD; font-weight: 600; }
-.nav { display: flex; gap: 4px; flex: 1; overflow-x: auto; min-width: 0; }
+.nav { position: relative; display: flex; gap: 4px; flex: 1; overflow-x: auto; min-width: 0; }
 .nav a { flex: none; padding: 9px 14px; border-radius: 6px; font-weight: 700; font-size: 15px; white-space: nowrap; color: #C9C9CE; background: transparent; }
 .nav a[aria-current="page"] { background: #D3202A; color: #FFFFFF; }
+/* 7a · píldora roja que se desliza entre secciones (sin JS, el enlace activo se pinta solo) */
+.nav a { position: relative; transition: color .25s; }
+.nav .pildora { display: none; position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 6px; background: #D3202A;
+  transition: left .35s cubic-bezier(.3,1.3,.5,1), width .35s cubic-bezier(.3,1.3,.5,1); }
+.nav.con-pildora .pildora { display: block; }
+.nav.con-pildora a[aria-current="page"] { background: transparent; }
 .back { margin-top: 20px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid #3A3A40; border-radius: 6px; font-weight: 600; font-size: 15px; color: #C9C9CE; }
 .back:hover { color: #fff; }
 
@@ -80,3 +88,121 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .semana-dest .cuatro { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; }
 @media (max-width: 1100px) { .semana-dest { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 720px) { .semana-dest .cuatro { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── Intro «Focos»: partidos del finde con su cuenta atrás (handoff_animaciones §1) ── */
+/* Medidas proporcionales al alto y al nº de partidos (--n): con 5 cabe sin scroll en 360×724 y 1280×720 */
+.intro { position: fixed; inset: 0; z-index: 50; overflow: hidden; background: #0D0D0E; color: #F4F4F5; container-type: size; touch-action: none; transition: opacity .3s ease; }
+.intro:focus { outline: none; }
+.intro.cierra { opacity: 0; pointer-events: none; }
+.intro .focos { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: radial-gradient(ellipse at 50% 120%, #2A1416 0%, #0D0D0E 60%); }
+.intro .haz { position: absolute; top: -30%; width: 40%; height: 160%; filter: blur(18px); transform-origin: top center; }
+.intro .haz.a { left: 10%; background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0) 80%); animation: mpSpotA 7s ease-in-out infinite; }
+.intro .haz.b { right: 10%; background: linear-gradient(180deg, rgba(211,32,42,.30), rgba(211,32,42,0) 80%); animation: mpSpotB 8s ease-in-out infinite; }
+.intro .centro { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: calc(min(4cqw, 24px) + env(safe-area-inset-top, 0px)) min(3cqw, 28px) calc(60px + env(safe-area-inset-bottom, 0px)); }
+.intro .caja { position: relative; display: flex; flex-direction: column; margin-top: min(2cqh, 12px); max-width: calc(100% - 56px); border-radius: 12px; border: 1px solid #26262A; }
+.intro .fila { position: relative; display: flex; flex-wrap: wrap; align-content: center; align-items: center; justify-content: center;
+  gap: min(.8cqh, 6px) min(2.4cqw, 14px); padding: min(1.2cqh, 8px) min(3cqw, 14px); background: rgba(24,24,27,.94); border-bottom: 1px solid #26262A;
+  animation: mpUp .5s cubic-bezier(.2,.8,.2,1) both; }
+.intro .fila:first-child { border-top-left-radius: 11px; border-top-right-radius: 11px; }
+.intro .fila:last-child { border-bottom: 0; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
+.intro .derbi { position: absolute; left: -28px; top: 4px; bottom: 4px; width: 22px; border-radius: 5px; background: #D3202A; display: grid; place-items: center; }
+.intro .derbi span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; font-weight: 700; letter-spacing: .18em; color: #FFFFFF; white-space: nowrap; }
+.intro .eq { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.intro .esc { width: min(9cqw, calc(9cqh / var(--n) * 5), 44px); height: min(9cqw, calc(9cqh / var(--n) * 5), 44px); flex: none; border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--ring, #FFFFFF); background: center / contain no-repeat; }
+.intro .vs-t { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: min(5.4cqw, calc(4.4cqh / var(--n) * 5), 22px); line-height: 1; white-space: nowrap; }
+.intro .vs-t span { color: #55555B; }
+.intro .cuando { font-size: min(3.2cqw, 12px); font-weight: 700; color: #A6A6AD; white-space: nowrap; margin-top: 2px; }
+.intro .cifras { display: flex; gap: 4px; }
+.intro .bloque { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.intro .num { position: relative; overflow: hidden; background: #26262A; border-radius: 6px; min-width: min(13cqw, calc(11cqh / var(--n) * 5), 68px); text-align: center;
+  font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: min(8.5cqw, calc(7.2cqh / var(--n) * 5), 54px); line-height: 1.02; font-variant-numeric: tabular-nums; }
+.intro .num.min { background: #D3202A; }
+.intro .num::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: #0D0D0E; opacity: .55; }
+.intro .bloque > span { font-size: 9px; font-weight: 700; letter-spacing: .14em; color: #A6A6AD; line-height: 1; }
+.intro button { font: inherit; color: inherit; cursor: pointer; }
+.intro .cerrar { position: absolute; top: calc(min(4cqw, 20px) + env(safe-area-inset-top, 0px)); right: min(4cqw, 20px); z-index: 3; width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(13,13,14,.6); border: 1px solid #3A3A40; display: grid; place-items: center; font-size: 20px; line-height: 1; color: #F4F4F5; animation: mpFade .4s .8s both; }
+.intro .entrar { position: absolute; left: 50%; bottom: calc(min(3cqh, 22px) + env(safe-area-inset-bottom, 0px)); z-index: 3; transform: translateX(-50%); background: none; border: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 13px; font-weight: 700; letter-spacing: .12em; color: #C9C9CE; animation: mpFade .5s 1s both; }
+.intro .entrar span:last-child { font-size: 18px; animation: mpBob 1.4s ease-in-out infinite; }
+.brand img { cursor: pointer; }
+
+/* ── 7l · Mientras carga: escudo que late y esqueleto con la forma de la página ── */
+.carga { display: flex; flex-direction: column; gap: 10px; padding-top: 28px; }
+.carga-cab { display: flex; align-items: center; gap: 12px; }
+.carga-esc { width: 40px; height: 40px; flex: none; border-radius: 50%; box-shadow: 0 0 0 2px #FFFFFF; background: url('../escudos/badge/madridpatina.png') center / contain no-repeat;
+  animation: mpBreath 1.4s ease-in-out infinite; }
+/* brillo continuo en bloques anchos: la franja de 400 px se repite y avanza 400 px por vuelta */
+.sk { border-radius: 8px; background: #18181B linear-gradient(90deg, #18181B 0, #18181B 25%, #26262A 50%, #18181B 75%, #18181B 100%) 0 0 / 400px 100% repeat-x;
+  animation: mpSk 1.2s linear infinite; }
+.carga-tarjetas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.carga-tarjetas .sk { height: 180px; border-radius: 10px; }
+.carga-tarjetas .sk:nth-child(2) { animation-delay: .15s; }
+.carga-tarjetas .sk:nth-child(3) { animation-delay: .3s; }
+
+/* ── Móvil (≤ 640 px) de las piezas animadas ── */
+@media (max-width: 640px) {
+  .cal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }          /* 7c · 3 columnas */
+  .plantilla { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; }   /* 7m · 3 columnas */
+  .plantilla .ini { font-size: 36px !important; }
+  .plantilla .dors { font-size: 30px !important; left: 6px !important; bottom: 4px !important; }
+  .plantilla .chapa { font-size: 10px !important; padding: 2px 5px !important; right: 5px !important; top: 5px !important; }
+  .plantilla .pie-cromo { padding: 7px 8px !important; }
+  .plantilla .pie-cromo > div:first-child { font-size: 13px !important; }
+  .plantilla .pie-cromo > div:last-child { font-size: 12px !important; }
+  .ficha-foto { aspect-ratio: auto !important; height: 240px; }                      /* 7e · foto arriba, 240 px */
+}
+
+/* ── 7k · Lo mejor de la semana: la columna de la foto es un rodillo de tragaperras ── */
+.rod-foto { position: relative; overflow: hidden; }
+.rod-tira { position: absolute; left: 0; right: 0; top: 0; }
+.rod-item { position: relative; height: var(--h, 250px); border-bottom: 3px solid #0D0D0E; }
+.rod-sombra { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,.65) 0%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 80%, rgba(0,0,0,.65) 100%); }
+.rod-flash { position: absolute; inset: 0; pointer-events: none; }
+[data-rodillo] .rod-txt, [data-rodillo] .rod-num { opacity: 0; }
+[data-rodillo].parado .rod-txt { animation: mpUp .4s cubic-bezier(.2,.8,.2,1) both; }
+[data-rodillo].parado .rod-num { animation: mpUp .4s cubic-bezier(.2,.8,.2,1) .2s both; }
+
+/* ── 7f · Cromos: un brillo los cruza y, al pasar el ratón, se inclinan en 3D ── */
+[data-cromo] { position: relative; transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; transform: perspective(700px); }
+[data-cromo]::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent); animation: mpShine 3.2s ease-in-out infinite; animation-delay: var(--brillo, 0s); }
+@media (hover: hover) {
+  [data-cromo]:hover { transform: perspective(700px) rotateY(-12deg) rotateX(6deg) translateY(-6px) scale(1.04); box-shadow: 0 18px 40px rgba(0,0,0,.6); z-index: 2; }
+}
+
+/* ── 8b · Billete de vuelta (cromo que se da la vuelta y resguardo que se rasga) ── */
+.cromos { display: flex; gap: 14px; flex-wrap: wrap; padding: 8px 2px 12px; }
+.billete { position: relative; flex: none; width: 184px; filter: drop-shadow(0 6px 18px rgba(0,0,0,.4)); perspective: 900px; }
+.billete .giro { position: relative; transform-style: preserve-3d; }
+.billete .reverso { position: absolute; inset: 0 0 34% 0; border-radius: 12px; background: #1E8A4C repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 10px, transparent 10px 20px);
+  transform: rotateY(180deg); backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+.billete .anverso { backface-visibility: hidden; -webkit-backface-visibility: hidden; transform-style: preserve-3d; }
+.billete .troquel { height: 0; border-top: 2px dashed var(--fondo, #0D0D0E); margin: 0 10px; }
+.billete .resguardo { position: relative; width: 184px; height: 88px; transform-style: preserve-3d; transform-origin: top center; transition: transform .5s cubic-bezier(.3,1.2,.5,1); cursor: pointer; }
+.billete.rasgado .resguardo { transform: rotateX(-10deg) translateZ(6px); }
+/* 16 tiras anidadas desde la derecha: cada una gira sobre su borde derecho (78° en total) */
+.billete .tira { position: absolute; left: -11.5px; top: 0; width: 13px; height: 88px; transform-style: preserve-3d; transform-origin: 11.5px 50%;
+  transition: transform .6s cubic-bezier(.3,1.2,.5,1) var(--dOut, 0ms); }
+.billete .tira.t0 { left: auto; right: 0; width: 11.5px; transition: none; }
+.billete.rasgado .tira:not(.t0) { transform: rotateY(var(--a)) rotateX(-.45deg); transition-delay: var(--dIn, 0ms); }
+.billete .recorte { position: absolute; inset: 0; overflow: hidden; outline: 1px solid transparent; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.billete .papel { position: absolute; top: 0; width: 184px; height: 88px; background: #3DD27E; color: #0D0D0E; padding: 10px 12px 12px; }
+.billete .sombra { position: absolute; inset: 0; opacity: 0; transition: opacity .45s; }
+.billete.rasgado .sombra { opacity: 1; }
+.billete .muesca { position: absolute; top: -8px; width: 16px; height: 16px; border-radius: 50%; background: var(--fondo, #0D0D0E); }
+
+/* ── Móvil (≤ 640 px) de los pasos 4 y 5 ── */
+@media (max-width: 640px) {
+  [data-rodillo] { grid-template-columns: 140px minmax(0, 1fr) !important; min-height: 210px !important; }   /* 7k */
+  .prox-fila { grid-template-columns: minmax(0, 1fr) 74px minmax(0, 1fr) !important; }                     /* 7i */
+  .recs { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }                                     /* 7p */
+  .recs > * { min-height: 150px !important; padding: 14px !important; }
+  .recs .rec-v { font-size: 52px !important; }
+  .carrusel-movil { display: flex !important; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 2px; }   /* 7f */
+  .carrusel-movil > * { flex: none; width: 150px; scroll-snap-align: start; }
+  .cromos { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; }                            /* 8b · 8c */
+  .cromos > * { scroll-snap-align: start; }
+}

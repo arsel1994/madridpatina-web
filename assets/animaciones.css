@@ -1,0 +1,81 @@
+/* MADRIDPATINA · animaciones (extraídas del prototipo de Claude Design)
+   Usar con: animation: <nombre> <duración> <curva> <delay> both;
+   Variables CSS que leen algunos keyframes: --dy, --dx, --to, --sx/--sy/--ex/--ey/--fy, --mpA, --mpP */
+@property --mpA{syntax:'<angle>';inherits:false;initial-value:0deg}
+@property --mpP{syntax:'<number>';inherits:false;initial-value:0}
+@keyframes mpUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes mpFade{from{opacity:0}to{opacity:1}}
+@keyframes mpL{from{opacity:0;transform:translateX(-60%) rotate(-12deg)}to{opacity:1;transform:none}}
+@keyframes mpR{from{opacity:0;transform:translateX(60%) rotate(12deg)}to{opacity:1;transform:none}}
+@keyframes mpPop{0%{opacity:0;transform:scale(.3)}70%{opacity:1;transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes mpFill{from{width:0}to{width:100%}}
+@keyframes mpMarq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes mpSweep{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
+@keyframes mpTick{0%{transform:translateY(-35%);opacity:0}100%{transform:none;opacity:1}}
+@keyframes mpPulse{0%,100%{box-shadow:0 0 0 0 rgba(211,32,42,.55)}50%{box-shadow:0 0 0 10px rgba(211,32,42,0)}}
+@keyframes mpBob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+@keyframes mpStripe{from{background-position:0 0}to{background-position:-226px 0}}
+@keyframes mpMarqR{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+@keyframes mpDrift{0%{transform:translate(0,0) rotate(-8deg)}50%{transform:translate(4%,-6%) rotate(6deg)}100%{transform:translate(0,0) rotate(-8deg)}}
+@keyframes mpSpotA{0%,100%{transform:translateX(-30%) rotate(18deg)}50%{transform:translateX(30%) rotate(-12deg)}}
+@keyframes mpSpotB{0%,100%{transform:translateX(30%) rotate(-18deg)}50%{transform:translateX(-30%) rotate(12deg)}}
+@keyframes mpSpin{to{--mpA:360deg}}
+@keyframes mpScan{from{background-position:0 0}to{background-position:0 6px}}
+@keyframes mpSkew{0%,89%,100%{transform:none;filter:none}90%{transform:skewX(-5deg) translateX(-4px);filter:brightness(1.4)}91.5%{transform:skewX(3deg) translateX(3px)}93%{transform:none;filter:none}}
+@keyframes mpCut{0%,88%,100%{clip-path:inset(0 0 100% 0);opacity:0}89%{clip-path:inset(22% 0 64% 0);opacity:1;transform:translateX(-10px)}91%{clip-path:inset(58% 0 30% 0);transform:translateX(12px)}93%{clip-path:inset(80% 0 8% 0);transform:translateX(-6px);opacity:1}94%{opacity:0}}
+@keyframes mpTraceX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes mpTraceY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes mpGlitchA{0%,84%,100%{transform:translate(0,0);opacity:1}86%{transform:translate(-5px,2px);opacity:.5}88%{transform:translate(4px,-2px);opacity:1}90%{transform:translate(-2px,0)}92%{transform:translate(0,0);opacity:.25}94%{opacity:1}}
+@keyframes mpGlitchB{0%,84%,100%{transform:translate(-3px,3px);opacity:.9}86%{transform:translate(4px,-1px);opacity:.3}88%{transform:translate(-6px,4px);opacity:1}91%{transform:translate(2px,0)}93%{transform:translate(-3px,3px);opacity:.4}95%{opacity:.9}}
+@keyframes mpSlice{0%,82%,100%{opacity:0;transform:translateX(0)}84%{opacity:.9;transform:translateX(-14px)}86%{opacity:.3;transform:translateX(10px)}88%{opacity:.8;transform:translateX(-4px)}90%{opacity:0}}
+@keyframes mpRgb{0%,84%,100%{text-shadow:none;transform:none}86%{text-shadow:-2px 0 var(--g1),2px 0 var(--g2);transform:translateX(1px)}88%{text-shadow:3px 0 var(--g1),-3px 0 var(--g2);transform:translateX(-1px)}90%{text-shadow:none;transform:none}}
+@keyframes mpFlick{0%,100%{opacity:1}50%{opacity:.75}}
+@keyframes mpSlash{from{transform:translateX(-120%) skewX(-18deg)}to{transform:translateX(0) skewX(-18deg)}}
+@keyframes mpMove{from{transform:translateY(var(--dy)) scale(.85);opacity:.35}to{transform:none;opacity:1}}
+@keyframes mpFlip{from{transform:perspective(600px) rotateY(90deg);opacity:0}to{transform:perspective(600px) rotateY(0);opacity:1}}
+@keyframes mpWipe{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes mpRoll{from{transform:translateY(0)}to{transform:translateY(var(--to))}}
+@keyframes mpReveal{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes mpRedWipe{0%{transform:translateX(-101%)}45%{transform:translateX(0)}100%{transform:translateX(101%)}}
+@keyframes mpRise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes mpShine{0%{transform:translateX(-150%) skewX(-20deg)}55%,100%{transform:translateX(350%) skewX(-20deg)}}
+@keyframes mpScale{0%{transform:scale(2.4);opacity:0}100%{transform:none;opacity:1}}
+@keyframes mpBounce{0%{transform:translateY(0)}35%{transform:translateY(-6px)}70%{transform:translateY(1px)}100%{transform:none}}
+@keyframes mpGauge{from{--mpP:0}to{--mpP:var(--to)}}
+@keyframes mpDrop{0%{opacity:0;transform:translateY(var(--dy)) scale(.4)}22%{opacity:1;transform:translateY(var(--dy)) scale(1.1)}32%{transform:translateY(var(--dy)) scale(1)}55%{transform:translateY(var(--dy))}100%{transform:none;opacity:1}}
+@keyframes mpTagIn{0%{opacity:0;transform:scale(.2)}70%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes mpLeave{0%{transform:translate(var(--dx),var(--dy));opacity:1}45%{transform:translate(var(--dx),0);opacity:1}85%{opacity:1}100%{transform:none;opacity:.45}}
+@keyframes mpArrive{0%{transform:translateY(var(--dy));opacity:0}35%{opacity:1}100%{transform:none;opacity:1}}
+@keyframes mpReel{0%{transform:translateY(0)}88%{transform:translateY(calc(var(--to) - 14px))}94%{transform:translateY(calc(var(--to) + 5px))}100%{transform:translateY(var(--to))}}
+@keyframes mpReelBlur{0%{filter:blur(0) grayscale(1)}12%,70%{filter:blur(2.5px) grayscale(1)}100%{filter:blur(0) grayscale(1)}}
+@keyframes mpLand{0%{box-shadow:inset 0 0 0 0 rgba(255,255,255,0)}40%{box-shadow:inset 0 0 0 4px rgba(255,255,255,.9)}100%{box-shadow:inset 0 0 0 0 rgba(255,255,255,0)}}
+@keyframes mpShift{from{transform:translate(var(--ex),var(--ey))}to{transform:translate(var(--ex),var(--fy))}}
+@keyframes mpDivUp{from{transform:none}to{transform:translateY(var(--dy))}}
+@keyframes mpArc{0%{transform:translate(var(--sx),var(--sy))}100%{transform:translate(var(--ex),var(--ey))}}
+@keyframes mpWave{from{opacity:0;transform:translateY(16px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes mpGone{0%{transform:translateY(var(--dy));opacity:1}70%{opacity:1}100%{transform:none;opacity:.45}}
+@keyframes mpBox{from{opacity:0;transform:scale(.96);border-color:transparent}to{opacity:1;transform:none}}
+@keyframes mpSwap{from{transform:translateY(var(--dy))}to{transform:none}}
+@keyframes mpInL{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:none}}
+@keyframes mpInR{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
+@keyframes mpCrash{0%{opacity:0;transform:scale(.2) rotate(-40deg)}60%{opacity:1;transform:scale(1.3)}100%{transform:scale(1)}}
+@keyframes mpSk{from{background-position:-200px 0}to{background-position:200px 0}}
+@keyframes mpBreath{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(211,32,42,.5)}50%{transform:scale(1.06);box-shadow:0 0 0 12px rgba(211,32,42,0)}}
+@keyframes mpArrow{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:none}}
+@keyframes mpRewind{0%{opacity:0;transform:translateX(70px) rotate(8deg)}60%{opacity:1;transform:translateX(-8px) rotate(-2deg)}100%{transform:none}}
+@keyframes mpDot{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes mpStamp{0%{opacity:0;transform:rotate(-14deg) scale(2.2)}60%{opacity:1;transform:rotate(-14deg) scale(.92)}100%{opacity:1;transform:rotate(-14deg) scale(1)}}
+@keyframes mpFlicker{0%,100%{opacity:.5}8%{opacity:.15}10%{opacity:.5}48%{opacity:.45}50%{opacity:.08}53%{opacity:.4}}
+@keyframes mpPing{0%{transform:scale(.4);opacity:.8}100%{transform:scale(1.6);opacity:0}}
+@keyframes mpFadeIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes mpTear{from{transform:translateY(-10px) rotate(-3deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes mpKen{from{transform:scale(1)}to{transform:scale(1.1) translateY(-3%)}}
+@keyframes mpRoute{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes mpTravel{from{left:0}to{left:calc(100% - 10px)}}
+@keyframes mpScratch{0%,100%{transform:rotate(0) translate(0,0)}15%{transform:rotate(4deg) translate(2px,3px)}30%{transform:rotate(1deg) translate(0,1px)}45%{transform:rotate(6deg) translate(3px,5px)}60%{transform:rotate(2deg) translate(1px,2px)}78%{transform:rotate(7deg) translate(4px,6px)}}
+@keyframes mpPerf{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes mpFlipIn{0%{transform:rotateY(180deg) translateY(-14px)}60%{transform:rotateY(-12deg)}100%{transform:rotateY(0)}}
+@keyframes mpRip{0%{transform:none}18%{transform:rotateY(10deg) rotateX(-4deg)}32%{transform:rotateY(4deg) rotateX(-2deg)}52%{transform:rotateY(18deg) rotateX(-7deg) translateZ(8px)}66%{transform:rotateY(12deg) rotateX(-5deg) translateZ(5px)}100%{transform:rotateY(34deg) rotateX(-12deg) translate3d(0,4px,30px)}}
+@keyframes mpRipBack{0%{transform:rotateY(34deg) rotateX(-12deg) translate3d(0,4px,30px)}70%{transform:rotateY(-3deg) rotateX(1deg)}100%{transform:none}}
+@keyframes mpYear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}}
