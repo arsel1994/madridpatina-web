@@ -78,4 +78,5 @@
 @keyframes mpRip{0%{transform:none}18%{transform:rotateY(10deg) rotateX(-4deg)}32%{transform:rotateY(4deg) rotateX(-2deg)}52%{transform:rotateY(18deg) rotateX(-7deg) translateZ(8px)}66%{transform:rotateY(12deg) rotateX(-5deg) translateZ(5px)}100%{transform:rotateY(34deg) rotateX(-12deg) translate3d(0,4px,30px)}}
 @keyframes mpRipBack{0%{transform:rotateY(34deg) rotateX(-12deg) translate3d(0,4px,30px)}70%{transform:rotateY(-3deg) rotateX(1deg)}100%{transform:none}}
 @keyframes mpYear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes mpGoal{0%{transform:translateX(-101%)}12%{transform:none}86%{transform:none}100%{transform:translateX(101%)}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}}

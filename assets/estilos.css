@@ -206,3 +206,175 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
   .cromos { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; }                            /* 8b · 8c */
   .cromos > * { scroll-snap-align: start; }
 }
+
+/* ── En directo · página del partido (handoff_directo 9b + 9d) ── */
+.dv { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 16px; }
+.dv-izq { flex: 3 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.dv-der { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.dv-caja { position: relative; overflow: hidden; background: #18181B; border-radius: 12px; padding: clamp(16px, 2.4vw, 26px) clamp(16px, 2.4vw, 26px) 0; }
+.dv-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.dv-liga { min-width: 0; flex: 1 1 auto; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #A6A6AD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-chip { display: flex; align-items: center; gap: 7px; padding: 5px 10px; flex: none; white-space: nowrap; border-radius: 6px; background: #26262A; font-weight: 700; font-size: 12px;
+  letter-spacing: .12em; font-variant-numeric: tabular-nums; transition: background .3s; }
+.dv-chip.vivo { background: #D3202A; }
+.dv-chip .punto { width: 7px; height: 7px; border-radius: 50%; background: #FFFFFF; animation: mpPulse 1.6s infinite; }
+.dv-marcador { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: start; gap: clamp(8px, 2vw, 20px); margin-top: clamp(14px, 2.4vw, 22px); }
+.dv-eq { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; }
+.dv-esc { width: clamp(52px, 6.5vw, 80px); height: clamp(52px, 6.5vw, 80px); border-radius: 50%; background: center / contain no-repeat; transition: box-shadow .3s; }
+.dv-abr { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: clamp(17px, 2vw, 22px); white-space: nowrap; }
+.dv-num { display: flex; align-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: clamp(64px, 9.5vw, 112px); line-height: 1; }
+.dv-rod { height: 1em; overflow: hidden; }
+.dv-rod > div { transition: transform 1.1s cubic-bezier(.2,.9,.25,1.08); }
+.dv-rod.V > div { transition-duration: 1.3s; }
+.dv-rod span { display: block; height: 1em; text-align: center; font-variant-numeric: tabular-nums; }
+.dv-guion { color: #55555B; padding: 0 4px; }
+.dv-linea { position: relative; height: 40px; margin-top: 20px; }
+.dv-tramos { position: absolute; left: 0; right: 0; top: 17px; height: 6px; display: flex; gap: 4px; }
+.dv-tramos > div { flex: 1; background: #26262A; border-radius: 3px; overflow: hidden; }
+.dv-tramos i { display: block; height: 100%; background: #55555B; transition: width 1s linear; }
+.dv-excl { position: absolute; top: 17px; height: 6px; background: #FF8A3D; border-radius: 2px; transform-origin: left; }
+.dv-pgol { position: absolute; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; box-shadow: 0 0 0 2px #18181B; }
+.dv-partes { display: flex; font-size: 11px; font-weight: 700; letter-spacing: .12em; color: #8A8A8F; padding-bottom: clamp(14px, 2.4vw, 22px); }
+.dv-partes span { flex: 1; }
+.dv-partes span + span { padding-left: 4px; }
+/* cortina de gol: entra por la izquierda y sale por la derecha (mpGoal 2,8 s); roja si es nuestro, gris si es del rival */
+.dv-cortina { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; gap: clamp(14px, 3vw, 36px); padding: 0 clamp(16px, 4vw, 44px);
+  background: #26262A; animation: mpGoal 2.8s cubic-bezier(.7,0,.3,1) both; }
+.dv-cortina.mp { background: #D3202A; }
+.dv-cfoto { position: relative; flex: none; width: clamp(92px, 13vw, 160px); aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; background: #0D0D0E; font-size: 44px; color: #55555B;
+  animation: mpUp .4s .25s both; }
+.dv-cfoto > span { position: absolute; left: 8px; bottom: 4px; z-index: 1; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: clamp(28px, 4.4vw, 48px); line-height: 1;
+  color: #FFFFFF; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+.dv-cesc { flex: none; width: clamp(72px, 10vw, 120px); height: clamp(72px, 10vw, 120px); border-radius: 50%; box-shadow: 0 0 0 3px #FFFFFF; background: center / contain no-repeat; animation: mpUp .4s .25s both; }
+.dv-cgol { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: clamp(64px, 12vw, 150px); line-height: .82; animation: mpScale .5s .15s cubic-bezier(.2,.8,.2,1) both; }
+.dv-cquien { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: clamp(20px, 2.8vw, 32px); line-height: 1.05; margin-top: 8px; animation: mpUp .4s .4s both; }
+.dv-csub { font-size: clamp(13px, 1.5vw, 15px); font-weight: 600; margin-top: 4px; animation: mpUp .4s .5s both; }
+.dv-cortina:not(.mp) .dv-csub { color: #C9C9CE; }
+/* minuto a minuto: lo más reciente arriba */
+.dv-lista { background: #18181B; border-radius: 12px; overflow: hidden; }
+.dv-lcab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #26262A; }
+.dv-lcab span:first-child { flex: none; white-space: nowrap; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #A6A6AD; }
+.dv-lcab span:last-child { flex: 1 1 auto; min-width: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; font-weight: 600; color: #8A8A8F; }
+.dv-lcab span.off { color: #FF8A3D; }
+.dv-filas { display: flex; flex-direction: column-reverse; }
+.dv-fila { display: grid; grid-template-columns: 52px 40px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid #26262A; }
+.dv-fila.mp { background: #2A1416; }
+.dv-fila .t { font-size: 12px; font-weight: 700; color: #8A8A8F; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dv-fila .tag { height: 26px; border-radius: 5px; display: grid; place-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: .03em; white-space: nowrap; }
+.dv-fila .tit { font-weight: 700; font-size: 15px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-fila .sub { font-size: 12px; font-weight: 500; color: #A6A6AD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-fila .der { display: flex; align-items: center; gap: 8px; }
+.dv-fila .der > div { width: 20px; height: 20px; border-radius: 50%; background: center / contain no-repeat; }
+.dv-fila .der > span { min-width: 34px; text-align: right; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 19px; font-variant-numeric: tabular-nums; }
+.dv-div { padding: 9px 16px; background: #121214; border-top: 1px solid #26262A; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .16em; color: #8A8A8F; }
+
+/* ── 9a · Barra «En directo»: sobre el menú, en toda la web, mientras juega un equipo nuestro ── */
+.barra-directo { position: relative; height: 44px; background: #121214; border-bottom: 1px solid #26262A; overflow: hidden; }
+.barra-directo[hidden] { display: none; }
+.bd-scroll { height: 100%; max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 40px); display: flex; align-items: center; gap: 14px;
+  overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.bd-scroll::-webkit-scrollbar { display: none; }
+.bd-tag { flex: none; display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 12px; letter-spacing: .14em; color: #FF6B63; }
+.bd-tag i { width: 8px; height: 8px; border-radius: 50%; background: #D3202A; animation: mpPulse 1.6s infinite; }
+.barra-directo .bd-partido { flex: none; display: flex; align-items: center; gap: 8px; color: #F4F4F5; }
+.bd-esc { flex: none; width: 22px; height: 22px; border-radius: 50%; background: center / contain no-repeat; }
+.bd-abr { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 17px; }
+.bd-num { display: flex; align-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; line-height: 1; }
+.bd-rod { height: 1em; overflow: hidden; }
+.bd-rod > div { transition: transform 1.1s cubic-bezier(.2,.9,.25,1.08); }
+.bd-rod span { display: block; height: 1em; text-align: center; font-variant-numeric: tabular-nums; }
+.bd-guion { color: #55555B; padding: 0 3px; }
+.bd-st { margin-left: 4px; font-size: 12px; font-weight: 700; color: #A6A6AD; font-variant-numeric: tabular-nums; }
+.bd-sep { flex: none; width: 1px; height: 20px; background: #26262A; }
+.bd-despues { flex: none; font-size: 12px; font-weight: 700; color: #A6A6AD; }
+.bd-despues b { color: #F4F4F5; font-weight: 700; }
+/* gol: franja roja (gris si marca el rival) que cruza la barra */
+.bd-gol { position: absolute; inset: 0; display: flex; align-items: center; gap: 10px; padding: 0 clamp(16px, 3vw, 40px); background: #26262A; color: #F4F4F5;
+  white-space: nowrap; overflow: hidden; animation: mpGoal 2.8s cubic-bezier(.7,0,.3,1) both; }
+.bd-gol.mp { background: #D3202A; }
+.bd-gol b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 24px; letter-spacing: .04em; }
+.bd-gol strong { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 18px; }
+.bd-gol span { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── 9c · Exclusiones (bajo el escudo del sancionado) y situación en pista ── */
+.dv-pens { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+.dv-pen { width: min(100%, 160px); }
+.dv-pen .q { display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 12px; font-weight: 700; line-height: 1.2; color: #FF8A3D; text-align: center; }
+.dv-pen .q span:first-child { overflow-wrap: anywhere; }
+.dv-pen .q span:last-child { font-variant-numeric: tabular-nums; }
+.dv-pen .b { height: 4px; background: #26262A; border-radius: 2px; margin-top: 3px; overflow: hidden; }
+.dv-pen .b i { display: block; height: 100%; background: #FF8A3D; transition: width .9s linear; }
+.dv-pen .m { font-size: 11px; font-weight: 600; color: #C9C9CE; margin-top: 3px; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+.dv-situ-caja { display: flex; justify-content: center; min-height: 32px; margin-top: 12px; }
+.dv-situ { display: flex; align-items: center; gap: 10px; padding: 4px 12px 4px 4px; border-radius: 7px; background: #26262A; white-space: nowrap; }
+.dv-situ.mp { background: #D3202A; }
+.dv-situ b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 20px; line-height: 24px; padding: 0 8px; border-radius: 5px; background: rgba(13,13,14,.4); font-variant-numeric: tabular-nums; }
+.dv-situ span { font-size: 12px; font-weight: 700; letter-spacing: .12em; }
+.dv-situ span + span { letter-spacing: 0; font-variant-numeric: tabular-nums; }
+@media (max-width: 420px) { .dv-situ { white-space: normal; } .dv-situ span { letter-spacing: .06em; } }
+
+/* ── 9g · Porteros: % de paradas y un rectángulo por tiro recibido (gris parada, rojo gol) ── */
+.dv-porteros { display: flex; flex-wrap: wrap; gap: 12px; }
+.dv-porteros:empty { display: none; }
+.dv-por { position: relative; flex: 1 1 240px; min-width: 0; background: #18181B; border-radius: 12px; padding: 14px; display: flex; gap: 12px; overflow: hidden; }
+.dv-por .foto { flex: none; width: 56px; height: 70px; border-radius: 8px; background: #222226; font-size: 26px; color: #55555B; overflow: hidden; transition: opacity .3s; }
+.dv-por .datos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; transition: opacity .3s; }
+.dv-por.fuera .foto, .dv-por.fuera .datos { opacity: .35; }
+.dv-por .arriba { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.dv-por .lab2 { font-size: 11px; font-weight: 700; letter-spacing: .12em; color: #8A8A8F; white-space: nowrap; }
+.dv-por .quien { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-por .pct { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; text-align: right; }
+.dv-por .par { font-size: 11px; font-weight: 700; color: #A6A6AD; white-space: nowrap; font-variant-numeric: tabular-nums; text-align: right; }
+.dv-por .barra { height: 4px; background: #26262A; border-radius: 2px; overflow: hidden; }
+.dv-por .barra i { display: block; height: 100%; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.dv-por .tiros { display: flex; flex-wrap: wrap; gap: 3px; }
+.dv-por .tiros span { width: 7px; height: 14px; border-radius: 2px; background: #55555B; }
+.dv-por .tiros span.g { background: #D3202A; }
+.dv-por .sello { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.dv-por .sello span { padding: 5px 10px; border-radius: 6px; background: #FF8A3D; color: #0D0D0E; font-size: 12px; font-weight: 700; letter-spacing: .12em; white-space: nowrap; }
+
+/* ── 9h · En juego: cada dato con barra (rojo los nuestros, gris el rival) ── */
+.dv-juego { background: #18181B; border-radius: 12px; padding: 14px 14px 2px; margin-bottom: 8px; }
+.dv-juego .cab { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: .12em; color: #8A8A8F; margin-bottom: 12px; }
+.dv-juego .fila { margin-bottom: 12px; }
+.dv-juego .nums { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.dv-juego .nums b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 20px; line-height: 1; font-variant-numeric: tabular-nums; }
+.dv-juego .nums span { font-size: 11px; font-weight: 700; letter-spacing: .12em; color: #A6A6AD; white-space: nowrap; }
+.dv-juego .bar { display: flex; gap: 3px; height: 5px; margin-top: 5px; }
+.dv-juego .bar i { border-radius: 3px; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.dv-juego .bar i + i { flex: 1; }
+
+/* ── 9e · Final: franja V/E/D bajo el marcador · columna «Hoy» ── */
+.dv-final { position: relative; height: 38px; margin: 0 calc(-1 * clamp(16px, 2.4vw, 26px)); }
+.dv-final i { position: absolute; inset: 0; transform-origin: left; }
+.dv-final span { position: relative; height: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'Big Shoulders Display', sans-serif;
+  font-weight: 800; font-size: clamp(15px, 1.8vw, 20px); letter-spacing: .04em; white-space: nowrap; }
+.dv-hoy-t { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #A6A6AD; padding: 2px 2px 4px; }
+.dv-der a.dv-hoy { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: #18181B; color: #F4F4F5; }
+.dv-der a.dv-hoy.vivo { background: #2A1416; }
+.dv-hoy .c { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: .12em; color: #8A8A8F; }
+.dv-hoy .c span:first-child { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-hoy .c span:last-child { flex: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dv-hoy .c .r { color: #FF6B63; }
+.dv-hoy .e { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.dv-hoy .e > div { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.dv-hoy .e > div:last-child { justify-content: flex-end; }
+.dv-hoy .e span { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 17px; white-space: nowrap; }
+.dv-hoy .e b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dv-hoy .esc2 { flex: none; width: 26px; height: 26px; border-radius: 50%; background: center / contain no-repeat; }
+
+/* ── 9f · Intro con un partido en juego: marcador de rodillo en lugar de la cuenta atrás ── */
+.intro .caja.quieta .fila { animation: none; }
+.intro .num.marc { height: 1.02em; transition: background .4s; }
+.intro .num.marc::after { display: none; }
+.intro .num.marc > div { transition: transform 1.1s cubic-bezier(.2,.9,.25,1.08); }
+.intro .num.marc.V > div { transition-duration: 1.3s; }
+.intro .num.marc span { display: block; height: 1.02em; }
+.intro .cuando.vivo { color: #FF6B63; display: flex; align-items: center; gap: 6px; }
+.intro .cuando.vivo i { width: 7px; height: 7px; border-radius: 50%; background: #D3202A; animation: mpPulse 1.6s infinite; }
+.intro .gcapa { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; z-index: 2; }
+.intro .gcapa > div { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 12px; background: #26262A;
+  animation: mpGoal 2.8s cubic-bezier(.7,0,.3,1) both; }
+.intro .gcapa > div.mp { background: #D3202A; }
+.intro .gcapa b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: min(10cqw, 48px); line-height: 1; }
+.intro .gcapa span { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: min(5cqw, 22px); }

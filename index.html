@@ -19,11 +19,13 @@
 <link rel="preload" href="assets/fonts/big-shoulders-display-900-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/ibm-plex-sans-condensed-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/fuentes.css">
-<link rel="stylesheet" href="assets/estilos.css?v=2026-10-10d">
-<link rel="stylesheet" href="assets/animaciones.css?v=2026-10-10d">
+<link rel="stylesheet" href="assets/estilos.css?v=2026-10-17a">
+<link rel="stylesheet" href="assets/animaciones.css?v=2026-10-17a">
 </head>
 <body>
 <header class="top">
+  <!-- 9a · barra «En directo»: solo mientras juega un equipo nuestro (la rellena app.js) -->
+  <div class="barra-directo" id="barra-directo" hidden><div class="bd-scroll" id="bd-scroll"></div></div>
   <div class="in">
     <a class="blk brand" href="#/jornada" data-nav>
       <img src="escudos/badge/madridpatina.png" alt="">
@@ -40,6 +42,7 @@
   </div>
 </main>
 <nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
-<script src="assets/app.js?v=2026-10-10d"></script>
+<script src="assets/directo.js?v=2026-10-17a"></script>
+<script src="assets/app.js?v=2026-10-17a"></script>
 </body>
 </html>
