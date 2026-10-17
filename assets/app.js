@@ -1164,7 +1164,7 @@
     else if (v === 'jugador') html = vJugador(parts[1]);
     else if (v === 'historico' || v === 'legado') html = vHistorico();
     else if (v === 'pretemporada') html = vPretemporada(parts[1]);
-    else if (v === 'directo') html = vDirecto(parts[1]);
+    else if (v === 'directo') html = vDirecto(parts[1], parts[2]);
     else html = vJornada(parts[1]);
     const back = S.hist.length && v !== 'jornada' ? '<a class="back" href="#" data-back>← Volver</a>' : '';
     const pie = `<footer class="pie"><span>MADRIDPATINA · Temporada ${esc(A.temporada)}</span><span>Datos: Federación Madrileña de Patinaje · actualizado ${fdc(A.actualizado).toLowerCase()}</span></footer>`;
@@ -1201,6 +1201,9 @@
      arriba, y el escudo de la cabecera la vuelve a abrir. No está en el menú. */
   const INTRO = 'mp-intro-visto';
   let introEl = null, introReloj = null;
+  // si al cargar no había nada que enseñar pero el directo trae enseguida lo ya jugado esta semana, se abre entonces (una vez)
+  let introAbierta = false, introVistaCarga = true;
+  const T_CARGA = Date.now();
   const p2 = n => String(n).padStart(2, '0');
   // 9f · partido de la intro que está en juego ahora (según el directo)
   function vivoIntro(k) {
@@ -1211,15 +1214,39 @@
     }
     return null;
   }
+  function finIntro(k) {   // partido de esta semana ya terminado, según el directo
+    for (const sn of Object.values(LIVE.snaps)) {
+      if (sn.estado !== 'final') continue;
+      const r = enCalendario(sn);
+      if (r && [r.local, r.vis].sort().join('|') + r.c.fecha === k) return sn;
+    }
+    return null;
+  }
   const IN = { mostrado: {}, pend: {}, visto: 0, cola: null, ps: [], clave: '' };
   function partidosFinde() {
     const ahora = Date.now(), d0 = new Date(), hoy = d0.getFullYear() + '-' + p2(d0.getMonth() + 1) + '-' + p2(d0.getDate());
+    const l0 = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() - (d0.getDay() + 6) % 7), lunes = l0.getFullYear() + '-' + p2(l0.getMonth() + 1) + '-' + p2(l0.getDate());
     const visto = {}, up = [];
     A.equipos.forEach(e => (e.cal || []).forEach(c => {
-      if (!c.fecha || c.resultado || c.descanso || c.fecha < hoy) return;
+      if (!c.fecha || c.descanso || c.fecha < lunes) return;
       const local = c.casa ? e.nombre : c.rival, vis = c.casa ? c.rival : e.nombre;
       const k = [local, vis].sort().join('|') + c.fecha;   // derbi: una sola fila
-      if (visto[k]) return; visto[k] = 1;
+      if (visto[k]) return;
+      // ya terminado esta semana: con su resultado (del directo o, si no, del calendario) y enlace a su resumen
+      const fin = c.fecha <= hoy ? finIntro(k) : null;
+      if (c.resultado || fin) {
+        visto[k] = 1;
+        const [y, m, d] = c.fecha.split('-').map(Number), [hh, mm] = (c.hora || '00:00').split(':').map(Number);
+        let gl, gv, pen = null, href = null;
+        if (fin) { gl = fin.gl || 0; gv = fin.gv || 0; pen = fin.penaltis; href = '#/directo/' + encodeURIComponent(fin.idp) + '/resumen'; }
+        else { const [n, o] = c.resultado.split('-').map(Number); [gl, gv] = c.casa ? [n, o] : [o, n]; href = c.mid ? hM(c.mid) : null; }
+        const nom = n => ours(n) && n === e.nombre ? 'MP ' + letraOf(e) : abr(n);
+        up.push({ k, fin: true, gl, gv, pen, href, mpL: ours(local), mpV: ours(vis), ts: new Date(y, m - 1, d, hh, mm).getTime(), dia: new Date(y, m - 1, d).getTime(), hora: c.hora, derbi: !!c.derbi, local, vis, la: nom(local), va: nom(vis),
+          cuando: DIA[new Date(y, m - 1, d).getDay()] + ' ' + d });
+        return;
+      }
+      if (c.resultado || c.fecha < hoy) return;
+      visto[k] = 1;
       const [y, m, d] = c.fecha.split('-').map(Number), [hh, mm] = (c.hora || '23:59').split(':').map(Number);
       const ts = new Date(y, m - 1, d, hh, mm).getTime();
       if (ts < ahora && !vivoIntro(k)) return;   // ya empezado: solo si está en juego (9f)
@@ -1243,9 +1270,14 @@
   const cuandoVivo = sn => '<i></i>' + esc('EN DIRECTO · ' + (sn.estado === 'descanso' ? 'DESCANSO' : estadoCorto(sn)));
   function filaIntro(x, i) {
     const esc1 = n => `<div class="esc" style="--ring:${ours(n) ? '#D3202A' : '#FFFFFF'};${crest(n) ? `background-image:url('${esc(crest(n))}')` : ''}"></div>`;
-    const sn = vivoIntro(x.k);
+    const sn = x.fin ? null : vivoIntro(x.k);
     let cifras, cuando;
-    if (sn) {   // en juego: dos bloques con el marcador de rodillo, del mismo tamaño que la cuenta atrás
+    if (x.fin) {   // terminado: el resultado (en rojo el bloque del ganador si es nuestro) y «▶ resumen»
+      const nos = x.mpL && !x.mpV ? 'L' : x.mpV && !x.mpL ? 'V' : null, gana = x.gl > x.gv ? 'L' : x.gv > x.gl ? 'V' : null;
+      cifras = [['L', x.gl, x.la], ['V', x.gv, x.va]].map(([l, n, lab]) => `<div class="bloque"><div class="num res${nos && gana === l && nos === l ? ' gana' : ''}"><div>${n}</div></div><span>${esc(lab)}</span></div>`).join('');
+      const nb = t => esc(t).replace(/ /g, '&nbsp;');   // corta solo entre «FINAL · SÁB 17» y «PENALTIS 1–0»
+      cuando = `<div class="cuando fin">${nb('FINAL · ' + x.cuando)}${x.pen ? ' · ' + nb('PENALTIS ' + x.pen.l + '–' + x.pen.v) : ''}</div>${x.href && /resumen/.test(x.href) ? '<div class="cuando ver">▶ VER RESUMEN</div>' : ''}`;
+    } else if (sn) {   // en juego: dos bloques con el marcador de rodillo, del mismo tamaño que la cuenta atrás
       const m = IN.mostrado[sn.idp] || (IN.mostrado[sn.idp] = { gl: sn.gl || 0, gv: sn.gv || 0 });
       cifras = [['L', m.gl, x.la], ['V', m.gv, x.va]].map(([l, n, lab]) => `<div class="bloque"><div class="num marc ${l}" data-in="${esc(sn.idp)}-${l}"><div style="transform:translateY(-${(n * 1.02).toFixed(2)}em)">${Array.from({ length: Math.max(16, n + 1) }, (_, d) => `<span>${d}</span>`).join('')}</div></div><span>${esc(lab)}</span></div>`).join('');
       cuando = `<div class="cuando vivo">${cuandoVivo(sn)}</div>`;
@@ -1254,7 +1286,8 @@
       cifras = ['DÍAS', 'HORAS', 'MIN'].map((k, j) => `<div class="bloque"><div class="num${j === 2 ? ' min' : ''}"><div>${q[j]}</div></div><span>${k}</span></div>`).join('');
       cuando = `<div class="cuando">${esc(x.cuando)}</div>`;
     }
-    return `<div class="fila" style="animation-delay:${150 + i * 110}ms"${sn ? ` data-vivo="${esc(sn.idp)}"` : ''}>${x.derbi ? '<div class="derbi"><span>DERBI</span></div>' : ''}
+    const href = x.fin ? x.href : sn ? '#/directo/' + encodeURIComponent(sn.idp) : null;
+    return `<div class="fila" style="animation-delay:${150 + i * 110}ms"${sn ? ` data-vivo="${esc(sn.idp)}"` : ''}${x.fin ? ' data-fin' : ''}${href ? ` data-href="${esc(href)}"` : ''}>${x.derbi ? '<div class="derbi"><span>DERBI</span></div>' : ''}
       <div class="eq">${esc1(x.local)}<div><div class="vs-t">${esc(x.la)} <span>vs</span> ${esc(x.va)}</div>${cuando}</div>${esc1(x.vis)}</div>
       <div class="cifras" data-i="${i}">${cifras}</div></div>`;
   }
@@ -1282,7 +1315,7 @@
   function introDirecto() {
     if (!introEl || !A) return;
     if (!IN.cola) IN.cola = MPDirecto.colaGoles(mostrarGolIntro);
-    const ps = partidosFinde(), clave = ps.map(x => x.k + (vivoIntro(x.k) ? '*' : '')).join('|');
+    const ps = partidosFinde(), clave = ps.map(x => x.k + (x.fin ? '=' + x.gl + '-' + x.gv : vivoIntro(x.k) ? '*' : '')).join('|');
     if (ps.length && clave !== IN.clave) {   // entra o sale una fila en directo: se repinta, sin animar la entrada
       IN.ps = ps; IN.clave = clave;
       const caja = introEl.querySelector('.caja');
@@ -1303,7 +1336,8 @@
     if (introEl || !A) return;
     const ps = partidosFinde();
     if (!ps.length) return;
-    IN.ps = ps; IN.clave = ps.map(x => x.k + (vivoIntro(x.k) ? '*' : '')).join('|'); IN.visto = LIVE.nuevos.length;
+    introAbierta = true;
+    IN.ps = ps; IN.clave = ps.map(x => x.k + (x.fin ? '=' + x.gl + '-' + x.gv : vivoIntro(x.k) ? '*' : '')).join('|'); IN.visto = LIVE.nuevos.length;
     try { sessionStorage.setItem(INTRO, '1'); } catch (e) { /* sin almacenamiento: saldrá en cada visita */ }
     const el = introEl = document.createElement('div');
     el.className = 'intro'; el.tabIndex = -1;
@@ -1316,7 +1350,11 @@
     document.body.appendChild(el);
     document.documentElement.style.overflow = 'hidden';
     el.focus({ preventScroll: true });
-    el.addEventListener('click', e => { if (e.target.closest('[data-cierra]')) cerrarIntro(); });
+    el.addEventListener('click', e => {
+      if (e.target.closest('[data-cierra]')) return cerrarIntro();
+      const f = e.target.closest('.fila[data-href]');   // terminado → su resumen; en juego → su directo
+      if (f) { const h = f.dataset.href; cerrarIntro(); location.hash = h; }
+    });
     let y0 = null;   // deslizar hacia arriba (en el ordenador, la rueda hacia abajo)
     el.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; }, { passive: true });
     el.addEventListener('touchmove', e => { if (y0 !== null && y0 - e.touches[0].clientY > 60) { y0 = null; cerrarIntro(); } }, { passive: true });
@@ -1325,7 +1363,7 @@
     // cada minuto, justo al cambiar de minuto; el bloque MIN «cae» al cambiar
     const tic = () => {
       el.querySelectorAll('.cifras').forEach(c => {
-        if (c.closest('[data-vivo]') || !IN.ps[+c.dataset.i]) return;   // la fila en directo lleva el marcador
+        if (c.closest('[data-vivo],[data-fin]') || !IN.ps[+c.dataset.i]) return;   // la fila en directo o terminada lleva el marcador
         const q = cuentaAtras(IN.ps[+c.dataset.i]);
         c.querySelectorAll('.num > div').forEach((n, j) => { if (n.textContent !== q[j]) { n.textContent = q[j]; if (j === 2) repetir(n, 'mpTick .35s cubic-bezier(.2,.8,.2,1)'); } });
       });
@@ -1385,7 +1423,8 @@
     return null;
   }
   // reloj de la parte: avanza solo entre respuestas; si el portal no lo da, no hay reloj (no se inventa)
-  const relojDe = sn => sn && sn.reloj ? MPDirecto.relojLocal(sn, LIVE.recibido[sn.idp] || Date.now()) : null;
+  // en el resumen, el reloj es el de la simulación; en directo avanza solo entre respuestas
+  const relojDe = sn => (sn && sn.reloj ? (sn._resumen ? sn.reloj : MPDirecto.relojLocal(sn, LIVE.recibido[sn.idp] || Date.now())) : null);
   let pintaPendiente = false;
   function pintarDirecto() {   // las piezas del directo (pasos 4-7) escuchan 'mp-directo'
     if (pintaPendiente) return;
@@ -1412,6 +1451,19 @@
       if (!DIRECTO_EJEMPLO) setTimeout(() => { if (LIVE.sesion) LIVE.sesion.stop(); LIVE.sesion = null; }, Math.max(0, fin - minAhora()) * 60000);
     };
     if (minAhora() >= ini) empezar(); else setTimeout(empezar, (ini - minAhora()) * 60000);
+  }
+  // una sola petición para traer lo ya jugado esta semana, con su acta para el resumen (si no hay directo en marcha que ya lo traiga)
+  function cargarSemana() {
+    if (!window.MPDirecto || LIVE.sesion) return;
+    const d0 = new Date(), hoy = hoyKey(), l0 = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() - (d0.getDay() + 6) % 7);
+    const lunes = l0.getFullYear() + '-' + p2(l0.getMonth() + 1) + '-' + p2(l0.getDate());
+    const falta = A.equipos.some(e => e.cal.some(c => c.fecha && !c.descanso && c.fecha >= lunes && c.fecha <= hoy
+      && (c.fecha < hoy || !c.hora || +c.hora.slice(0, 2) * 60 + +c.hora.slice(3, 5) < minAhora())));
+    if (!falta && !DIRECTO_EJEMPLO) return;
+    fetch(DIRECTO_URL + (DIRECTO_URL.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(d => {
+      (d.partidos || []).forEach(sn => { if (!LIVE.snaps[sn.idp]) { LIVE.snaps[sn.idp] = sn; LIVE.recibido[sn.idp] = Date.now(); } });
+      pintarDirecto();
+    }).catch(() => { /* sin conexión: la intro sigue como estaba */ });
   }
   // para revisar a mano desde la consola: MPLive.snaps, MPLive.cal('14544')…
   LIVE.cal = idp => { const r = LIVE.snaps[idp] && enCalendario(LIVE.snaps[idp]); return r ? { equipo: r.e.id, jornada: r.c.j, fecha: r.c.fecha, mid: r.c.mid, local: r.local, visitante: r.vis } : null; };
@@ -1461,8 +1513,8 @@
   }
   function chipDirecto(sn) {
     const r = relojDe(sn);
-    if (sn.estado === 'directo' && sn.fase === 'penaltis') return { vivo: true, txt: 'PENALTIS' + (sn.penaltis ? ' · ' + sn.penaltis.l + '–' + sn.penaltis.v : '') };
-    if (sn.estado === 'directo') return { vivo: true, txt: ordinal(sn.periodo || 1) + ' PARTE' + (r ? ' · ' + r : '') };
+    if (sn.estado === 'directo' && sn.fase === 'penaltis') return { vivo: !sn._resumen, txt: 'PENALTIS' + (sn.penaltis ? ' · ' + sn.penaltis.l + '–' + sn.penaltis.v : '') };
+    if (sn.estado === 'directo') return { vivo: !sn._resumen, txt: ordinal(sn.periodo || 1) + ' PARTE' + (r ? ' · ' + r : '') };
     return { vivo: false, txt: sn.estado === 'descanso' ? 'DESCANSO' : sn.estado === 'final' ? 'FINAL' : 'HOY' + (sn.hora ? ' · ' + sn.hora : '') };
   }
   const chipHtml = c => (c.vivo ? '<span class="punto"></span>' : '') + esc(c.txt);
@@ -1487,7 +1539,7 @@
     pintarPorteros(ctx);
     clearTimeout(timerListas);
     const prox = Object.values(DV.aparece).concat(...Object.values(DV.tiros).map(st => st.lista.map(x => x.aparece || 0))).filter(t => t > Date.now() + 30);
-    if (prox.length) { const gen = DV.gen; timerListas = setTimeout(() => { const sn = LIVE.snaps[DV.idp]; if (gen === DV.gen && sn) pintarListas(ctxDirecto(sn)); }, Math.min(...prox) - Date.now()); }
+    if (prox.length) { const gen = DV.gen; timerListas = setTimeout(() => { const sn = snapDV(); if (gen === DV.gen && sn) pintarListas(ctxDirecto(sn)); }, Math.min(...prox) - Date.now()); }
   }
   function marcasLinea(ctx) {
     const { sn, dur } = ctx;
@@ -1539,6 +1591,7 @@
   }
   function cabLista(sn) {
     const n = sn.eventos.length;
+    if (sn._resumen) return `<span>${n} ${n === 1 ? 'evento' : 'eventos'} · resumen del acta</span>`;
     if (LIVE.ok === false) return '<span class="off">sin conexión · reintentando</span>';
     return `<span>${n} ${n === 1 ? 'evento' : 'eventos'} · ${DIRECTO_EJEMPLO ? 'datos de ejemplo' : 'cada 15 s'}</span>`;
   }
@@ -1642,7 +1695,11 @@
     if (!cont) return;
     const quiero = ['L', 'V'].map(l => { const x = porteroDe(ctx, l); return x ? l + '-' + x.p.dorsal : ''; }).filter(Boolean).join(',');
     const hay = [...cont.querySelectorAll('[data-por]')].map(c => c.dataset.por).join(',');
-    if (quiero !== hay) { cont.innerHTML = porterosHtml(ctx); return; }   // cambia el portero: se vuelve a pintar
+    if (quiero !== hay) {   // cambia el portero: se vuelve a pintar (en el resumen, entran al acabar)
+      cont.innerHTML = porterosHtml(ctx);
+      if (ctx.sn._resumen && DV.listo && MOV) cont.querySelectorAll('.dv-por').forEach((c, i) => { c.style.animation = `mpUp .45s ${i * 120}ms cubic-bezier(.2,.8,.2,1) both`; });
+      return;
+    }
     ['L', 'V'].forEach(l => { const x = porteroDe(ctx, l); if (!x) return;
       const card = cont.querySelector(`[data-por="${CSS.escape(l + '-' + x.p.dorsal)}"]`), pc = pctP(x.p);
       card.querySelector('[data-k="pct"]').textContent = pc == null ? '—' : dec(pc) + '%';
@@ -1704,48 +1761,127 @@
     return `<div class="dv-final"><i style="background:${r[1]};${animar ? 'animation:mpWipe .5s cubic-bezier(.2,.8,.2,1) both' : ''}"></i><span${animar ? ' style="animation:mpFade .3s .35s both"' : ''}>${r[0]} · ${esc(ctx.abr.L)} ${sn.gl ?? 0}–${sn.gv ?? 0} ${esc(ctx.abr.V)}${pen}</span></div>`;
   }
   function pintarFinal() {
-    const sn = LIVE.snaps[DV.idp], cont = $('[data-dv="final"]');
+    const sn = snapDV(), cont = $('[data-dv="final"]');
     if (!sn || !cont) return;
     const h = finalHtml(ctxDirecto(sn), true);
     if (!h) cont.innerHTML = ''; else if (!cont.firstElementChild) cont.innerHTML = h;
   }
   // 9e · «Hoy»: todos nuestros partidos del día con su estado; el que se juega, con fondo granate
   function hoyHtml() {
-    const ps = Object.values(LIVE.snaps).sort((a, b) => horaDe(a).localeCompare(horaDe(b)));
+    const d = new Date(), hoyDM = p2(d.getDate()) + '/' + p2(d.getMonth() + 1);
+    const ps = Object.values(LIVE.snaps).filter(sn => !sn.fecha || sn.fecha === hoyDM).sort((a, b) => horaDe(a).localeCompare(horaDe(b)));
     if (!ps.length) return '';
-    const d = new Date();
     const escHoy = (ctx, l) => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
       return `<div class="esc2" style="box-shadow:0 0 0 1.5px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>`; };
     return `<div class="dv-hoy-t">HOY · ${DIA[d.getDay()]} ${d.getDate()} ${MES[d.getMonth()]}</div>` + ps.map(sn => {
       const ctx = ctxDirecto(sn), vivo = sn.estado === 'directo' || sn.estado === 'descanso';
       const st = sn.estado === 'directo' ? '● ' + estadoCorto(sn) : sn.estado === 'descanso' ? '● DESCANSO' : sn.estado === 'final' ? 'FINAL' : (sn.hora || 'POR FIJAR');
-      const m = sn.idp === DV.idp && !DV.vacio ? DV.mostrado : { gl: sn.gl || 0, gv: sn.gv || 0 };
+      const m = sn.idp === DV.idp && !DV.vacio && !RSM.activo ? DV.mostrado : { gl: sn.gl || 0, gv: sn.gv || 0 };
       const cat = (sn.liga || '').replace(/^Liga\s+/i, '').toUpperCase() + ' · ' + (ctx.mp.L && ctx.mp.V ? 'DERBI' : sn.hora || '');
-      return `<a class="blk dv-hoy${vivo ? ' vivo' : ''}" href="#/directo/${encodeURIComponent(sn.idp)}"><div class="c"><span>${esc(cat)}</span><span${vivo ? ' class="r"' : ''}>${esc(st)}</span></div>
+      return `<a class="blk dv-hoy${vivo ? ' vivo' : ''}" href="#/directo/${encodeURIComponent(sn.idp)}${sn.estado === 'final' ? '/resumen' : ''}"><div class="c"><span>${esc(cat)}</span><span${vivo ? ' class="r"' : ''}>${esc(st)}</span></div>
         <div class="e"><div>${escHoy(ctx, 'L')}<span>${esc(ctx.abr.L)}</span></div><b>${sn.estado === 'previa' ? 'vs' : m.gl + '–' + m.gv}</b><div><span>${esc(ctx.abr.V)}</span>${escHoy(ctx, 'V')}</div></div></a>`;
     }).join('');
   }
   function pintarHoy() { const c = $('[data-dv="hoy"]'); if (c) c.innerHTML = hoyHtml(); }
 
+  /* ── Modo resumen (#/directo/{idp}/resumen): un partido terminado se vuelve a «jugar» deprisa ─────────────────
+     El reloj corre (el partido entero en unos 25 s y parado mientras pasa cada cortina de gol); los eventos entran a su
+     minuto, el marcador sube con las cortinas, y al final aparecen los porteros, los tiros y la franja del resultado.
+     Los tiros de cada portero solo se conocen al final (el acta no dice cuándo fue cada uno): no se inventan por el camino. */
+  const RSM = { activo: false, idp: null, final: null, foto: null, T: 0, fase: '', nuevos: [], pausa: 0, timer: null, tPen: null, saltado: false };
+  const snapDV = () => (RSM.activo && RSM.idp === DV.idp ? RSM.foto : LIVE.snaps[DV.idp]);
+  const fuenteNuevos = () => (RSM.activo && RSM.idp === DV.idp ? RSM.nuevos : LIVE.nuevos);
+  function fotoResumen(S, T) {
+    const dur = S.duracion_periodo || 1200, p = T < dur || RSM.fase === 'descanso' || RSM.fase === 'p1fin' ? 1 : 2, tp = Math.max(0, Math.min(dur, p === 1 ? T : T - dur));
+    const tE = e => (e.t != null ? segs(e.t) : e.t_acta ? dur - segs(e.t_acta) : 0);
+    const evs = S.eventos.filter(e => !e.periodo || e.periodo < p || (e.periodo === p && tE(e) <= tp));
+    return Object.assign({}, S, { _resumen: true, estado: RSM.fase === 'descanso' ? 'descanso' : 'directo', periodo: p, reloj: mmssD(tp), fase: null, penaltis: null,
+      gl: evs.filter(e => e.tipo === 'GOL' && e.lado === 'L').length, gv: evs.filter(e => e.tipo === 'GOL' && e.lado === 'V').length, eventos: evs, porteros: [], tiros: null });
+  }
+  function aplicarFotoResumen(f) {
+    const ids = new Set(RSM.foto.eventos.map(e => e.id));
+    f.eventos.filter(e => !ids.has(e.id)).forEach(e => RSM.nuevos.push({ idp: RSM.idp, ev: e }));
+    RSM.foto = f;
+    if (RSM.idp === DV.idp && !DV.vacio) actualizarDirecto();
+  }
+  function pasoResumen() {
+    if (!RSM.activo || !new RegExp('^#/directo/' + RSM.idp + '/resumen').test(location.hash.replace(/%2F/g, '/'))) return pararResumen();
+    if (DV.pendientes > 0 || Date.now() < RSM.pausa || RSM.fase === 'fin') return;
+    const S = RSM.final, dur = S.duracion_periodo || 1200;
+    if (RSM.fase === 'p2fin') return finResumen();
+    if (RSM.fase === 'p1fin') { RSM.fase = 'descanso'; RSM.pausa = Date.now() + 1600; return aplicarFotoResumen(fotoResumen(S, dur)); }
+    if (RSM.fase === 'descanso') RSM.fase = 'p2';
+    RSM.T += 2 * dur / 25 * 0.1;
+    // al acabar cada parte, primero su último minuto (con sus goles, y sus cortinas) y después el descanso o el final
+    if (RSM.fase === '' && RSM.T >= dur) { RSM.T = dur; RSM.fase = 'p1fin'; } else if (RSM.T >= 2 * dur) { RSM.T = 2 * dur; RSM.fase = 'p2fin'; }
+    aplicarFotoResumen(fotoResumen(S, RSM.T));
+  }
+  function finResumen() {
+    const S = RSM.final, dur = S.duracion_periodo || 1200;
+    RSM.fase = 'fin'; clearInterval(RSM.timer); RSM.timer = null;
+    const fin = () => aplicarFotoResumen(Object.assign({}, S, { _resumen: true }));
+    if (!S.penaltis || !MOV) return fin();
+    // la tanda, ronda a ronda: el acta da los lanzamientos de cada equipo, no quién tiró primero
+    const base = fotoResumen(S, 2 * dur), tiros = S.penaltis.tiros || [], tl = tiros.filter(x => x.lado === 'L'), tv = tiros.filter(x => x.lado === 'V');
+    const rondas = Math.max(tl.length, tv.length), goles = (arr, k) => arr.slice(0, k).filter(x => x.gol).length;
+    const paso = k => {
+      aplicarFotoResumen(Object.assign({}, base, { fase: 'penaltis', penaltis: rondas ? { l: goles(tl, k), v: goles(tv, k), tiros: [] } : S.penaltis }));
+      RSM.tPen = setTimeout(() => (rondas && k < rondas ? paso(k + 1) : fin()), rondas && k < rondas ? 900 : 1500);
+    };
+    paso(0);
+  }
+  function pararResumen() { clearInterval(RSM.timer); clearTimeout(RSM.tPen); RSM.timer = RSM.tPen = null; RSM.activo = false; }
+  // devuelve el aviso de espera si aún no tenemos el partido; si no, deja preparada la simulación (o el final, si se saltó)
+  function prepararResumen(idp) {
+    const S = RSM.final && RSM.final.idp === idp ? RSM.final : LIVE.snaps[idp];
+    if (!S) { cargarPartidoResumen(idp); return '<div class="loading" data-dv="espera">Cargando el resumen…</div>'; }
+    if (S.estado !== 'final') { pararResumen(); return null; }   // aún se juega: la página del directo
+    pararResumen();
+    Object.assign(RSM, { activo: true, idp, final: S, T: 0, fase: '', nuevos: [], pausa: Date.now() + 900 });
+    if (RSM.saltado || !MOV) { RSM.fase = 'fin'; RSM.foto = Object.assign({}, S, { _resumen: true }); return null; }
+    RSM.foto = fotoResumen(S, 0);
+    RSM.timer = setInterval(pasoResumen, 100);
+    return null;
+  }
+  function cargarPartidoResumen(idp) {
+    const url = DIRECTO_EJEMPLO ? DIRECTO_URL : DIRECTO_URL + '?idp=' + encodeURIComponent(idp);
+    fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(d => {
+      const S = (d.partidos || []).find(p => p.idp === idp);
+      if (!S) { const w = $('[data-dv="espera"]'); if (w) w.textContent = 'No encuentro este partido en el acta de la federación.'; return; }
+      RSM.final = S;
+      if (location.hash.indexOf('#/directo/' + idp) === 0) render();
+    }).catch(() => { const w = $('[data-dv="espera"]'); if (w) w.textContent = 'Sin conexión con el acta de la federación. Prueba otra vez en un momento.'; });
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-res]');
+    if (!b) return;
+    RSM.saltado = b.dataset.res === 'saltar';
+    render();
+  });
+  const barraResumen = () => (RSM.activo && RSM.idp === DV.idp ? `<div class="dv-resumen"><span><b>▶</b>RESUMEN · ASÍ FUE EL PARTIDO</span>${MOV ? `<span class="b">${RSM.fase === 'fin' ? '' : '<button type="button" data-res="saltar">Saltar al final</button>'}<button type="button" data-res="repetir">↺ Repetir</button></span>` : ''}</div>` : '');
+
   // sin datos del partido: aún conectando, sin conexión (se reintenta) o el partido no está hoy en el directo
   const esperaTxt = () => (LIVE.ok === false && !LIVE.cargado ? 'Sin conexión con el directo · reintentando…' : LIVE.cargado ? 'Este partido no está ahora en el directo.' : 'Conectando con el directo…');
-  function vDirecto(idp) {
-    const sn = LIVE.snaps[idp];
+  function vDirecto(idp, modo) {
     DV.idp = idp; DV.gen++;
+    if (modo === 'resumen') { const espera = prepararResumen(idp); if (espera) { DV.vacio = true; return espera; } } else { pararResumen(); RSM.saltado = false; }
+    const sn = snapDV();
     if (!sn) { DV.vacio = true; return `<div class="loading" data-dv="espera">${esperaTxt()}</div>`; }
     DV.vacio = false;
     const ctx = ctxDirecto(sn), [f1, f2] = rellenoDirecto(sn), ch = chipDirecto(sn);
     // se pinta quieto: lo que ya hay no se anima
-    Object.assign(DV, { mostrado: { gl: sn.gl || 0, gv: sn.gv || 0 }, visto: LIVE.nuevos.length, aparece: {}, pendientes: 0, cola: MPDirecto.colaGoles(mostrarGol),
+    Object.assign(DV, { mostrado: { gl: sn.gl || 0, gv: sn.gv || 0 }, visto: fuenteNuevos().length, aparece: {}, pendientes: 0, cola: MPDirecto.colaGoles(mostrarGol),
       penVistos: new Set(), situClave: '', tiros: {}, listo: false });
     contarTiros(ctx, []);
     excluidos(ctx).L.concat(excluidos(ctx).V).forEach(p => DV.penVistos.add(p.id));
     { const si = situacionPista(ctx, excluidos(ctx)); DV.situClave = si ? si.label + si.n : ''; }
-    setTimeout(() => { DV.listo = true; pintarSituacion(ctxDirecto(LIVE.snaps[idp] || sn)); }, 0);
+    setTimeout(() => { DV.listo = true; pintarSituacion(ctxDirecto(snapDV() || sn)); }, 0);
     DV.claves = new Set(itemsFeed(ctx).map(([, id]) => id));
     const eqHtml = l => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
       return `<div class="dv-eq"><div class="dv-esc" data-dv="esc${l}" style="box-shadow:0 0 0 2px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div><span class="dv-abr">${esc(ctx.abr[l])}</span><div class="dv-pens" data-dv="pen${l}"></div></div>`; };
-    return `<div class="dv">
+    const resumenHtml = barraResumen();
+    if (modo === 'resumen') RSM.saltado = false;
+    return `${resumenHtml}<div class="dv">
       <div class="dv-izq">
         <div class="dv-caja" data-dv="caja">
           <div class="dv-cab"><div class="dv-liga">${esc(((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase())}</div><div class="dv-chip${ch.vivo ? ' vivo' : ''}" data-dv="chip">${chipHtml(ch)}</div></div>
@@ -1770,7 +1906,7 @@
     pintarHoy(); pintarFinal();
   }
   function sincronizarMarcador() {   // por si el portal corrige un gol: sin cortinas pendientes, el marcador es el del portal
-    const sn = LIVE.snaps[DV.idp];
+    const sn = snapDV();
     if (!sn || DV.pendientes || (DV.mostrado.gl === (sn.gl || 0) && DV.mostrado.gv === (sn.gv || 0))) return;
     DV.mostrado = { gl: sn.gl || 0, gv: sn.gv || 0 }; pintarMarcador();
   }
@@ -1789,7 +1925,7 @@
     return new Promise(res => {
       const fin = () => { if (gen === DV.gen) { const m = /^(\d+)-(\d+)$/.exec(e.marcador || ''); if (m) DV.mostrado = { gl: +m[1], gv: +m[2] }; pintarMarcador();
         DV.pendientes = Math.max(0, DV.pendientes - 1); if (!DV.pendientes) setTimeout(sincronizarMarcador, 1300); } res(); };
-      const caja = $('[data-dv="caja"]'), sn = LIVE.snaps[DV.idp];
+      const caja = $('[data-dv="caja"]'), sn = snapDV();
       if (!ms || !caja || !sn || gen !== DV.gen) return fin();
       const tmp = document.createElement('div'); tmp.innerHTML = cortinaHtml(ctxDirecto(sn), e);
       const el = tmp.firstElementChild; caja.appendChild(el);
@@ -1797,11 +1933,11 @@
     });
   }
   function actualizarDirecto() {
-    const sn = LIVE.snaps[DV.idp];
+    const sn = snapDV();
     if (!sn || !$('[data-dv="caja"]')) return;
     const ctx = ctxDirecto(sn), ahora = Date.now();
-    const nuevos = LIVE.nuevos.slice(DV.visto).filter(x => x.idp === DV.idp).map(x => x.ev);
-    DV.visto = LIVE.nuevos.length;
+    const fuente = fuenteNuevos(), nuevos = fuente.slice(DV.visto).filter(x => x.idp === DV.idp).map(x => x.ev);
+    DV.visto = fuente.length;
     nuevos.forEach(e => { DV.aparece[e.id] = ahora + (e.tipo === 'GOL' && MOV ? 2800 + DV.pendientes * 4000 : 0); if (e.tipo === 'GOL') { DV.pendientes++; DV.cola(e); } });
     itemsFeed(ctx).forEach(([k, id]) => { if (k === 'div' && !DV.claves.has(id)) { DV.claves.add(id); DV.aparece['div-' + id] = ahora + (MOV ? DV.pendientes * 4000 : 0); } });
     contarTiros(ctx, nuevos.filter(e => e.tipo === 'GOL'));
@@ -1815,12 +1951,14 @@
     const lc = $('[data-dv="lcab"]');
     if (lc) { const h = cabLista(sn); lc.className = /off/.test(h) ? 'off' : ''; lc.textContent = h.replace(/<[^>]+>/g, ''); }
     if (!DV.pendientes) sincronizarMarcador();
+    const br = $('.dv-resumen');
+    if (br && RSM.fase === 'fin') { const sb = br.querySelector('[data-res="saltar"]'); if (sb) sb.remove(); }
   }
   document.addEventListener('mp-directo', () => {
     const m = /^#\/directo\/([^/]+)/.exec(location.hash);
     if (!m) return;
     const idp = decodeURIComponent(m[1]);
-    if (DV.vacio) { if (LIVE.snaps[idp]) render(); else { const w = $('[data-dv="espera"]'); if (w) w.textContent = esperaTxt(); } return; }
+    if (DV.vacio) { if (LIVE.snaps[idp]) render(); else if (!/\/resumen/.test(location.hash)) { const w = $('[data-dv="espera"]'); if (w) w.textContent = esperaTxt(); } return; }
     if (DV.idp === idp) actualizarDirecto();
   });
   /* ── 9a · Barra «En directo» sobre el menú ──────────────────────────────────────────────────
@@ -1883,7 +2021,7 @@
     barra.hidden = false;
   }
   document.addEventListener('mp-directo', barraDirecto);
-  document.addEventListener('mp-directo', introDirecto);
+  document.addEventListener('mp-directo', () => { if (introEl) introDirecto(); else if (!introAbierta && !introVistaCarga && Date.now() - T_CARGA < 5000) abrirIntro(); });
 
   // el reloj de la parte avanza cada segundo entre respuestas (si el portal lo da)
   setInterval(() => {
@@ -1891,7 +2029,7 @@
       const fi = introEl && introEl.querySelector(`[data-vivo="${CSS.escape(sn.idp)}"] .cuando`); if (fi) fi.innerHTML = cuandoVivo(sn); } });
     if (!DV.vacio && /^#\/directo\//.test(location.hash) && Object.values(LIVE.snaps).some(sn => sn.estado === 'directo' && sn.reloj)) pintarHoy();
     if (DV.vacio || !/^#\/directo\//.test(location.hash)) return;
-    const sn = LIVE.snaps[DV.idp];
+    const sn = snapDV();
     if (!sn || sn.estado !== 'directo' || !sn.reloj) return;
     const ch = chipDirecto(sn), chip = $('[data-dv="chip"]');
     if (chip) chip.innerHTML = chipHtml(ch);
@@ -1914,8 +2052,10 @@
     prevRoute = location.hash;
     let introVista = false;
     try { introVista = sessionStorage.getItem(INTRO) === '1'; } catch (e) { /* sin almacenamiento */ }
+    introVistaCarga = introVista;
     if (!introVista) abrirIntro();
     render();
     arrancarDirecto();
+    cargarSemana();
   })).catch(() => { view.innerHTML = '<div class="loading">No se ha podido cargar la web (falta data/app.json).</div>'; });
 })();

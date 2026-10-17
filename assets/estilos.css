@@ -378,3 +378,22 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .intro .gcapa > div.mp { background: #D3202A; }
 .intro .gcapa b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: min(10cqw, 48px); line-height: 1; }
 .intro .gcapa span { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: min(5cqw, 22px); }
+
+/* ── Intro: partidos ya terminados de la semana (resultado y «ver resumen») ── */
+.intro .fila[data-href] { cursor: pointer; transition: background .2s; }
+.intro .fila[data-href]:hover { background: rgba(38,38,42,.97); }
+.intro .num.res { height: 1.02em; }
+.intro .num.res::after { display: none; }
+.intro .num.res.gana { background: #D3202A; }
+.intro .fila[data-fin] .eq > div { min-width: 0; }
+.intro .cuando.fin { white-space: normal; }
+.intro .cuando.ver { color: #FF6B63; }
+
+/* ── Modo resumen de un partido terminado ── */
+.dv-resumen { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; padding: 10px 14px; border-radius: 10px;
+  background: #121214; border: 1px solid #26262A; }
+.dv-resumen > span:first-child { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #A6A6AD; }
+.dv-resumen > span:first-child b { color: #FF6B63; font-size: 11px; }
+.dv-resumen .b { display: flex; gap: 6px; }
+.dv-resumen button { font: inherit; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 6px; border: 0; background: #26262A; color: #F4F4F5; cursor: pointer; }
+.dv-resumen button:hover { background: #3A3A40; }
