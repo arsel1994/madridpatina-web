@@ -64,12 +64,12 @@
 @keyframes mpArrow{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:none}}
 @keyframes mpRewind{0%{opacity:0;transform:translateX(70px) rotate(8deg)}60%{opacity:1;transform:translateX(-8px) rotate(-2deg)}100%{transform:none}}
 @keyframes mpDot{from{transform:scale(0)}to{transform:scale(1)}}
-@keyframes mpStamp{0%{opacity:0;transform:rotate(-14deg) scale(2.2)}60%{opacity:1;transform:rotate(-14deg) scale(.92)}100%{opacity:1;transform:rotate(-14deg) scale(1)}}
+@keyframes mpStampSb{0%{opacity:0;transform:rotate(-14deg) scale(2.2)}60%{opacity:1;transform:rotate(-14deg) scale(.92)}100%{opacity:1;transform:rotate(-14deg) scale(1)}}
 @keyframes mpFlicker{0%,100%{opacity:.5}8%{opacity:.15}10%{opacity:.5}48%{opacity:.45}50%{opacity:.08}53%{opacity:.4}}
 @keyframes mpPing{0%{transform:scale(.4);opacity:.8}100%{transform:scale(1.6);opacity:0}}
 @keyframes mpFadeIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes mpTear{from{transform:translateY(-10px) rotate(-3deg);opacity:0}to{transform:none;opacity:1}}
-@keyframes mpKen{from{transform:scale(1)}to{transform:scale(1.1) translateY(-3%)}}
+@keyframes mpKen{from{transform:scale(1.12)}to{transform:scale(1)}}
 @keyframes mpRoute{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes mpTravel{from{left:0}to{left:calc(100% - 10px)}}
 @keyframes mpScratch{0%,100%{transform:rotate(0) translate(0,0)}15%{transform:rotate(4deg) translate(2px,3px)}30%{transform:rotate(1deg) translate(0,1px)}45%{transform:rotate(6deg) translate(3px,5px)}60%{transform:rotate(2deg) translate(1px,2px)}78%{transform:rotate(7deg) translate(4px,6px)}}
@@ -79,7 +79,16 @@
 @keyframes mpRipBack{0%{transform:rotateY(34deg) rotateX(-12deg) translate3d(0,4px,30px)}70%{transform:rotateY(-3deg) rotateX(1deg)}100%{transform:none}}
 @keyframes mpYear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes mpGoal{0%{transform:translateX(-101%)}12%{transform:none}86%{transform:none}100%{transform:translateX(101%)}}
+/* escenas a pantalla completa del directo (handoff_directo §2b, sección 10) */
+@keyframes mpCurtain{0%{transform:translateX(-101%)}9%{transform:none}92%{transform:none}100%{transform:translateX(101%)}}
+@keyframes mpSlideL{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+@keyframes mpSlideR{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes mpSlamL{0%{transform:translateX(-60cqw) scale(1.4)}70%{transform:translateX(2cqw) scale(1)}100%{transform:none}}
+@keyframes mpSlamR{0%{transform:translateX(60cqw) scale(1.4)}70%{transform:translateX(-2cqw) scale(1)}100%{transform:none}}
+@keyframes mpStamp{0%{transform:scale(3) rotate(-8deg);opacity:0}60%{transform:scale(.94) rotate(-4deg);opacity:1}100%{transform:scale(1) rotate(-4deg);opacity:1}}
+@keyframes mpShake{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@keyframes mpBar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes mpBars{0%{transform:translateY(-115%)}70%{transform:translateY(4%)}85%{transform:translateY(-2%)}100%{transform:none}}
+@keyframes mpDraw{to{stroke-dashoffset:0}}
+@keyframes mpRing{0%{transform:scale(.6);opacity:1}100%{transform:scale(3.2);opacity:0}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}}
-
-/* presentación del partido: cada pantalla entra por la derecha, se queda y sale por la izquierda */
-@keyframes mpPres { 0% { opacity: 0; transform: translateX(28px); } 9% { opacity: 1; transform: none; } 91% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateX(-28px); } }

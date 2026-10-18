@@ -612,7 +612,7 @@
       ${b.foto ? `<div style="position:absolute;inset:0;background:url('${esc(b.foto)}') 50% 18%/cover no-repeat;filter:grayscale(1) brightness(.55) contrast(1.1)"></div>` : ''}
       <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,13,14,.15) 0%,rgba(13,13,14,.25) 45%,rgba(13,13,14,.92) 72%)"></div>
       <span style="position:absolute;right:10px;top:6px;${BS}font-weight:900;font-size:36px;line-height:1;color:rgba(255,255,255,.35)">${esc(b.dorsal || '')}</span>
-      <div data-anim="mpStamp .45s cubic-bezier(.3,1.4,.5,1) ${400 + i * 120}ms" style="position:absolute;left:50%;top:34%;width:150px;margin-left:-75px;padding:5px 0;text-align:center;border:3px solid ${RED};border-radius:4px;color:#FF5A52;${BS}font-weight:900;font-size:17px;line-height:1.05;letter-spacing:.04em;background:rgba(13,13,14,.55)">DESAPARECIDO<br>EN ACCIÓN</div>
+      <div data-anim="mpStampSb .45s cubic-bezier(.3,1.4,.5,1) ${400 + i * 120}ms" style="position:absolute;left:50%;top:34%;width:150px;margin-left:-75px;padding:5px 0;text-align:center;border:3px solid ${RED};border-radius:4px;color:#FF5A52;${BS}font-weight:900;font-size:17px;line-height:1.05;letter-spacing:.04em;background:rgba(13,13,14,.55)">DESAPARECIDO<br>EN ACCIÓN</div>
       <div style="position:absolute;left:0;right:0;bottom:0;padding:12px;display:flex;flex-direction:column;gap:6px">
         <div><div style="font-weight:700;font-size:15px;line-height:1.15;color:#F4F4F5">${esc(corto(b))}</div><div style="font-size:12px;color:#A6A6AD">Visto por última vez: ${prev} · MP ${esc(m.e.id)}</div></div>
         <div style="display:flex;align-items:baseline;gap:6px"><span style="${BS}font-weight:900;font-size:30px;line-height:1;color:#F4F4F5">${dec(m.pct)}%</span><span style="font-size:11px;font-weight:600;color:#A6A6AD;line-height:1.2">de los puntos de su equipo en ${prev.slice(2)}</span></div>
@@ -1276,7 +1276,7 @@
       const nos = x.mpL && !x.mpV ? 'L' : x.mpV && !x.mpL ? 'V' : null, gana = x.gl > x.gv ? 'L' : x.gv > x.gl ? 'V' : null;
       cifras = [['L', x.gl, x.la], ['V', x.gv, x.va]].map(([l, n, lab]) => `<div class="bloque"><div class="num res${nos && gana === l && nos === l ? ' gana' : ''}"><div>${n}</div></div><span>${esc(lab)}</span></div>`).join('');
       const nb = t => esc(t).replace(/ /g, '&nbsp;');   // corta solo entre «FINAL · SÁB 17» y «PENALTIS 1–0»
-      cuando = `<div class="cuando fin">${nb('FINAL · ' + x.cuando)}${x.pen ? ' · ' + nb('PENALTIS ' + x.pen.l + '–' + x.pen.v) + (x.pen.ganador ? ' · ' + nb('GANA ' + (x.pen.ganador === 'L' ? x.la : x.va)) : '') : ''}</div>${x.href && /resumen/.test(x.href) ? '<div class="cuando ver">▶ VER RESUMEN</div>' : ''}`;
+      cuando = `<div class="cuando fin">${nb('FINAL · ' + x.cuando)}${x.pen ? ' · ' + nb('PENALTIS ' + x.pen.gl + '–' + x.pen.gv) + (x.pen.ganador ? ' · ' + nb('GANA ' + (x.pen.ganador === 'L' ? x.la : x.va)) : '') : ''}</div>${x.href && /resumen/.test(x.href) ? '<div class="cuando ver">▶ VER RESUMEN</div>' : ''}`;
     } else if (sn) {   // en juego: dos bloques con el marcador de rodillo, del mismo tamaño que la cuenta atrás
       const m = IN.mostrado[sn.idp] || (IN.mostrado[sn.idp] = { gl: sn.gl || 0, gv: sn.gv || 0 });
       cifras = [['L', m.gl, x.la], ['V', m.gv, x.va]].map(([l, n, lab]) => `<div class="bloque"><div class="num marc ${l}" data-in="${esc(sn.idp)}-${l}"><div style="transform:translateY(-${(n * 1.02).toFixed(2)}em)">${Array.from({ length: Math.max(16, n + 1) }, (_, d) => `<span>${d}</span>`).join('')}</div></div><span>${esc(lab)}</span></div>`).join('');
@@ -1513,7 +1513,7 @@
   }
   function chipDirecto(sn) {
     const r = relojDe(sn);
-    if (sn.estado === 'directo' && sn.fase === 'penaltis') return { vivo: !sn._resumen, txt: 'PENALTIS' + (sn.penaltis ? ' · ' + sn.penaltis.l + '–' + sn.penaltis.v : '') };
+    if (sn.estado === 'directo' && sn.fase === 'penaltis') return { vivo: !sn._resumen, txt: 'PENALTIS' + (sn.penaltis ? ' · ' + sn.penaltis.gl + '–' + sn.penaltis.gv : '') };
     if (sn.estado === 'directo') return { vivo: !sn._resumen, txt: ordinal(sn.periodo || 1) + ' PARTE' + (r ? ' · ' + r : '') };
     return { vivo: false, txt: sn.estado === 'descanso' ? 'DESCANSO' : sn.estado === 'final' ? 'FINAL' : 'HOY' + (sn.hora ? ' · ' + sn.hora : '') };
   }
@@ -1583,8 +1583,8 @@
     if (hay2) out.push(['div', 'ini2', 'EMPIEZA LA 2ª PARTE']);
     evs.filter(e => e.periodo >= 2).forEach(e => out.push(['ev', e.id, e]));
     const gana = sn.penaltis && sn.penaltis.ganador ? ' · GANA ' + ctx.abr[sn.penaltis.ganador] : '';
-    if (sn.penaltis || sn.fase === 'penaltis') out.push(['div', 'pen', 'PENALTIS' + (sn.penaltis ? ' · ' + sn.penaltis.l + '–' + sn.penaltis.v + gana : '')]);
-    if (sn.estado === 'final') out.push(['div', 'fin', 'FINAL · ' + (sn.gl ?? 0) + '–' + (sn.gv ?? 0) + (sn.penaltis ? ' · PENALTIS ' + sn.penaltis.l + '–' + sn.penaltis.v + gana : '')]);
+    if (sn.penaltis || sn.fase === 'penaltis') out.push(['div', 'pen', 'PENALTIS' + (sn.penaltis ? ' · ' + sn.penaltis.gl + '–' + sn.penaltis.gv + gana : '')]);
+    if (sn.estado === 'final') out.push(['div', 'fin', 'FINAL · ' + (sn.gl ?? 0) + '–' + (sn.gv ?? 0) + (sn.penaltis ? ' · PENALTIS ' + sn.penaltis.gl + '–' + sn.penaltis.gv + gana : '')]);
     return out;
   }
   function filasHtml(ctx) {
@@ -1751,21 +1751,29 @@
       f.querySelector('[data-k="w"]').style.width = (a + b ? a / (a + b) * 100 : 50).toFixed(1) + '%'; });
   }
 
+  // resultado desde nuestro lado: VICTORIA / EMPATE / DERROTA; empate con tanda → «… EN LOS PENALTIS» (como el prototipo)
+  function resultadoMP(ctx, sn) {
+    const M = ctx.mp.L && ctx.mp.V ? null : ctx.mp.L ? 'L' : 'V';
+    if (!M) return ['DERBI', '#55555B', '#26262A'];
+    const nos = M === 'L' ? sn.gl : sn.gv, ellos = M === 'L' ? sn.gv : sn.gl, g = sn.penaltis && sn.penaltis.ganador;
+    if (nos > ellos) return ['VICTORIA', '#1E8A4C', '#123A24'];
+    if (nos < ellos) return ['DERROTA', '#55555B', '#1F1F22'];
+    if (g) return g === M ? ['VICTORIA EN LOS PENALTIS', '#1E8A4C', '#123A24'] : ['DERROTA EN LOS PENALTIS', '#55555B', '#1F1F22'];
+    return ['EMPATE', '#8A8A8F', '#26262A'];
+  }
   // 9e · franja V/E/D bajo el marcador cuando acaba (y después de la última cortina)
   function finalHtml(ctx, animar) {
     const { sn } = ctx;
     if (sn.estado !== 'final' || DV.pendientes || DV.mostrado.gl !== (sn.gl || 0) || DV.mostrado.gv !== (sn.gv || 0)) return '';
-    const M = ctx.mp.L && ctx.mp.V ? null : ctx.mp.L ? 'L' : 'V';
-    const nos = M === 'L' ? sn.gl : sn.gv, ellos = M === 'L' ? sn.gv : sn.gl;
-    const r = !M ? ['DERBI', '#55555B'] : nos > ellos ? ['VICTORIA', '#1E8A4C'] : nos < ellos ? ['DERROTA', '#55555B'] : ['EMPATE', '#8A8A8F'];
-    const pen = sn.penaltis ? ' · PENALTIS ' + sn.penaltis.l + '–' + sn.penaltis.v + (sn.penaltis.ganador ? ', GANA ' + ctx.abr[sn.penaltis.ganador] : '') : '';
+    const r = resultadoMP(ctx, sn);
+    const pen = sn.penaltis ? ' · PENALTIS ' + sn.penaltis.gl + '–' + sn.penaltis.gv : '';
     return `<div class="dv-final"><i style="background:${r[1]};${animar ? 'animation:mpWipe .5s cubic-bezier(.2,.8,.2,1) both' : ''}"></i><span${animar ? ' style="animation:mpFade .3s .35s both"' : ''}>${r[0]} · ${esc(ctx.abr.L)} ${sn.gl ?? 0}–${sn.gv ?? 0} ${esc(ctx.abr.V)}${pen}</span></div>`;
   }
   // tanda de penaltis bajo el marcador: una fila por ronda (como el acta, que no dice quién tiró primero); verde = gol
   function tandaHtml(ctx) {
     const { sn } = ctx, pen = sn.penaltis;
     if (!pen && sn.fase !== 'penaltis') return '';
-    const tiros = (pen && pen.tiros) || [], vis = x => x && !pendiente('tanda-' + x.lado + x.ronda);
+    const tiros = (pen && pen.tanda) || [], vis = x => x && !pendiente('tanda-' + x.lado + x.ronda);
     const rondas = tiros.reduce((m, x) => Math.max(m, x.ronda || 0), 0), filas = [];
     const marca = x => (vis(x) ? `<i class="m ${x.gol ? 'si' : 'no'}" style="${animDe('tanda-' + x.lado + x.ronda, 'mpDot .35s cubic-bezier(.3,1.4,.5,1) both')}">${x.gol ? '✓' : '✕'}</i>` : '<i class="m"></i>');
     const nom = x => (vis(x) ? esc(quienD(ctx, x.lado, x.dorsal, x.jugador_corto, x.jugador)) : '');
@@ -1774,81 +1782,128 @@
       if (vis(a) || vis(b)) filas.push(`<div class="r"><span class="n">${nom(a)}</span>${marca(a)}<b>${r}</b>${marca(b)}<span class="n v">${nom(b)}</span></div>`);
     }
     const g = l => tiros.filter(x => x.lado === l && x.gol && vis(x)).length;
-    const gana = pen && pen.ganador && !DV.pendientes ? `<div class="gana${ctx.mp[pen.ganador] ? ' mp' : ''}">GANA LA TANDA ${esc(ctx.abr[pen.ganador])} · ${pen.l}–${pen.v}</div>` : '';
-    return `<div class="dv-tanda"><div class="cab"><span>TANDA DE PENALTIS</span><span>${esc(ctx.abr.L)} ${tiros.length ? g('L') : pen ? pen.l : 0}–${tiros.length ? g('V') : pen ? pen.v : 0} ${esc(ctx.abr.V)}</span></div>${filas.join('')}${gana}</div>`;
+    const gana = pen && pen.ganador && !DV.pendientes ? `<div class="gana${ctx.mp[pen.ganador] ? ' mp' : ''}">GANA LA TANDA ${esc(ctx.abr[pen.ganador])} · ${pen.gl}–${pen.gv}</div>` : '';
+    return `<div class="dv-tanda"><div class="cab"><span>TANDA DE PENALTIS</span><span>${esc(ctx.abr.L)} ${tiros.length ? g('L') : pen ? pen.gl : 0}–${tiros.length ? g('V') : pen ? pen.gv : 0} ${esc(ctx.abr.V)}</span></div>${filas.join('')}${gana}</div>`;
   }
   function pintarTanda(ctx) { const c = $('[data-dv="tanda"]'), h = tandaHtml(ctx); if (c && c._h !== h) { c.innerHTML = h; c._h = h; } }
   // plantilla de un equipo: porteros primero y luego por dorsal; C capitán, A asistente, P portero
   const nomPres = (ctx, l, j) => quienD(ctx, l, j.dorsal, j.jugador_corto, j.jugador).replace(/^#\d+\s+/, '');
-  const ordenPl = pl => pl.jugadores.slice().sort((a, b) => (b.portero - a.portero) || ((+a.dorsal || 99) - (+b.dorsal || 99)));
-  const posHtml = j => (j.portero ? '<i class="dv-pos">P</i>' : j.pos === 'C' ? '<i class="dv-pos c">C</i>' : j.pos === 'A' ? '<i class="dv-pos a">A</i>' : '');
+  const ordenPl = pl => pl.slice().sort((a, b) => ((b.rol === 'P') - (a.rol === 'P')) || ((+a.dorsal || 99) - (+b.dorsal || 99)));
+  const posHtml = j => (j.rol === 'P' ? '<i class="dv-pos">P</i>' : j.rol === 'C' ? '<i class="dv-pos c">C</i>' : j.rol === 'A' ? '<i class="dv-pos a">A</i>' : '');
   const escFicha = (ctx, l) => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
     return `<i style="--ring:${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></i>`; };
-  const staffTxt = pl => pl.staff.map(x => (x.cargo ? x.cargo + ' · ' : '') + x.nombre).join(' · ');
+  const staffDe = (sn, l) => (sn.staff && sn.staff[l]) || [];
+  const staffTxt = st => st.map(x => (x.cargo ? x.cargo + ' · ' : '') + x.nombre).join(' · ');
+  // «POLID. MUNICIPAL JOSE CABALLERO-PISTA 4» → «Polid. Municipal Jose Caballero-Pista 4» (el acta la da en mayúsculas)
+  const pistaBonita = s => (s || '').toLowerCase().replace(/(^|[\s\-(])(\p{L})/gu, (m, a, c) => a + c.toUpperCase()).replace(/ (De|Del|La|Las|Los|Y) /g, m => m.toLowerCase());
   // 9h · ficha del partido (columna derecha): pista, árbitros, alineaciones y cuerpo técnico, tal como los da el acta
   function fichaHtml(ctx) {
     const { sn } = ctx, P = sn.plantillas, arb = sn.arbitros || [];
     if (!sn.pista && !arb.length && !P) return '';
     const eq = l => (P && P[l] ? `<div class="eq"><div class="n">${escFicha(ctx, l)}${esc(ctx.abr[l])}</div>${ordenPl(P[l]).map(j => `<div class="j"><b>${esc(j.dorsal)}</b><span>${esc(nomPres(ctx, l, j))}</span>${posHtml(j)}</div>`).join('')}
-      ${P[l].staff.length ? `<div class="staff">Cuerpo técnico · ${esc(staffTxt(P[l]))}</div>` : ''}</div>` : '<div></div>');
+      ${staffDe(sn, l).length ? `<div class="staff">Cuerpo técnico · ${esc(staffTxt(staffDe(sn, l)))}</div>` : ''}</div>` : '<div></div>');
     return `<div class="dv-ficha"><div class="cab">FICHA DEL PARTIDO</div>
-      ${sn.pista ? `<div class="dato"><span>PISTA</span><b>${esc(sn.pista)}</b></div>` : ''}
+      ${sn.pista ? `<div class="dato"><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></div>` : ''}
       ${arb.length ? `<div class="dato"><span>${arb.length > 1 ? 'ÁRBITROS' : 'ÁRBITRO'}</span><b>${esc(arb.join(' · '))}</b></div>` : ''}
       ${P ? `<div class="eqs">${eq('L')}${eq('V')}</div><div class="ley"><span><i class="dv-pos c">C</i>capitán</span><span><i class="dv-pos a">A</i>asistente</span><span><i class="dv-pos">P</i>portero</span></div>` : ''}</div>`;
   }
   function pintarFicha(ctx) { const c = $('[data-dv="ficha"]'), h = fichaHtml(ctx); if (c && c._h !== h) { c.innerHTML = h; c._h = h; } }
-  // presentación al principio: pista y árbitro, y la plantilla de cada equipo con su cuerpo técnico (se puede saltar)
+  /* ── 10b · Presentación a pantalla completa ─────────────────────────────────────────────────────────────────────
+     Al abrirse el acta (el portal no da convocados antes: el acta se abre 0-2 min antes de empezar), una vez, si aún no hay
+     apuntes; o con «Ver alineación». Título → nuestros uno a uno cada 1,25 s (foto a color, dorsal gigante de fondo, rol,
+     apellido grande; la rejilla se rellena) → rival en lista → escudos chocando «VS» con hora y pista. */
   const PRES_VISTAS = new Set();
-  const presPantallas = sn => [sn.pista || (sn.arbitros || []).length ? ['info', 2400] : null].concat(['L', 'V'].map(l => (sn.plantillas && sn.plantillas[l] ? [l, 4200] : null))).filter(Boolean);
-  const presMs = sn => presPantallas(sn).reduce((t, [, ms]) => t + ms, 0);
-  function presentacionHtml(ctx) {
-    const { sn } = ctx, arb = sn.arbitros || [];
-    let t = 0;
-    const pantallas = presPantallas(sn).map(([k, ms]) => {
-      const d = t; t += ms;
-      let h;
-      if (k === 'info') {
-        h = `<div class="lab">PRESENTACIÓN · ${esc(((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase())}</div>
-          <div class="tit">${escFicha(ctx, 'L')}${esc(ctx.abr.L)} <span>vs</span> ${esc(ctx.abr.V)}${escFicha(ctx, 'V')}</div>
-          <div class="datos">${sn.pista ? `<div style="animation-delay:${d + 350}ms"><span>PISTA</span><b>${esc(sn.pista)}</b></div>` : ''}${arb.length ? `<div style="animation-delay:${d + 550}ms"><span>${arb.length > 1 ? 'ÁRBITROS' : 'ÁRBITRO'}</span><b>${esc(arb.join(' · '))}</b></div>` : ''}</div>`;
-      } else {
-        const pl = sn.plantillas[k], js = ordenPl(pl);
-        h = `<div class="eqcab">${escFicha(ctx, k)}${esc(ctx.nombre[k])}<span>${k === 'L' ? 'LOCAL' : 'VISITANTE'}</span></div>
-          <div class="lista" style="--filas:${Math.ceil(js.length / 2)}">${js.map((j, i) => `<div class="j" style="animation:mpUp .35s ${d + 300 + i * 70}ms both"><b>${esc(j.dorsal)}</b><span>${esc(nomPres(ctx, k, j))}</span>${posHtml(j)}</div>`).join('')}</div>
-          ${pl.staff.length ? `<div class="staff" style="animation:mpUp .35s ${d + 400 + js.length * 70}ms both"><b>CUERPO TÉCNICO</b>${esc(staffTxt(pl))}</div>` : ''}`;
-      }
-      return `<div class="dv-pres-sl" style="animation:mpPres ${ms}ms ${d}ms both">${h}</div>`;
+  const ROL_TXT = { P: ['PORTERO', '#F4F4F5', '#0D0D0E'], C: ['CAPITÁN', '#D3202A', '#FFFFFF'], A: ['ASISTENTE', '#26262A', '#F4F4F5'] };
+  let POR_ID = null;   // nuestros jugadores por id del portal (la foto es fotos/{id}.webp); sin foto, por dorsal
+  const jugadorPorId = id => {
+    if (!POR_ID) { POR_ID = {}; Object.values(A.jugadores).forEach(p => { const m = /fotos\/(\d+)\./.exec(p.foto || ''); if (m) POR_ID[m[1]] = p; }); }
+    return id ? POR_ID[id] || null : null;
+  };
+  const jugadorDe = (ctx, l, id, dorsal) => (ctx.mp[l] && jugadorPorId(id)) || jugadorMP(ctx, l, dorsal);
+  const fechaLarga = sn => { const [d, m] = (sn.fecha || '').split('/'); if (!d) return ''; const y = new Date().getFullYear(); return DIA[new Date(y, +m - 1, +d).getDay()] + ' ' + (+d) + ' ' + MES[+m - 1]; };
+  function escenaPresentacion(ctx) {
+    const { sn } = ctx, P = sn.plantillas;
+    if (!P || ESC.abierta || ESC.cargando || !A) return false;
+    const nos = ctx.mp.L ? 'L' : ctx.mp.V ? 'V' : null, riv = nos === 'L' ? 'V' : 'L';
+    if (!nos || !P[nos] || !P[nos].length) return false;
+    const mps = ordenPl(P[nos]).map(j => { const p = jugadorDe(ctx, nos, j.id_player, j.dorsal); return { j, foto: (p && p.foto) || '', ini: p ? ini(p.nombre, p.apellidos) : iniDe(j.jugador_corto || j.jugador) }; });
+    const rivs = P[riv] ? ordenPl(P[riv]) : [];
+    const estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8;
+    const liga = ((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase();
+    const escB = (l, cls) => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; return `<i class="${cls}" style="box-shadow:0 0 0 3px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></i>`; };
+    const el = document.createElement('div');
+    el.className = 'esc esc-pres' + (estr ? ' estr' : ''); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Alineación de ' + ctx.nombre[nos]);
+    el.innerHTML = `<div class="foco a"></div><div class="foco b"></div><div class="ep-stage"></div>
+      <div class="esc-top"><div class="l">PRESENTACIÓN · ${esc(liga)}</div><div class="r">${sn.pista ? `<div class="pista"><i></i><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></div>` : ''}<button type="button" class="esc-saltar" data-esc-cierra>Saltar ›</button></div></div>`;
+    document.body.appendChild(el);
+    document.documentElement.style.overflow = 'hidden';
+    const stage = el.querySelector('.ep-stage'), timers = [], luego = (ms, f) => timers.push(setTimeout(f, ms));
+    const cuando = [fechaLarga(sn), sn.hora].filter(Boolean).join(' · ');
+    // 1 · título
+    stage.innerHTML = `<div class="pr-tit">${escB(nos, 'e0')}<div class="k">ALINEACIÓN</div><div class="n">${esc(ctx.nombre[nos])}</div><div class="bar"></div><div class="s">${esc([liga, cuando].filter(Boolean).join(' · '))}</div></div>`;
+    // 2 · nuestros, uno a uno
+    let t = 1600;
+    luego(t, () => {
+      stage.innerHTML = `<div class="pr-mp"><div class="pr-hero"></div><div class="pr-rej">${mps.map(x => `<div>${x.foto ? `<div class="f" style="background-image:url('${esc(x.foto)}')"></div>` : `<div class="i">${esc(x.ini)}</div>`}<div class="d">${esc(x.j.dorsal)}</div></div>`).join('')}</div></div>`;
     });
-    return `<div class="dv-pres"><button type="button" class="dv-pres-saltar" data-pres>Saltar presentación ›</button>${pantallas.join('')}</div>`;
+    mps.forEach((x, k) => luego(t + k * 1250, () => {
+      const hero = stage.querySelector('.pr-hero'), celdas = [...stage.querySelectorAll('.pr-rej > div')];
+      if (!hero) return;
+      const r = ROL_TXT[x.j.rol] || ['JUGADOR', '#26262A', '#F4F4F5'];
+      hero.innerHTML = `<div class="pr-big"><span>${esc(x.j.dorsal)}</span></div>
+        <div class="pr-foto">${x.foto ? `<div class="f" style="background-image:url('${esc(x.foto)}')"></div>` : `<div class="i">${esc(x.ini)}</div>`}<div class="d">${esc(x.j.dorsal)}</div></div>
+        <div class="pr-nom"><div class="rol" style="background:${r[1]};color:${r[2]}">${r[0]}</div><div class="nm">${esc(x.j.nombre || '')}</div><div class="ap">${esc((x.j.apellido || x.j.jugador_corto || '').toUpperCase())}</div>
+          <div class="cnt">${p2(k + 1)} / ${p2(mps.length)}</div></div>`;
+      celdas.forEach((cl, q) => { cl.classList.toggle('on', q <= k); cl.classList.toggle('cur', q === k); });
+    }));
+    t += mps.length * 1250;
+    // 3 · rival en lista
+    if (rivs.length) {
+      luego(t, () => {
+        const pos = j => (j.rol === 'P' ? 'POR' : j.rol === 'C' ? 'CAP' : j.rol === 'A' ? 'ASIS' : '');
+        stage.innerHTML = `<div class="pr-riv"><div class="cab">${escB(riv, 'e1')}<div class="k">RIVAL</div><div class="n">${esc(ctx.nombre[riv])}</div></div>
+          <div class="lista">${rivs.map((j, q) => `<div class="j" style="animation-delay:${(0.35 + q * 0.09).toFixed(2)}s"><b>${esc(j.dorsal)}</b><span>${esc(quienD(ctx, riv, j.dorsal, j.jugador_corto, j.jugador).replace(/^#\d+\s+/, ''))}</span><em>${pos(j)}</em></div>`).join('')}</div></div>`;
+      });
+      t += 3200;
+    }
+    // 4 · escudos chocando «VS», con la hora y la pista
+    luego(t, () => {
+      const h = sn._resumen ? cuando.toUpperCase() : sn.estado === 'previa' ? (sn.hora ? sn.hora + ' · EMPIEZA' : 'EMPIEZA') : sn.estado === 'directo' || sn.estado === 'descanso' ? 'EN JUEGO' : cuando.toUpperCase();
+      stage.innerHTML = `<div class="pr-vs"><div class="fila"><div class="eq l">${escB('L', '')}<span>${esc(ctx.abr.L)}</span></div><span class="vs">VS</span><div class="eq v">${escB('V', '')}<span>${esc(ctx.abr.V)}</span></div></div>
+        <div class="chips">${h ? `<span class="h">${esc(h)}</span>` : ''}${sn.pista ? `<span class="p"><i></i>${esc(pistaBonita(sn.pista))}</span>` : ''}</div></div>`;
+    });
+    t += 3000;
+    let cerrada = false;
+    const cerrar = () => {
+      if (cerrada) return; cerrada = true;
+      timers.forEach(clearTimeout); document.removeEventListener('keydown', tecla);
+      el.classList.add('cierra'); setTimeout(() => el.remove(), 400);
+      document.documentElement.style.overflow = ''; ESC.abierta = null;
+      document.dispatchEvent(new CustomEvent('mp-escena-fin', { detail: 'presentacion' }));
+    };
+    const tecla = e => { if (e.key === 'Escape') cerrar(); };
+    document.addEventListener('keydown', tecla);
+    el.querySelector('[data-esc-cierra]').addEventListener('click', cerrar);
+    luego(t, cerrar);
+    ESC.abierta = { tipo: 'presentacion', cerrar };
+    return true;
   }
-  // en el resumen, antes de que corra el reloj; en directo, una vez, si se abre el acta antes de que haya ningún apunte
+  // en directo: una vez, al abrirse el acta antes de que haya ningún apunte (en el resumen la lanza su bucle)
   function presentarSiToca(ctx) {
-    const caja = $('[data-dv="caja"]'), { sn } = ctx;
-    if (!caja || caja.querySelector('.dv-pres') || !sn.plantillas || !MOV) return;
-    const resumen = RSM.activo && RSM.idp === DV.idp;
-    if (resumen ? RSM.fase !== 'pres' : PRES_VISTAS.has(sn.idp) || !(sn.estado === 'previa' || (sn.estado === 'directo' && (sn.periodo || 1) === 1 && !sn.eventos.length))) return;
+    const { sn } = ctx;
+    if (!sn.plantillas || !MOV || ESC.abierta || ESC.cargando || (RSM.activo && RSM.idp === DV.idp)) return;
+    if (PRES_VISTAS.has(sn.idp) || !(sn.estado === 'previa' || (sn.estado === 'directo' && (sn.periodo || 1) === 1 && !sn.eventos.length))) return;
     PRES_VISTAS.add(sn.idp);
-    const tmp = document.createElement('div'); tmp.innerHTML = presentacionHtml(ctx);
-    const el = tmp.firstElementChild; caja.appendChild(el);
-    el._t = setTimeout(quitarPresentacion, presMs(sn));
+    escenaPresentacion(ctx);
   }
-  function quitarPresentacion() { const el = $('.dv-pres'); if (el) { clearTimeout(el._t); el.remove(); } }
+  const alinBtn = sn => (sn && sn.plantillas ? '<button type="button" class="dv-alin" data-alin>▶ Ver alineación</button>' : '');
   document.addEventListener('click', e => {
-    if (!e.target.closest('[data-pres]')) return;
-    quitarPresentacion();
-    if (RSM.activo && RSM.fase === 'pres') RSM.pausa = 0;
+    if (!e.target.closest('[data-alin]')) return;
+    const sn = snapDV();
+    if (!sn) return;
+    if (MOV) escenaPresentacion(ctxDirecto(sn)); else { const f = $('[data-dv="ficha"]'); if (f) f.scrollIntoView({ block: 'start' }); }   // sin animaciones: a la ficha
   });
-  // cortinas: falta (naranja: exclusión, quién y por qué) y tanda de penaltis (la ronda, con quién tiró y si entró)
-  function cortinaFaltaHtml(ctx, e) {
-    const l = e.lado, n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
-    const sub = [motivoFalta(e), ordinal(e.periodo) + (e.t ? ' · ' + e.t : '')].filter(Boolean).join(' · ');
-    return `<div class="dv-cortina falta"><div class="dv-cesc" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>
-      <div style="min-width:0"><div class="dv-clab">EXCLUSIÓN · ${esc(ctx.abr[l])}</div><div class="dv-cgol peq">${esc(fmin(e.min_sancion || 2))}</div><div class="dv-cquien">${esc(quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador))}</div><div class="dv-csub">${esc(sub)}</div></div></div>`;
-  }
-  function cortinaTandaHtml(ctx, e) {
-    return `<div class="dv-cortina tanda"><div style="min-width:0"><div class="dv-clab">PENALTIS · RONDA ${e.ronda}</div>${e.tiros.map(x => { const n = ctx.nombre[x.lado], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
-      return `<div class="dv-ctiro"><div class="e" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div><span>${esc(quienD(ctx, x.lado, x.dorsal, x.jugador_corto, x.jugador))}</span><b class="${x.gol ? 'si' : 'no'}">${x.gol ? 'GOL' : 'FALLADO'}</b></div>`; }).join('')}</div></div>`;
-  }
+
   function pintarFinal() {
     const sn = snapDV(), cont = $('[data-dv="final"]');
     if (!sn || !cont) return;
@@ -1873,6 +1928,94 @@
   }
   function pintarHoy() { const c = $('[data-dv="hoy"]'); if (c) c.innerHTML = hoyHtml(); }
 
+  /* ── 10a · La pista: mapa a pantalla completa (prototipo «Pista intro.html») ────────────────────────────────────
+     Al abrir el partido en la previa o la primera vez en la sesión: la Comunidad se dibuja, el resto de pistas como puntos,
+     vuelo a la pista, pin con onda y el nombre palabra a palabra. Solo pistas con coordenadas comprobadas (data/venues_geo.json);
+     sin ellas no hay escena (no se inventa el sitio). Leaflet y el mapa se cargan solo cuando hacen falta. */
+  const ESC = { abierta: null, cargando: false };
+  let leafletP = null, geoP = null;
+  function cargarLeaflet() {
+    if (window.L && window.L.map) return Promise.resolve();
+    if (!leafletP) leafletP = new Promise((ok, ko) => {
+      const l = document.createElement('link');
+      Object.assign(l, { rel: 'stylesheet', href: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', integrity: 'sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H', crossOrigin: 'anonymous' });
+      const j = document.createElement('script');
+      Object.assign(j, { src: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', integrity: 'sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH', crossOrigin: 'anonymous', onload: ok, onerror: ko });
+      document.head.append(l, j);
+    }).catch(e => { leafletP = null; throw e; });
+    return leafletP;
+  }
+  const cargarGeo = () => geoP || (geoP = fetch('data/venues_geo.json').then(r => r.json()).catch(() => { geoP = null; return null; }));
+  // «…, Calle de Guadarrama, Galapagar, Comunidad de Madrid, 28260, España» → «Calle de Guadarrama · Galapagar»
+  const lugarPista = d => { const p = (d || '').split(',').map(x => x.trim()).filter(x => x && !/^\d+$/.test(x) && !/^Comunidad de Madrid$|^España$/i.test(x)); return p.length <= 2 ? p.slice(-1).join('') : p.slice(-2).join(' · '); };
+  function escenaPista(sn) {
+    const key = (sn && sn.pista || '').toUpperCase();
+    if (!key || ESC.abierta || ESC.cargando) return Promise.resolve(false);
+    ESC.cargando = true;
+    return Promise.all([cargarGeo(), cargarLeaflet()]).then(([geo]) => {
+      ESC.cargando = false;
+      const v = geo && geo.venues[key];
+      if (!v || ESC.abierta) return false;
+      const d0 = new Date(), hoyDM = p2(d0.getDate()) + '/' + p2(d0.getMonth() + 1);
+      const [dd, mm] = (sn.fecha || '').split('/'), cuando = sn.fecha && sn.fecha !== hoyDM && dd ? 'LA PISTA · ' + DIA[new Date(d0.getFullYear(), +mm - 1, +dd).getDay()] + ' ' + (+dd) + ' ' + MES[+mm - 1] : 'LA PISTA DE HOY';
+      const el = document.createElement('div');
+      el.className = 'esc esc-pista'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'La pista: ' + key);
+      el.innerHTML = `<div class="ep-mapa"></div><div class="ep-vig"></div><div class="ep-cam"><i></i><i></i><i></i><i></i></div>
+        <div class="ep-hud"><span>${esc(cuando)}</span><b data-coord></b></div><button type="button" class="esc-saltar" data-esc-cierra>Saltar ›</button>
+        <div class="ep-card"><div class="ep-k">PISTA</div><div class="ep-n">${key.split(' ').map((w, i) => `<span style="animation-delay:${(0.12 + i * 0.07).toFixed(2)}s">${esc(w)}</span>`).join(' ')}</div><div class="ep-s">${esc(lugarPista(v.display))}</div><div class="ep-bar"></div></div>`;
+      document.body.appendChild(el);
+      document.documentElement.style.overflow = 'hidden';
+      const map = L.map(el.querySelector('.ep-mapa'), { zoomControl: false, attributionControl: true, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false, zoomSnap: 0 });
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors', maxZoom: 19 }).addTo(map);
+      const fmtC = ll => Math.abs(ll.lat).toFixed(4) + ' N · ' + Math.abs(ll.lng).toFixed(4) + ' O', coord = el.querySelector('[data-coord]');
+      map.on('move', () => { coord.textContent = fmtC(map.getCenter()); });
+      const target = [v.lat, v.lon], timers = [], luego = (ms, f) => timers.push(setTimeout(f, MOV ? ms : 0));
+      map.setView(MOV ? [40.50, -3.72] : target, MOV ? (innerWidth < 600 ? 7.6 : 8.6) : 16, { animate: false });
+      coord.textContent = fmtC(map.getCenter());
+      if (geo.madrid_polygon && geo.madrid_polygon.length) {   // silueta de la Comunidad, que se dibuja
+        const poly = L.polygon(geo.madrid_polygon.map(([lo, la]) => [la, lo]), { color: '#D3202A', weight: 2, fillColor: '#D3202A', fillOpacity: .06, interactive: false }).addTo(map);
+        const pe = poly.getElement();
+        if (pe && MOV) { const len = pe.getTotalLength(); pe.style.strokeDasharray = len; pe.style.strokeDashoffset = len; pe.style.animation = 'mpDraw 1.6s cubic-bezier(.6,0,.2,1) forwards'; }
+      }
+      if (MOV) L.marker([40.36, -3.70], { interactive: false, icon: L.divIcon({ className: '', html: '<div class="ep-lbl" data-mlbl>MADRID</div>', iconSize: [0, 0] }) }).addTo(map);
+      Object.entries(geo.venues).forEach(([k, p], i) => { if (k !== key) L.marker([p.lat, p.lon], { interactive: false, icon: L.divIcon({ className: '', html: `<div class="ep-vdot" style="animation-delay:${(0.5 + i * 0.04).toFixed(2)}s"></div>`, iconSize: [8, 8], iconAnchor: [4, 4] }) }).addTo(map); });
+      let cerrada = false;
+      const cerrar = () => {
+        if (cerrada) return; cerrada = true;
+        timers.forEach(clearTimeout); document.removeEventListener('keydown', tecla);
+        el.classList.add('cierra');
+        setTimeout(() => { try { map.remove(); } catch (e) { /* ya quitado */ } el.remove(); }, MOV ? 400 : 0);
+        document.documentElement.style.overflow = ''; ESC.abierta = null;
+        document.dispatchEvent(new CustomEvent('mp-escena-fin', { detail: 'pista' }));
+      };
+      const tecla = e => { if (e.key === 'Escape') cerrar(); };
+      document.addEventListener('keydown', tecla);
+      el.querySelector('[data-esc-cierra]').addEventListener('click', cerrar);
+      ESC.abierta = { tipo: 'pista', cerrar };
+      luego(1900, () => { const m = el.querySelector('[data-mlbl]'); if (m) m.style.opacity = 0; if (MOV) map.flyTo(target, 16, { duration: 3.8, easeLinearity: 0.2 }); });
+      luego(5800, () => {   // pin con onda, el pin queda por encima de la tarjeta y el nombre entra
+        L.marker(target, { interactive: false, icon: L.divIcon({ className: '', html: '<div class="ep-pin"><em></em><em></em><span></span></div>', iconSize: [18, 18], iconAnchor: [9, 9] }) }).addTo(map);
+        map.panBy([0, Math.round(innerHeight * 0.16)], { animate: MOV, duration: .6 });
+        el.querySelector('.ep-cam').style.opacity = 0; el.querySelector('.ep-card').classList.add('on');
+      });
+      timers.push(setTimeout(cerrar, MOV ? 9800 : 3000));
+      return true;
+    }).catch(() => { ESC.cargando = false; return false; });
+  }
+  // en la previa, o la primera vez que se abre el partido en esta sesión
+  function pistaSiToca(sn) {
+    if (!sn || !sn.pista) return;
+    const k = 'mp-pista-' + sn.idp;
+    let visto = false;
+    try { visto = sessionStorage.getItem(k) === '1'; } catch (e) { /* sin almacenamiento */ }
+    if (visto && sn.estado !== 'previa') return;
+    try { sessionStorage.setItem(k, '1'); } catch (e) { /* sin almacenamiento */ }
+    escenaPista(sn);
+  }
+  const pistaChip = sn => (sn && sn.pista ? `<button type="button" class="dv-pista" data-pista title="Ver la pista en el mapa"><i></i><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></button>` : '');
+  document.addEventListener('click', e => { if (e.target.closest('[data-pista]')) escenaPista(snapDV()); });
+  document.addEventListener('mp-escena-fin', () => { const sn = snapDV(); if (sn && $('[data-dv="caja"]')) presentarSiToca(ctxDirecto(sn)); });
+
   /* ── Modo resumen (#/directo/{idp}/resumen): un partido terminado se vuelve a «jugar» deprisa ─────────────────
      El reloj corre (el partido entero en unos 25 s y parado mientras pasa cada cortina de gol); los eventos entran a su
      minuto, el marcador sube con las cortinas, y al final aparecen los porteros, los tiros y la franja del resultado.
@@ -1895,9 +2038,13 @@
   }
   function pasoResumen() {
     if (!RSM.activo || !new RegExp('^#/directo/' + RSM.idp + '/resumen').test(location.hash.replace(/%2F/g, '/'))) return pararResumen();
-    if (DV.pendientes > 0 || Date.now() < RSM.pausa || Date.now() - (DV.finCortina || 0) < 1300 || RSM.fase === 'fin') return;
+    if (DV.pendientes > 0 || Date.now() < RSM.pausa || Date.now() - (DV.finCortina || 0) < 1300 || RSM.fase === 'fin' || ESC.abierta || ESC.cargando) return;
     const S = RSM.final, dur = S.duracion_periodo || 1200;
-    if (RSM.fase === 'pres') { quitarPresentacion(); RSM.fase = ''; RSM.pausa = Date.now() + 500; return; }
+    if (RSM.fase === 'pista') {   // la escena de la pista ya pasó (o no tocaba): la presentación, si hay convocados
+      RSM.fase = S.plantillas && MOV && escenaPresentacion(ctxDirecto(snapDV())) ? 'pres' : '';
+      return;
+    }
+    if (RSM.fase === 'pres') { RSM.fase = ''; RSM.pausa = Date.now() + 500; return; }
     if (RSM.fase === 'p2fin' || RSM.fase === 'pen') return tandaResumen();
     if (RSM.fase === 'p1fin') { RSM.fase = 'descanso'; RSM.pausa = Date.now() + 1600; return aplicarFotoResumen(fotoResumen(S, dur)); }
     if (RSM.fase === 'descanso') RSM.fase = 'p2';
@@ -1906,20 +2053,12 @@
     if (RSM.fase === '' && RSM.T >= dur) { RSM.T = dur; RSM.fase = 'p1fin'; } else if (RSM.T >= 2 * dur) { RSM.T = 2 * dur; RSM.fase = 'p2fin'; }
     aplicarFotoResumen(fotoResumen(S, RSM.T));
   }
-  // la tanda, ronda a ronda (cada fila del acta es una ronda; no dice quién tiró primero): cada una con su cortina
-  function tandaResumen() {
-    const S = RSM.final, dur = S.duracion_periodo || 1200, tiros = (S.penaltis && S.penaltis.tiros) || [];
-    if (!S.penaltis || !MOV) return finResumen();
-    const rondas = tiros.reduce((m, x) => Math.max(m, x.ronda || 0), 0);
-    if (RSM.fase !== 'pen') { RSM.fase = 'pen'; RSM.ronda = 0; } else if (RSM.ronda >= rondas) return finResumen(); else RSM.ronda++;
-    const hasta = tiros.filter(x => (x.ronda || 0) <= RSM.ronda);
-    const pen = rondas ? { l: hasta.filter(x => x.lado === 'L' && x.gol).length, v: hasta.filter(x => x.lado === 'V' && x.gol).length, tiros: hasta, ganador: null } : S.penaltis;
-    RSM.pausa = Date.now() + (RSM.ronda ? 500 : 1300);
-    aplicarFotoResumen(Object.assign(fotoResumen(S, 2 * dur), { fase: 'penaltis', penaltis: pen }));
-  }
+  // la tanda: se aplica el final (con la tanda entera y su ganador) y la escena 10d la cuenta lanzamiento a lanzamiento
+  const tandaResumen = () => finResumen();
   function finResumen() {
     RSM.fase = 'fin'; clearInterval(RSM.timer); RSM.timer = null;
     aplicarFotoResumen(Object.assign({}, RSM.final, { _resumen: true }));
+    quizasResumen();   // si no quedó nada por anunciar
   }
   function pararResumen() { clearInterval(RSM.timer); clearTimeout(RSM.tPen); RSM.timer = RSM.tPen = null; RSM.activo = false; }
   // devuelve el aviso de espera si aún no tenemos el partido; si no, deja preparada la simulación (o el final, si se saltó)
@@ -1928,9 +2067,9 @@
     if (!S) { cargarPartidoResumen(idp); return '<div class="loading" data-dv="espera">Cargando el resumen…</div>'; }
     if (S.estado !== 'final') { pararResumen(); return null; }   // aún se juega: la página del directo
     pararResumen();
-    Object.assign(RSM, { activo: true, idp, final: S, T: 0, fase: '', nuevos: [], pausa: Date.now() + 900 });
-    if (RSM.saltado || !MOV) { RSM.fase = 'fin'; RSM.foto = Object.assign({}, S, { _resumen: true }); return null; }
-    if (S.plantillas) { RSM.fase = 'pres'; RSM.pausa = Date.now() + presMs(S); }   // primero, la presentación
+    Object.assign(RSM, { activo: true, idp, final: S, T: 0, fase: '', nuevos: [], pausa: Date.now() + 900, resumenVisto: false });
+    if (RSM.saltado || !MOV) { RSM.fase = 'fin'; RSM.foto = Object.assign({}, S, { _resumen: true }); setTimeout(() => quizasResumen(true), 0); return null; }   // directo al final: el resumen
+    RSM.fase = 'pista';   // primero la pista (si toca), luego la presentación
     RSM.foto = fotoResumen(S, 0);
     RSM.timer = setInterval(pasoResumen, 100);
     return null;
@@ -1955,6 +2094,7 @@
   // sin datos del partido: aún conectando, sin conexión (se reintenta) o el partido no está hoy en el directo
   const esperaTxt = () => (LIVE.ok === false && !LIVE.cargado ? 'Sin conexión con el directo · reintentando…' : LIVE.cargado ? 'Este partido no está ahora en el directo.' : 'Conectando con el directo…');
   function vDirecto(idp, modo) {
+    if (ESC.abierta && ESC.abierta.tipo === 'resumen') ESC.abierta.cerrar();
     DV.idp = idp; DV.gen++;
     if (modo === 'resumen') { const espera = prepararResumen(idp); if (espera) { DV.vacio = true; return espera; } } else { pararResumen(); RSM.saltado = false; }
     const sn = snapDV();
@@ -1963,20 +2103,23 @@
     const ctx = ctxDirecto(sn), [f1, f2] = rellenoDirecto(sn), ch = chipDirecto(sn);
     // se pinta quieto: lo que ya hay no se anima
     Object.assign(DV, { mostrado: { gl: sn.gl || 0, gv: sn.gv || 0 }, visto: fuenteNuevos().length, aparece: {}, pendientes: 0, cola: MPDirecto.colaGoles(mostrarGol),
-      penVistos: new Set(), situClave: '', tiros: {}, listo: false, tanda: new Set(((sn.penaltis && sn.penaltis.tiros) || []).map(x => x.lado + x.ronda)) });
+      penVistos: new Set(), situClave: '', tiros: {}, listo: false, colaFin: 0, ganVisto: !!(sn.penaltis && sn.penaltis.ganador), tanda: new Set(((sn.penaltis && sn.penaltis.tanda) || []).map(x => x.lado + x.ronda)) });
     contarTiros(ctx, []);
     excluidos(ctx).L.concat(excluidos(ctx).V).forEach(p => DV.penVistos.add(p.id));
     { const si = situacionPista(ctx, excluidos(ctx)); DV.situClave = si ? si.label + si.n : ''; }
-    setTimeout(() => { DV.listo = true; const c2 = ctxDirecto(snapDV() || sn); pintarSituacion(c2); presentarSiToca(c2); }, 0);
+    setTimeout(() => { DV.listo = true; const c2 = ctxDirecto(snapDV() || sn); pintarSituacion(c2); pistaSiToca(c2.sn); presentarSiToca(c2); }, 0);
     DV.claves = new Set(itemsFeed(ctx).map(([, id]) => id));
     const eqHtml = l => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
       return `<div class="dv-eq"><div class="dv-esc" data-dv="esc${l}" style="box-shadow:0 0 0 2px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div><span class="dv-abr">${esc(ctx.abr[l])}</span><div class="dv-pens" data-dv="pen${l}"></div></div>`; };
     const resumenHtml = barraResumen();
     if (modo === 'resumen') RSM.saltado = false;
-    return `${resumenHtml}<div class="dv">
+    const verRes = modo === 'resumen' ? '<button type="button" class="dv-alin" data-ver-resumen>▶ Resumen final</button>'
+      : sn.estado === 'final' ? `<a class="dv-alin" href="#/directo/${encodeURIComponent(idp)}/resumen">▶ Ver resumen</a>` : '';
+    const arriba = verRes + alinBtn(sn) + pistaChip(sn);
+    return `${arriba ? `<div class="dv-arriba">${arriba}</div>` : ''}${resumenHtml}<div class="dv">
       <div class="dv-izq">
         <div class="dv-caja" data-dv="caja">
-          <div class="dv-cab"><div class="dv-liga">${esc(((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase())}</div><div class="dv-chip${ch.vivo ? ' vivo' : ''}" data-dv="chip">${chipHtml(ch)}</div></div>
+          <div class="dv-cab"><div class="dv-cabtx"><div class="dv-liga">${esc(((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase())}</div>${sn.pista ? `<div class="dv-sede">${esc(pistaBonita(sn.pista))}</div>` : ''}</div><div class="dv-chip${ch.vivo ? ' vivo' : ''}" data-dv="chip">${chipHtml(ch)}</div></div>
           <div class="dv-marcador">${eqHtml('L')}<div class="dv-num">${rodilloD(DV.mostrado.gl, 'L')}<span class="dv-guion">–</span>${rodilloD(DV.mostrado.gv, 'V')}</div>${eqHtml('V')}</div>
           <div class="dv-situ-caja" data-dv="situ"></div>
           ${ctx.dur ? `<div class="dv-linea"><div class="dv-tramos"><div><i data-dv="f1" style="width:${f1}%"></i></div><div><i data-dv="f2" style="width:${f2}%"></i></div></div><div data-dv="marcas">${marcasLinea(ctx)}</div></div>
@@ -2003,27 +2146,219 @@
     if (!sn || DV.pendientes || (DV.mostrado.gl === (sn.gl || 0) && DV.mostrado.gv === (sn.gv || 0))) return;
     DV.mostrado = { gl: sn.gl || 0, gv: sn.gv || 0 }; pintarMarcador();
   }
-  function cortinaHtml(ctx, e) {
-    const l = e.lado, sub = [e.asist_dorsal || e.asist_jugador ? 'Asist. ' + quienD(ctx, l, e.asist_dorsal, e.asist_corto, e.asist_jugador) : 'Sin asistencia',
-      situacionGol(e, ctx.sn.eventos, ctx.dur), ordinal(e.periodo) + (e.t ? ' · ' + e.t : '')].filter(Boolean).join(' · ');
-    const quien = `<div style="min-width:0"><div class="dv-cgol">GOL</div><div class="dv-cquien">${esc(quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador))}</div><div class="dv-csub">${esc(sub)}</div></div>`;
-    if (ctx.mp[l]) { const p = jugadorMP(ctx, l, e.dorsal);
-      return `<div class="dv-cortina mp"><div class="dv-cfoto ini">${p ? esc(ini(p.nombre, p.apellidos)) : ''}${p ? photo(p.foto, 'grayscale(1)', '50% 15%') : ''}<span>${esc(e.dorsal || '')}</span></div>${quien}</div>`; }
-    const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
-    return `<div class="dv-cortina"><div class="dv-cesc" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>${quien}</div>`;
+  /* ── 10c · Gol a pantalla completa ──────────────────────────────────────────────────────────────────────────────
+     Nuestro: cortina roja (5 s) con la foto a color del goleador delante y la del asistente detrás («ASIST.»); sin
+     asistencia, solo el goleador. Rival: cortina gris (4 s) con su escudo. Sin foto (o menores, que nunca la tienen): iniciales. */
+  const DUR_GOL = { mp: 5000, riv: 4000 }, DUR_FALTA = 5000, DUR_CORTA = 2200;
+  const T_TIRO = 2300, T_GANA = 3200;   // 10d: cada lanzamiento (tarjeta y, a los 1,3 s, el sello) y la tarjeta del ganador
+  const durAnuncio = (ctx, e) => (e.tipo === 'GOL' ? (ctx.mp[e.lado] ? DUR_GOL.mp : DUR_GOL.riv) : e.tipo === 'FALTA' ? DUR_FALTA
+    : e.tipo === 'TANDA' ? e.nuevos.length * T_TIRO + (e.ganador ? T_GANA : 500) : DUR_CORTA);
+  const iniDe = n => (n || '').replace(/\./g, '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  function escenaGolHtml(ctx, e) {
+    const l = e.lado, estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8 ? ' estr' : '';
+    const parte = ordinal(e.periodo) + (e.t ? ' · ' + e.t : ''), marc = e.marcador ? ctx.abr.L + ' ' + e.marcador.replace('-', '–') + ' ' + ctx.abr.V : '';
+    const quien = quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador), hayA = !!(e.asist_dorsal || e.asist_jugador);
+    const asWho = hayA ? quienD(ctx, l, e.asist_dorsal, e.asist_corto, e.asist_jugador) : '';
+    if (!ctx.mp[l]) {
+      const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
+      const sub = [hayA ? 'Asist. ' + asWho : 'Sin asistencia', parte, marc].filter(Boolean).join(' · ');
+      return `<div class="esc-gol riv${estr}" role="status" aria-label="Gol de ${esc(ctx.abr[l])}"><div class="eg-cortina"><div class="eg-esc" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>
+        <div class="eg-tx"><div class="eg-gol">GOL</div><div class="eg-quien">${esc(quien)}</div><div class="eg-sub">${esc(sub)}</div></div></div></div>`;
+    }
+    const foto = (p, nombre) => (p && p.foto ? `<div class="f" style="background-image:url('${esc(p.foto)}')"></div>` : `<div class="i">${esc(p ? ini(p.nombre, p.apellidos) : iniDe(nombre))}</div>`);
+    const s1 = jugadorDe(ctx, l, e.id_player, e.dorsal), a1 = hayA ? jugadorDe(ctx, l, e.assist_id_player, e.asist_dorsal) : null;
+    const nota = situacionGol(e, ctx.sn.eventos, ctx.dur);
+    return `<div class="esc-gol${estr}" role="status" aria-label="Gol de ${esc(ctx.abr[l])}"><div class="eg-cortina">
+      <div class="eg-fotos${hayA ? ' con-a' : ''}">
+        ${hayA ? `<div class="eg-as">${foto(a1, e.asist_corto || e.asist_jugador)}<div class="tag">ASIST.</div><div class="d">${esc(e.asist_dorsal || '')}</div></div>` : ''}
+        <div class="eg-sc">${foto(s1, e.jugador_corto || e.jugador)}<div class="d">${esc(e.dorsal || '')}</div></div>
+      </div>
+      <div class="eg-tx"><div class="eg-gol">GOL</div><div class="eg-quien">${esc(quien)}</div>${hayA ? `<div class="eg-asis">Asistencia de <b>${esc(asWho)}</b></div>` : ''}
+        <div class="eg-chips">${[parte, marc, nota.toUpperCase()].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}</div></div>
+    </div></div>`;
   }
+
+  /* ── 10f · Falta a pantalla completa ────────────────────────────────────────────────────────────────────────────
+     Foto del sancionado en blanco y negro (la única escena en B/N) y caen 6 barrotes con rebote y 2 travesaños; rival sin
+     foto: su escudo entre rejas. «EXCLUSIÓN · equipo», cuenta atrás grande (la sanción, corriendo deprisa) con barra naranja,
+     nombre y «Motivo (COD)». Sin candado. */
+  function escenaFaltaHtml(ctx, e) {
+    const l = e.lado, estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8 ? ' estr' : '';
+    let dentro;
+    if (ctx.mp[l]) { const p = jugadorDe(ctx, l, e.id_player, e.dorsal); dentro = p && p.foto ? `<div class="f" style="background-image:url('${esc(p.foto)}')"></div>` : `<div class="i">${esc(p ? ini(p.nombre, p.apellidos) : iniDe(e.jugador_corto || e.jugador))}</div>`; }
+    else { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; dentro = `<div class="e" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>`; }
+    const sub = [motivoFalta(e), ordinal(e.periodo) + (e.t ? ' · ' + e.t : '')].filter(Boolean).join(' · ');
+    return `<div class="esc-falta${estr}" role="status" aria-label="Exclusión de ${esc(ctx.abr[l])}">
+      <div class="ef-foto"><div class="ef-caja">${dentro}<div class="velo"></div>
+        <div class="ef-rejas">${[0, 1, 2, 3, 4, 5].map(k => `<i style="animation-delay:${(0.45 + k * 0.07).toFixed(2)}s"></i>`).join('')}</div>
+        <div class="ef-trav a"></div><div class="ef-trav b"></div><div class="d">${esc(e.dorsal || '')}</div></div></div>
+      <div class="ef-tx"><div class="ef-pill">EXCLUSIÓN · ${esc(ctx.abr[l])}</div><div class="ef-reloj">${mmssD((e.min_sancion || 2) * 60)}</div><div class="ef-barra"><i></i></div>
+        <div class="ef-quien">${esc(quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador))}</div><div class="ef-sub">${esc(sub)}</div></div>
+    </div>`;
+  }
+
+  /* ── 10d · Penaltis a pantalla completa ─────────────────────────────────────────────────────────────────────────
+     Rodillo de la tanda entre los escudos, la tarjeta de cada lanzador (foto a color si es nuestro; escudo si es rival) con
+     «LANZA · RONDA n», el sello GOL / FALLA, las casillas de cada equipo y, al acabar, quién gana la tanda. El acta da los
+     dos tiros de cada ronda a la vez: van por rondas, el local primero. */
+  function escenaPenaltis(ctx, e, alFin) {
+    const { sn } = ctx, tiros = e.tiros, estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8;
+    const rondas = Math.max(3, tiros.reduce((m, x) => Math.max(m, x.ronda || 0), 0));
+    const escP = l => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; return `background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}`; };
+    const resueltos = new Set(tiros.slice(0, e.desde).map(x => x.lado + x.ronda));
+    const goles = l => tiros.filter(x => x.lado === l && x.gol && resueltos.has(x.lado + x.ronda)).length;
+    const el = document.createElement('div');
+    el.className = 'esc esc-pen' + (estr ? ' estr' : ''); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Tanda de penaltis');
+    const rod = l => `<div class="pn-rod"><div data-rod="${l}" style="transform:translateY(-${goles(l)}em)">${Array.from({ length: 16 }, (_, d) => `<div>${d}</div>`).join('')}</div></div>`;
+    el.innerHTML = `<div class="esc-top"><div class="l">${sn._resumen ? 'RESUMEN' : '● EN DIRECTO'} · PENALTIS</div><div class="r">${sn.pista ? `<div class="pista"><i></i><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></div>` : ''}<button type="button" class="esc-saltar" data-esc-cierra>Saltar ›</button></div></div>
+      <div class="pn"><div class="pn-k">TANDA DE PENALTIS</div>
+        <div class="pn-marc"><i style="box-shadow:0 0 0 2px ${ctx.mp.L ? RED : '#FFFFFF'};${escP('L')}"></i><div class="pn-num">${rod('L')}<span>–</span>${rod('V')}</div><i style="box-shadow:0 0 0 2px ${ctx.mp.V ? RED : '#FFFFFF'};${escP('V')}"></i></div>
+        <div class="pn-stage"></div><div class="pn-filas" style="--n:${rondas}"></div></div>`;
+    document.body.appendChild(el);
+    const stage = el.querySelector('.pn-stage'), filas = el.querySelector('.pn-filas'), timers = [], luego = (ms, f) => timers.push(setTimeout(f, ms));
+    // casillas: gol (rojo si es nuestro, blanco si es del rival), fallo «×», el que tira ahora con el aro que late
+    const pintaFilas = (cur, recien) => { filas.innerHTML = ['L', 'V'].map(l => `<div class="pn-fila"><span>${esc(ctx.abr[l])}</span>${Array.from({ length: rondas }, (_, r) => {
+      const x = tiros.find(t => t.lado === l && t.ronda === r + 1), k = x && x.lado + x.ronda, hecho = k && resueltos.has(k);
+      const bg = hecho ? (x.gol ? (ctx.mp[l] ? RED : '#F4F4F5') : '#3A3A3F') : '', ink = hecho && x.gol && !ctx.mp[l] ? '#0D0D0E' : '';
+      return `<i class="${k && k === cur ? 'cur' : hecho && k === recien ? 'res' : ''}" style="${bg ? `background:${bg};` : ''}${ink ? `color:${ink}` : ''}">${hecho && !x.gol ? '×' : ''}</i>`; }).join('')}</div>`).join(''); };
+    pintaFilas(null, null);
+    e.nuevos.forEach((x, q) => {
+      const t0 = q * T_TIRO, k = x.lado + x.ronda, mp = ctx.mp[x.lado];
+      luego(t0, () => {
+        let card;
+        if (mp) { const p = jugadorDe(ctx, x.lado, x.id_player, x.dorsal); card = `<div class="pn-card mp">${p && p.foto ? `<div class="f" style="background-image:url('${esc(p.foto)}')"></div>` : `<div class="i">${esc(p ? ini(p.nombre, p.apellidos) : iniDe(x.jugador_corto || x.jugador))}</div>`}`; }
+        else card = `<div class="pn-card riv"><div class="e" style="${escP(x.lado)}"></div>`;
+        stage.innerHTML = card + `<div class="pie"><small>LANZA · RONDA ${x.ronda}</small><b>${esc(quienD(ctx, x.lado, x.dorsal, x.jugador_corto, x.jugador))}</b></div></div>`;
+        pintaFilas(k, null);
+      });
+      luego(t0 + 1300, () => {   // el sello y el rodillo
+        resueltos.add(k);
+        const bg = x.gol ? (mp ? RED : '#F4F4F5') : '#3A3A3F', ink = x.gol && !mp ? '#0D0D0E' : '#FFFFFF';
+        stage.insertAdjacentHTML('beforeend', `<div class="pn-sello"><b style="background:${bg};color:${ink}">${x.gol ? 'GOL' : 'FALLA'}</b></div>`);
+        const r = el.querySelector(`[data-rod="${x.lado}"]`); if (r) r.style.transform = `translateY(-${goles(x.lado)}em)`;
+        pintaFilas(null, k);
+      });
+    });
+    let t = e.nuevos.length * T_TIRO;
+    if (e.ganador) {   // quién gana la tanda: verde si somos nosotros
+      luego(t, () => { stage.innerHTML = `<div class="pn-gana" style="background:${ctx.mp[e.ganador] ? '#1E8A4C' : '#3A3A3F'}"><i style="${escP(e.ganador)}"></i><b>${esc(ctx.abr[e.ganador])} GANA LA TANDA</b></div>`; });
+      t += T_GANA;
+    } else t += 500;
+    let cerrada = false;
+    const cerrar = () => { if (cerrada) return; cerrada = true; timers.forEach(clearTimeout); el.classList.add('cierra'); setTimeout(() => el.remove(), 300); alFin(); };
+    el.querySelector('[data-esc-cierra]').addEventListener('click', cerrar);
+    luego(t, cerrar);
+  }
+
+  /* ── 10e · Resumen final a pantalla completa ────────────────────────────────────────────────────────────────────
+     Resultado (V/E/D, «… EN LOS PENALTIS»), marcador y penaltis, pista; goles con foto del goleador y del asistente (a color;
+     rival con su escudo), porteros con sus paradas y la tanda. Se desplaza dentro de la escena; «Cerrar» o Esc la quitan. */
+  function escenaResumen(ctx) {
+    const { sn } = ctx;
+    if (!sn || sn.estado !== 'final' || ESC.abierta || ESC.cargando) return false;
+    const r = resultadoMP(ctx, sn), pen = sn.penaltis;
+    const escR = l => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; return `background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}`; };
+    const fotoB = (p, nombre) => (p && p.foto ? `style="background-image:url('${esc(p.foto)}')">` : `>${esc(p ? ini(p.nombre, p.apellidos) : iniDe(nombre))}`);
+    const goles = sn.eventos.filter(e => e.tipo === 'GOL').map((e, q) => {
+      const l = e.lado, mp = ctx.mp[l], hayA = !!(e.asist_dorsal || e.asist_jugador);
+      let ph;
+      if (mp) { const s1 = jugadorDe(ctx, l, e.id_player, e.dorsal), a1 = hayA ? jugadorDe(ctx, l, e.assist_id_player, e.asist_dorsal) : null;
+        ph = `${hayA ? `<div class="a" ${fotoB(a1, e.asist_corto || e.asist_jugador)}</div>` : ''}<div class="s" ${fotoB(s1, e.jugador_corto || e.jugador)}</div>`; }
+      else ph = `<div class="e" style="${escR(l)}"></div>`;
+      const sub = [hayA ? 'Asist. ' + quienD(ctx, l, e.asist_dorsal, e.asist_corto, e.asist_jugador) : 'Sin asistencia', situacionGol(e, sn.eventos, ctx.dur)].filter(Boolean).join(' · ');
+      return `<div class="er-gol${mp ? ' mp' : ''}" style="animation-delay:${(0.7 + q * 0.12).toFixed(2)}s"><span class="t">${esc(ordinal(e.periodo) + ' ' + (e.t || ''))}</span><div class="erf">${ph}</div>
+        <div class="q"><b>${esc(quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador))}</b><span>${esc(sub)}</span></div><span class="m">${esc((e.marcador || '').replace('-', '–'))}</span></div>`;
+    }).join('');
+    const pors = (sn.porteros || []).filter(p => p.tiros).map((p, q) => {
+      const mp = ctx.mp[p.lado], pj = mp ? jugadorDe(ctx, p.lado, p.id_player, p.dorsal) : null, pc = pctP(p);
+      return `<div class="er-por" style="animation-delay:${(0.8 + q * 0.1).toFixed(1)}s"><div class="erf" ${fotoB(pj, p.jugador_corto || p.jugador)}</div>
+        <div class="d"><small>PORTERO · ${esc(ctx.abr[p.lado])}</small><b>${esc(quienD(ctx, p.lado, p.dorsal, p.jugador_corto, p.jugador))}</b>
+          <div class="n"><strong>${pc == null ? '—' : dec(pc) + '%'}</strong><span>${(p.tiros || 0) - (p.gc || 0)}/${p.tiros || 0} PARADAS</span></div>
+          <div class="bar"><i style="width:${pc || 0}%;background:${mp ? RED : '#F4F4F5'}"></i></div></div></div>`;
+    }).join('');
+    let penHtml = '';
+    if (pen && (pen.tanda || []).length) {
+      const n = Math.max(3, pen.tanda.reduce((m, x) => Math.max(m, x.ronda || 0), 0));
+      penHtml = `<div class="er-pen"><div class="er-t" style="padding:0;border:0">PENALTIS · ${pen.gl}–${pen.gv}${pen.ganador ? ' · GANA ' + esc(ctx.abr[pen.ganador]) : ''}</div>${['L', 'V'].map(l => `<div class="fila" style="--n:${n}"><span>${esc(ctx.abr[l])}</span>${Array.from({ length: n }, (_, k) => {
+        const x = pen.tanda.find(t => t.lado === l && t.ronda === k + 1);
+        return `<i style="${x ? `background:${x.gol ? (ctx.mp[l] ? RED : '#F4F4F5') : '#3A3A3F'};${x.gol && !ctx.mp[l] ? 'color:#0D0D0E' : ''}` : ''}">${x && !x.gol ? '×' : ''}</i>`; }).join('')}</div>`).join('')}</div>`;
+    }
+    const el = document.createElement('div');
+    el.className = 'esc esc-res'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Resumen del partido');
+    el.style.background = `radial-gradient(ellipse at 50% -10%, ${r[2]} 0%, #0D0D0E 55%)`;
+    el.innerHTML = `<div class="esc-top"><div class="l">RESUMEN · ${esc(fechaLarga(sn))}</div><div class="r"><button type="button" data-res="repetir">↺ Ver otra vez</button><button type="button" data-esc-cierra>Cerrar ✕</button></div></div>
+      <div class="er"><div class="er-cab"><div class="k">FINAL · ${esc(((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase())}</div>
+        <div class="er-pill"><i style="background:${r[1]}"></i><span>${esc(r[0])}</span></div>
+        <div class="er-marc"><div class="er-eq l"><i style="box-shadow:0 0 0 2px ${ctx.mp.L ? RED : '#FFFFFF'};${escR('L')}"></i><span>${esc(ctx.abr.L)}</span></div>
+          <div class="er-num"><b>${sn.gl ?? 0}<em>–</em>${sn.gv ?? 0}</b>${pen ? `<small>PENALTIS ${pen.gl}–${pen.gv}</small>` : ''}</div>
+          <div class="er-eq v"><i style="box-shadow:0 0 0 2px ${ctx.mp.V ? RED : '#FFFFFF'};${escR('V')}"></i><span>${esc(ctx.abr.V)}</span></div></div>
+        ${sn.pista ? `<div class="er-pista"><i></i>${esc(pistaBonita(sn.pista))}</div>` : ''}</div>
+      <div class="er-cols"><div class="er-goles"><div class="er-t">GOLES</div>${goles || '<div class="er-gol"><span class="t"></span><div></div><div class="q"><span>Sin goles</span></div></div>'}</div>
+        ${pors || penHtml ? `<div class="er-der">${pors}${penHtml}</div>` : ''}</div></div>`;
+    document.body.appendChild(el);
+    document.documentElement.style.overflow = 'hidden';
+    let cerrada = false;
+    const cerrar = () => {
+      if (cerrada) return; cerrada = true;
+      document.removeEventListener('keydown', tecla);
+      el.classList.add('cierra'); setTimeout(() => el.remove(), MOV ? 400 : 0);
+      document.documentElement.style.overflow = ''; ESC.abierta = null;
+      document.dispatchEvent(new CustomEvent('mp-escena-fin', { detail: 'resumen' }));
+    };
+    const tecla = e => { if (e.key === 'Escape') cerrar(); };
+    document.addEventListener('keydown', tecla);
+    el.querySelector('[data-esc-cierra]').addEventListener('click', cerrar);
+    el.querySelector('[data-res="repetir"]').addEventListener('click', cerrar);
+    ESC.abierta = { tipo: 'resumen', cerrar };
+    return true;
+  }
+  // al terminar la simulación (sin anuncios pendientes), una vez por pasada
+  function quizasResumen(ya) {   // ya: con «Saltar al final» (o sin animaciones), sin esperar
+    if (!RSM.activo || RSM.idp !== DV.idp || RSM.fase !== 'fin' || DV.pendientes || RSM.resumenVisto) return;
+    RSM.resumenVisto = true;
+    const idp = RSM.idp, gen = DV.gen;
+    setTimeout(() => { if (DV.idp === idp && DV.gen === gen && RSM.activo) escenaResumen(ctxDirecto(Object.assign({}, RSM.final, { _resumen: true }))); }, ya || !MOV ? 0 : 1800);
+  }
+  // si se cambia de página con una escena abierta, se cierra
+  window.addEventListener('hashchange', () => { if (ESC.abierta) ESC.abierta.cerrar(); });
+  document.addEventListener('click', e => { if (!e.target.closest('[data-ver-resumen]')) return; const S = RSM.final || LIVE.snaps[DV.idp]; if (S) escenaResumen(ctxDirecto(Object.assign({}, S, { _resumen: true }))); });
+
   // cola de goles: una cortina cada vez (2,8 s); al salir, el rodillo sube un número (con «reducir movimiento», directo)
   function mostrarGol(e, ms) {
     const gen = DV.gen;
     return new Promise(res => {
       const fin = () => { if (gen === DV.gen) { const m = /^(\d+)-(\d+)$/.exec(e.marcador || ''); if (m) DV.mostrado = { gl: +m[1], gv: +m[2] }; pintarMarcador();
-        DV.pendientes = Math.max(0, DV.pendientes - 1); DV.finCortina = Date.now(); if (!DV.pendientes) setTimeout(sincronizarMarcador, 1300); } res(); };
+        DV.pendientes = Math.max(0, DV.pendientes - 1); DV.finCortina = Date.now();
+        if (!DV.pendientes) {   // sin anuncios pendientes: entra lo que esperaba (la franja final, quién gana la tanda…)
+          const s2 = snapDV(); if (s2 && $('[data-dv="caja"]')) { pintarFinal(); pintarListas(ctxDirecto(s2)); }
+          setTimeout(sincronizarMarcador, 1300); quizasResumen();
+        } } res(); };
       const caja = $('[data-dv="caja"]'), sn = snapDV();
       if (!ms || !caja || !sn || gen !== DV.gen) return fin();
-      const ctx = ctxDirecto(sn), tmp = document.createElement('div');
-      tmp.innerHTML = e.tipo === 'GOL' ? cortinaHtml(ctx, e) : e.tipo === 'FALTA' ? cortinaFaltaHtml(ctx, e) : cortinaTandaHtml(ctx, e);
-      const el = tmp.firstElementChild; caja.appendChild(el);
-      setTimeout(() => { el.remove(); fin(); }, e.tipo === 'GOL' ? ms : Math.min(ms, 2200));
+      const ctx = ctxDirecto(sn), dur = durAnuncio(ctx, e), tmp = document.createElement('div');
+      if (e.tipo === 'TANDA') {   // 10d: la tanda a pantalla completa (espera a que acabe la pista o la presentación)
+        const mostrar = () => (gen !== DV.gen ? fin() : escenaPenaltis(ctx, e, fin));
+        if (ESC.abierta || ESC.cargando) document.addEventListener('mp-escena-fin', mostrar, { once: true }); else mostrar();
+        return;
+      }
+      if (e.tipo === 'GOL' || e.tipo === 'FALTA') {   // 10c / 10f: a pantalla completa; se puede tocar para cerrarla antes
+        const mostrar = () => {
+          if (gen !== DV.gen) return fin();
+          tmp.innerHTML = e.tipo === 'GOL' ? escenaGolHtml(ctx, e) : escenaFaltaHtml(ctx, e);
+          const el = tmp.firstElementChild; document.body.appendChild(el);
+          let hecho = false, tic = null;
+          if (e.tipo === 'FALTA') {   // la sanción corre deprisa (×4) desde el segundo 1,6, para que se vea el reloj bajar
+            const total = (e.min_sancion || 2) * 60, t0 = Date.now(), r = el.querySelector('.ef-reloj'), b = el.querySelector('.ef-barra i');
+            tic = setInterval(() => { const rem = Math.max(0, total - Math.max(0, Date.now() - t0 - 1600) / 1000 * 4); r.textContent = mmssD(rem); b.style.width = (rem / total * 100).toFixed(1) + '%'; }, 100);
+            setTimeout(() => el.classList.add('sale'), dur - 350);
+          }
+          const acaba = () => { if (hecho) return; hecho = true; clearInterval(tic); el.remove(); fin(); };
+          el.addEventListener('click', acaba); setTimeout(acaba, dur);
+        };
+        if (ESC.abierta || ESC.cargando) document.addEventListener('mp-escena-fin', mostrar, { once: true }); else mostrar();
+        return;
+      }
+      fin();
     });
   }
   function actualizarDirecto() {
@@ -2033,15 +2368,18 @@
     const fuente = fuenteNuevos(), nuevos = fuente.slice(DV.visto).filter(x => x.idp === DV.idp).map(x => x.ev);
     DV.visto = fuente.length;
     // goles y faltas se anuncian (cortina) y su fila entra al acabar; la tanda, ronda a ronda
+    const turno = dur => { const ini0 = Math.max(ahora, DV.colaFin || 0), fin = ini0 + dur; DV.colaFin = fin + 1200; return fin; };
     nuevos.forEach(e => { const anuncia = e.tipo === 'GOL' || e.tipo === 'FALTA';
-      DV.aparece[e.id] = ahora + (anuncia && MOV ? (e.tipo === 'GOL' ? 2800 : 2200) + DV.pendientes * 4000 : 0); if (anuncia) { DV.pendientes++; DV.cola(e); } });
-    const porRonda = {};
-    ((sn.penaltis && sn.penaltis.tiros) || []).filter(x => !DV.tanda.has(x.lado + x.ronda)).forEach(x => { DV.tanda.add(x.lado + x.ronda); (porRonda[x.ronda] = porRonda[x.ronda] || []).push(x); });
-    Object.keys(porRonda).sort((a, b) => a - b).forEach(r => {
-      porRonda[r].forEach(x => { DV.aparece['tanda-' + x.lado + x.ronda] = ahora + (MOV ? 2200 + DV.pendientes * 4000 : 0); });
-      DV.pendientes++; DV.cola({ tipo: 'TANDA', id: 'tanda-' + r, ronda: +r, tiros: porRonda[r].sort((a, b) => (a.lado < b.lado ? -1 : 1)) });
-    });
-    itemsFeed(ctx).forEach(([k, id]) => { if (k === 'div' && !DV.claves.has(id)) { DV.claves.add(id); DV.aparece['div-' + id] = ahora + (MOV ? DV.pendientes * 4000 : 0); } });
+      DV.aparece[e.id] = anuncia && MOV ? turno(durAnuncio(ctx, e)) : ahora; if (anuncia) { DV.pendientes++; DV.cola(e); } });
+    const tanda = (sn.penaltis && sn.penaltis.tanda) || [], nuevosT = tanda.filter(x => !DV.tanda.has(x.lado + x.ronda)), gan = sn.penaltis && sn.penaltis.ganador;
+    if (nuevosT.length || (gan && !DV.ganVisto)) {
+      nuevosT.forEach(x => DV.tanda.add(x.lado + x.ronda)); DV.ganVisto = !!gan;
+      const item = { tipo: 'TANDA', id: 'tanda-' + tanda.length, tiros: tanda, desde: nuevosT.length ? tanda.indexOf(nuevosT[0]) : tanda.length, nuevos: nuevosT, ganador: gan || null };
+      const fin = MOV ? turno(durAnuncio(ctx, item)) : ahora;
+      nuevosT.forEach(x => { DV.aparece['tanda-' + x.lado + x.ronda] = fin; });
+      DV.pendientes++; DV.cola(item);
+    }
+    itemsFeed(ctx).forEach(([k, id]) => { if (k === 'div' && !DV.claves.has(id)) { DV.claves.add(id); DV.aparece['div-' + id] = MOV && DV.pendientes ? DV.colaFin - 1200 : ahora; } });
     contarTiros(ctx, nuevos.filter(e => e.tipo === 'GOL'));
     pintarSituacion(ctx); pintarJuego(ctx); pintarHoy(); pintarFinal(); pintarFicha(ctx); presentarSiToca(ctx);
     const ch = chipDirecto(sn), chip = $('[data-dv="chip"]');
