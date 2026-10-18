@@ -80,3 +80,6 @@
 @keyframes mpYear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes mpGoal{0%{transform:translateX(-101%)}12%{transform:none}86%{transform:none}100%{transform:translateX(101%)}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}}
+
+/* presentación del partido: cada pantalla entra por la derecha, se queda y sale por la izquierda */
+@keyframes mpPres { 0% { opacity: 0; transform: translateX(28px); } 9% { opacity: 1; transform: none; } 91% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateX(-28px); } }

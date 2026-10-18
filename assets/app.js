@@ -1276,7 +1276,7 @@
       const nos = x.mpL && !x.mpV ? 'L' : x.mpV && !x.mpL ? 'V' : null, gana = x.gl > x.gv ? 'L' : x.gv > x.gl ? 'V' : null;
       cifras = [['L', x.gl, x.la], ['V', x.gv, x.va]].map(([l, n, lab]) => `<div class="bloque"><div class="num res${nos && gana === l && nos === l ? ' gana' : ''}"><div>${n}</div></div><span>${esc(lab)}</span></div>`).join('');
       const nb = t => esc(t).replace(/ /g, '&nbsp;');   // corta solo entre «FINAL · SÁB 17» y «PENALTIS 1–0»
-      cuando = `<div class="cuando fin">${nb('FINAL · ' + x.cuando)}${x.pen ? ' · ' + nb('PENALTIS ' + x.pen.l + '–' + x.pen.v) : ''}</div>${x.href && /resumen/.test(x.href) ? '<div class="cuando ver">▶ VER RESUMEN</div>' : ''}`;
+      cuando = `<div class="cuando fin">${nb('FINAL · ' + x.cuando)}${x.pen ? ' · ' + nb('PENALTIS ' + x.pen.l + '–' + x.pen.v) + (x.pen.ganador ? ' · ' + nb('GANA ' + (x.pen.ganador === 'L' ? x.la : x.va)) : '') : ''}</div>${x.href && /resumen/.test(x.href) ? '<div class="cuando ver">▶ VER RESUMEN</div>' : ''}`;
     } else if (sn) {   // en juego: dos bloques con el marcador de rodillo, del mismo tamaño que la cuenta atrás
       const m = IN.mostrado[sn.idp] || (IN.mostrado[sn.idp] = { gl: sn.gl || 0, gv: sn.gv || 0 });
       cifras = [['L', m.gl, x.la], ['V', m.gv, x.va]].map(([l, n, lab]) => `<div class="bloque"><div class="num marc ${l}" data-in="${esc(sn.idp)}-${l}"><div style="transform:translateY(-${(n * 1.02).toFixed(2)}em)">${Array.from({ length: Math.max(16, n + 1) }, (_, d) => `<span>${d}</span>`).join('')}</div></div><span>${esc(lab)}</span></div>`).join('');
@@ -1536,7 +1536,7 @@
     const mk = $('[data-dv="marcas"]'), fl = $('[data-dv="filas"]');
     if (mk) mk.innerHTML = marcasLinea(ctx);
     if (fl) fl.innerHTML = filasHtml(ctx);
-    pintarPorteros(ctx);
+    pintarPorteros(ctx); pintarTanda(ctx);
     clearTimeout(timerListas);
     const prox = Object.values(DV.aparece).concat(...Object.values(DV.tiros).map(st => st.lista.map(x => x.aparece || 0))).filter(t => t > Date.now() + 30);
     if (prox.length) { const gen = DV.gen; timerListas = setTimeout(() => { const sn = snapDV(); if (gen === DV.gen && sn) pintarListas(ctxDirecto(sn)); }, Math.min(...prox) - Date.now()); }
@@ -1582,8 +1582,9 @@
     if (hay2 || sn.estado === 'descanso') out.push(['div', 'desc', 'DESCANSO · ' + goles(1, 'L') + '–' + goles(1, 'V')]);
     if (hay2) out.push(['div', 'ini2', 'EMPIEZA LA 2ª PARTE']);
     evs.filter(e => e.periodo >= 2).forEach(e => out.push(['ev', e.id, e]));
-    if (sn.penaltis || sn.fase === 'penaltis') out.push(['div', 'pen', 'PENALTIS' + (sn.penaltis ? ' · ' + sn.penaltis.l + '–' + sn.penaltis.v : '')]);
-    if (sn.estado === 'final') out.push(['div', 'fin', 'FINAL · ' + (sn.gl ?? 0) + '–' + (sn.gv ?? 0) + (sn.penaltis ? ' · PENALTIS ' + sn.penaltis.l + '–' + sn.penaltis.v : '')]);
+    const gana = sn.penaltis && sn.penaltis.ganador ? ' · GANA ' + ctx.abr[sn.penaltis.ganador] : '';
+    if (sn.penaltis || sn.fase === 'penaltis') out.push(['div', 'pen', 'PENALTIS' + (sn.penaltis ? ' · ' + sn.penaltis.l + '–' + sn.penaltis.v + gana : '')]);
+    if (sn.estado === 'final') out.push(['div', 'fin', 'FINAL · ' + (sn.gl ?? 0) + '–' + (sn.gv ?? 0) + (sn.penaltis ? ' · PENALTIS ' + sn.penaltis.l + '–' + sn.penaltis.v + gana : '')]);
     return out;
   }
   function filasHtml(ctx) {
@@ -1757,8 +1758,96 @@
     const M = ctx.mp.L && ctx.mp.V ? null : ctx.mp.L ? 'L' : 'V';
     const nos = M === 'L' ? sn.gl : sn.gv, ellos = M === 'L' ? sn.gv : sn.gl;
     const r = !M ? ['DERBI', '#55555B'] : nos > ellos ? ['VICTORIA', '#1E8A4C'] : nos < ellos ? ['DERROTA', '#55555B'] : ['EMPATE', '#8A8A8F'];
-    const pen = sn.penaltis ? ' · PENALTIS ' + sn.penaltis.l + '–' + sn.penaltis.v : '';
+    const pen = sn.penaltis ? ' · PENALTIS ' + sn.penaltis.l + '–' + sn.penaltis.v + (sn.penaltis.ganador ? ', GANA ' + ctx.abr[sn.penaltis.ganador] : '') : '';
     return `<div class="dv-final"><i style="background:${r[1]};${animar ? 'animation:mpWipe .5s cubic-bezier(.2,.8,.2,1) both' : ''}"></i><span${animar ? ' style="animation:mpFade .3s .35s both"' : ''}>${r[0]} · ${esc(ctx.abr.L)} ${sn.gl ?? 0}–${sn.gv ?? 0} ${esc(ctx.abr.V)}${pen}</span></div>`;
+  }
+  // tanda de penaltis bajo el marcador: una fila por ronda (como el acta, que no dice quién tiró primero); verde = gol
+  function tandaHtml(ctx) {
+    const { sn } = ctx, pen = sn.penaltis;
+    if (!pen && sn.fase !== 'penaltis') return '';
+    const tiros = (pen && pen.tiros) || [], vis = x => x && !pendiente('tanda-' + x.lado + x.ronda);
+    const rondas = tiros.reduce((m, x) => Math.max(m, x.ronda || 0), 0), filas = [];
+    const marca = x => (vis(x) ? `<i class="m ${x.gol ? 'si' : 'no'}" style="${animDe('tanda-' + x.lado + x.ronda, 'mpDot .35s cubic-bezier(.3,1.4,.5,1) both')}">${x.gol ? '✓' : '✕'}</i>` : '<i class="m"></i>');
+    const nom = x => (vis(x) ? esc(quienD(ctx, x.lado, x.dorsal, x.jugador_corto, x.jugador)) : '');
+    for (let r = 1; r <= rondas; r++) {
+      const a = tiros.find(x => x.lado === 'L' && x.ronda === r), b = tiros.find(x => x.lado === 'V' && x.ronda === r);
+      if (vis(a) || vis(b)) filas.push(`<div class="r"><span class="n">${nom(a)}</span>${marca(a)}<b>${r}</b>${marca(b)}<span class="n v">${nom(b)}</span></div>`);
+    }
+    const g = l => tiros.filter(x => x.lado === l && x.gol && vis(x)).length;
+    const gana = pen && pen.ganador && !DV.pendientes ? `<div class="gana${ctx.mp[pen.ganador] ? ' mp' : ''}">GANA LA TANDA ${esc(ctx.abr[pen.ganador])} · ${pen.l}–${pen.v}</div>` : '';
+    return `<div class="dv-tanda"><div class="cab"><span>TANDA DE PENALTIS</span><span>${esc(ctx.abr.L)} ${tiros.length ? g('L') : pen ? pen.l : 0}–${tiros.length ? g('V') : pen ? pen.v : 0} ${esc(ctx.abr.V)}</span></div>${filas.join('')}${gana}</div>`;
+  }
+  function pintarTanda(ctx) { const c = $('[data-dv="tanda"]'), h = tandaHtml(ctx); if (c && c._h !== h) { c.innerHTML = h; c._h = h; } }
+  // plantilla de un equipo: porteros primero y luego por dorsal; C capitán, A asistente, P portero
+  const nomPres = (ctx, l, j) => quienD(ctx, l, j.dorsal, j.jugador_corto, j.jugador).replace(/^#\d+\s+/, '');
+  const ordenPl = pl => pl.jugadores.slice().sort((a, b) => (b.portero - a.portero) || ((+a.dorsal || 99) - (+b.dorsal || 99)));
+  const posHtml = j => (j.portero ? '<i class="dv-pos">P</i>' : j.pos === 'C' ? '<i class="dv-pos c">C</i>' : j.pos === 'A' ? '<i class="dv-pos a">A</i>' : '');
+  const escFicha = (ctx, l) => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
+    return `<i style="--ring:${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></i>`; };
+  const staffTxt = pl => pl.staff.map(x => (x.cargo ? x.cargo + ' · ' : '') + x.nombre).join(' · ');
+  // 9h · ficha del partido (columna derecha): pista, árbitros, alineaciones y cuerpo técnico, tal como los da el acta
+  function fichaHtml(ctx) {
+    const { sn } = ctx, P = sn.plantillas, arb = sn.arbitros || [];
+    if (!sn.pista && !arb.length && !P) return '';
+    const eq = l => (P && P[l] ? `<div class="eq"><div class="n">${escFicha(ctx, l)}${esc(ctx.abr[l])}</div>${ordenPl(P[l]).map(j => `<div class="j"><b>${esc(j.dorsal)}</b><span>${esc(nomPres(ctx, l, j))}</span>${posHtml(j)}</div>`).join('')}
+      ${P[l].staff.length ? `<div class="staff">Cuerpo técnico · ${esc(staffTxt(P[l]))}</div>` : ''}</div>` : '<div></div>');
+    return `<div class="dv-ficha"><div class="cab">FICHA DEL PARTIDO</div>
+      ${sn.pista ? `<div class="dato"><span>PISTA</span><b>${esc(sn.pista)}</b></div>` : ''}
+      ${arb.length ? `<div class="dato"><span>${arb.length > 1 ? 'ÁRBITROS' : 'ÁRBITRO'}</span><b>${esc(arb.join(' · '))}</b></div>` : ''}
+      ${P ? `<div class="eqs">${eq('L')}${eq('V')}</div><div class="ley"><span><i class="dv-pos c">C</i>capitán</span><span><i class="dv-pos a">A</i>asistente</span><span><i class="dv-pos">P</i>portero</span></div>` : ''}</div>`;
+  }
+  function pintarFicha(ctx) { const c = $('[data-dv="ficha"]'), h = fichaHtml(ctx); if (c && c._h !== h) { c.innerHTML = h; c._h = h; } }
+  // presentación al principio: pista y árbitro, y la plantilla de cada equipo con su cuerpo técnico (se puede saltar)
+  const PRES_VISTAS = new Set();
+  const presPantallas = sn => [sn.pista || (sn.arbitros || []).length ? ['info', 2400] : null].concat(['L', 'V'].map(l => (sn.plantillas && sn.plantillas[l] ? [l, 4200] : null))).filter(Boolean);
+  const presMs = sn => presPantallas(sn).reduce((t, [, ms]) => t + ms, 0);
+  function presentacionHtml(ctx) {
+    const { sn } = ctx, arb = sn.arbitros || [];
+    let t = 0;
+    const pantallas = presPantallas(sn).map(([k, ms]) => {
+      const d = t; t += ms;
+      let h;
+      if (k === 'info') {
+        h = `<div class="lab">PRESENTACIÓN · ${esc(((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase())}</div>
+          <div class="tit">${escFicha(ctx, 'L')}${esc(ctx.abr.L)} <span>vs</span> ${esc(ctx.abr.V)}${escFicha(ctx, 'V')}</div>
+          <div class="datos">${sn.pista ? `<div style="animation-delay:${d + 350}ms"><span>PISTA</span><b>${esc(sn.pista)}</b></div>` : ''}${arb.length ? `<div style="animation-delay:${d + 550}ms"><span>${arb.length > 1 ? 'ÁRBITROS' : 'ÁRBITRO'}</span><b>${esc(arb.join(' · '))}</b></div>` : ''}</div>`;
+      } else {
+        const pl = sn.plantillas[k], js = ordenPl(pl);
+        h = `<div class="eqcab">${escFicha(ctx, k)}${esc(ctx.nombre[k])}<span>${k === 'L' ? 'LOCAL' : 'VISITANTE'}</span></div>
+          <div class="lista" style="--filas:${Math.ceil(js.length / 2)}">${js.map((j, i) => `<div class="j" style="animation:mpUp .35s ${d + 300 + i * 70}ms both"><b>${esc(j.dorsal)}</b><span>${esc(nomPres(ctx, k, j))}</span>${posHtml(j)}</div>`).join('')}</div>
+          ${pl.staff.length ? `<div class="staff" style="animation:mpUp .35s ${d + 400 + js.length * 70}ms both"><b>CUERPO TÉCNICO</b>${esc(staffTxt(pl))}</div>` : ''}`;
+      }
+      return `<div class="dv-pres-sl" style="animation:mpPres ${ms}ms ${d}ms both">${h}</div>`;
+    });
+    return `<div class="dv-pres"><button type="button" class="dv-pres-saltar" data-pres>Saltar presentación ›</button>${pantallas.join('')}</div>`;
+  }
+  // en el resumen, antes de que corra el reloj; en directo, una vez, si se abre el acta antes de que haya ningún apunte
+  function presentarSiToca(ctx) {
+    const caja = $('[data-dv="caja"]'), { sn } = ctx;
+    if (!caja || caja.querySelector('.dv-pres') || !sn.plantillas || !MOV) return;
+    const resumen = RSM.activo && RSM.idp === DV.idp;
+    if (resumen ? RSM.fase !== 'pres' : PRES_VISTAS.has(sn.idp) || !(sn.estado === 'previa' || (sn.estado === 'directo' && (sn.periodo || 1) === 1 && !sn.eventos.length))) return;
+    PRES_VISTAS.add(sn.idp);
+    const tmp = document.createElement('div'); tmp.innerHTML = presentacionHtml(ctx);
+    const el = tmp.firstElementChild; caja.appendChild(el);
+    el._t = setTimeout(quitarPresentacion, presMs(sn));
+  }
+  function quitarPresentacion() { const el = $('.dv-pres'); if (el) { clearTimeout(el._t); el.remove(); } }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-pres]')) return;
+    quitarPresentacion();
+    if (RSM.activo && RSM.fase === 'pres') RSM.pausa = 0;
+  });
+  // cortinas: falta (naranja: exclusión, quién y por qué) y tanda de penaltis (la ronda, con quién tiró y si entró)
+  function cortinaFaltaHtml(ctx, e) {
+    const l = e.lado, n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
+    const sub = [motivoFalta(e), ordinal(e.periodo) + (e.t ? ' · ' + e.t : '')].filter(Boolean).join(' · ');
+    return `<div class="dv-cortina falta"><div class="dv-cesc" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>
+      <div style="min-width:0"><div class="dv-clab">EXCLUSIÓN · ${esc(ctx.abr[l])}</div><div class="dv-cgol peq">${esc(fmin(e.min_sancion || 2))}</div><div class="dv-cquien">${esc(quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador))}</div><div class="dv-csub">${esc(sub)}</div></div></div>`;
+  }
+  function cortinaTandaHtml(ctx, e) {
+    return `<div class="dv-cortina tanda"><div style="min-width:0"><div class="dv-clab">PENALTIS · RONDA ${e.ronda}</div>${e.tiros.map(x => { const n = ctx.nombre[x.lado], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
+      return `<div class="dv-ctiro"><div class="e" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div><span>${esc(quienD(ctx, x.lado, x.dorsal, x.jugador_corto, x.jugador))}</span><b class="${x.gol ? 'si' : 'no'}">${x.gol ? 'GOL' : 'FALLADO'}</b></div>`; }).join('')}</div></div>`;
   }
   function pintarFinal() {
     const sn = snapDV(), cont = $('[data-dv="final"]');
@@ -1806,9 +1895,10 @@
   }
   function pasoResumen() {
     if (!RSM.activo || !new RegExp('^#/directo/' + RSM.idp + '/resumen').test(location.hash.replace(/%2F/g, '/'))) return pararResumen();
-    if (DV.pendientes > 0 || Date.now() < RSM.pausa || RSM.fase === 'fin') return;
+    if (DV.pendientes > 0 || Date.now() < RSM.pausa || Date.now() - (DV.finCortina || 0) < 1300 || RSM.fase === 'fin') return;
     const S = RSM.final, dur = S.duracion_periodo || 1200;
-    if (RSM.fase === 'p2fin') return finResumen();
+    if (RSM.fase === 'pres') { quitarPresentacion(); RSM.fase = ''; RSM.pausa = Date.now() + 500; return; }
+    if (RSM.fase === 'p2fin' || RSM.fase === 'pen') return tandaResumen();
     if (RSM.fase === 'p1fin') { RSM.fase = 'descanso'; RSM.pausa = Date.now() + 1600; return aplicarFotoResumen(fotoResumen(S, dur)); }
     if (RSM.fase === 'descanso') RSM.fase = 'p2';
     RSM.T += 2 * dur / 25 * 0.1;
@@ -1816,19 +1906,20 @@
     if (RSM.fase === '' && RSM.T >= dur) { RSM.T = dur; RSM.fase = 'p1fin'; } else if (RSM.T >= 2 * dur) { RSM.T = 2 * dur; RSM.fase = 'p2fin'; }
     aplicarFotoResumen(fotoResumen(S, RSM.T));
   }
+  // la tanda, ronda a ronda (cada fila del acta es una ronda; no dice quién tiró primero): cada una con su cortina
+  function tandaResumen() {
+    const S = RSM.final, dur = S.duracion_periodo || 1200, tiros = (S.penaltis && S.penaltis.tiros) || [];
+    if (!S.penaltis || !MOV) return finResumen();
+    const rondas = tiros.reduce((m, x) => Math.max(m, x.ronda || 0), 0);
+    if (RSM.fase !== 'pen') { RSM.fase = 'pen'; RSM.ronda = 0; } else if (RSM.ronda >= rondas) return finResumen(); else RSM.ronda++;
+    const hasta = tiros.filter(x => (x.ronda || 0) <= RSM.ronda);
+    const pen = rondas ? { l: hasta.filter(x => x.lado === 'L' && x.gol).length, v: hasta.filter(x => x.lado === 'V' && x.gol).length, tiros: hasta, ganador: null } : S.penaltis;
+    RSM.pausa = Date.now() + (RSM.ronda ? 500 : 1300);
+    aplicarFotoResumen(Object.assign(fotoResumen(S, 2 * dur), { fase: 'penaltis', penaltis: pen }));
+  }
   function finResumen() {
-    const S = RSM.final, dur = S.duracion_periodo || 1200;
     RSM.fase = 'fin'; clearInterval(RSM.timer); RSM.timer = null;
-    const fin = () => aplicarFotoResumen(Object.assign({}, S, { _resumen: true }));
-    if (!S.penaltis || !MOV) return fin();
-    // la tanda, ronda a ronda: el acta da los lanzamientos de cada equipo, no quién tiró primero
-    const base = fotoResumen(S, 2 * dur), tiros = S.penaltis.tiros || [], tl = tiros.filter(x => x.lado === 'L'), tv = tiros.filter(x => x.lado === 'V');
-    const rondas = Math.max(tl.length, tv.length), goles = (arr, k) => arr.slice(0, k).filter(x => x.gol).length;
-    const paso = k => {
-      aplicarFotoResumen(Object.assign({}, base, { fase: 'penaltis', penaltis: rondas ? { l: goles(tl, k), v: goles(tv, k), tiros: [] } : S.penaltis }));
-      RSM.tPen = setTimeout(() => (rondas && k < rondas ? paso(k + 1) : fin()), rondas && k < rondas ? 900 : 1500);
-    };
-    paso(0);
+    aplicarFotoResumen(Object.assign({}, RSM.final, { _resumen: true }));
   }
   function pararResumen() { clearInterval(RSM.timer); clearTimeout(RSM.tPen); RSM.timer = RSM.tPen = null; RSM.activo = false; }
   // devuelve el aviso de espera si aún no tenemos el partido; si no, deja preparada la simulación (o el final, si se saltó)
@@ -1839,6 +1930,7 @@
     pararResumen();
     Object.assign(RSM, { activo: true, idp, final: S, T: 0, fase: '', nuevos: [], pausa: Date.now() + 900 });
     if (RSM.saltado || !MOV) { RSM.fase = 'fin'; RSM.foto = Object.assign({}, S, { _resumen: true }); return null; }
+    if (S.plantillas) { RSM.fase = 'pres'; RSM.pausa = Date.now() + presMs(S); }   // primero, la presentación
     RSM.foto = fotoResumen(S, 0);
     RSM.timer = setInterval(pasoResumen, 100);
     return null;
@@ -1871,11 +1963,11 @@
     const ctx = ctxDirecto(sn), [f1, f2] = rellenoDirecto(sn), ch = chipDirecto(sn);
     // se pinta quieto: lo que ya hay no se anima
     Object.assign(DV, { mostrado: { gl: sn.gl || 0, gv: sn.gv || 0 }, visto: fuenteNuevos().length, aparece: {}, pendientes: 0, cola: MPDirecto.colaGoles(mostrarGol),
-      penVistos: new Set(), situClave: '', tiros: {}, listo: false });
+      penVistos: new Set(), situClave: '', tiros: {}, listo: false, tanda: new Set(((sn.penaltis && sn.penaltis.tiros) || []).map(x => x.lado + x.ronda)) });
     contarTiros(ctx, []);
     excluidos(ctx).L.concat(excluidos(ctx).V).forEach(p => DV.penVistos.add(p.id));
     { const si = situacionPista(ctx, excluidos(ctx)); DV.situClave = si ? si.label + si.n : ''; }
-    setTimeout(() => { DV.listo = true; pintarSituacion(ctxDirecto(snapDV() || sn)); }, 0);
+    setTimeout(() => { DV.listo = true; const c2 = ctxDirecto(snapDV() || sn); pintarSituacion(c2); presentarSiToca(c2); }, 0);
     DV.claves = new Set(itemsFeed(ctx).map(([, id]) => id));
     const eqHtml = l => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
       return `<div class="dv-eq"><div class="dv-esc" data-dv="esc${l}" style="box-shadow:0 0 0 2px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div><span class="dv-abr">${esc(ctx.abr[l])}</span><div class="dv-pens" data-dv="pen${l}"></div></div>`; };
@@ -1889,13 +1981,14 @@
           <div class="dv-situ-caja" data-dv="situ"></div>
           ${ctx.dur ? `<div class="dv-linea"><div class="dv-tramos"><div><i data-dv="f1" style="width:${f1}%"></i></div><div><i data-dv="f2" style="width:${f2}%"></i></div></div><div data-dv="marcas">${marcasLinea(ctx)}</div></div>
           <div class="dv-partes"><span>1ª PARTE</span><span>2ª PARTE</span></div>` : '<div style="height:clamp(14px,2.4vw,22px)"></div>'}
+          <div data-dv="tanda">${tandaHtml(ctx)}</div>
           <div data-dv="final">${finalHtml(ctx, false)}</div>
         </div>
         <div class="dv-porteros" data-dv="porteros">${porterosHtml(ctx)}</div>
         <div class="dv-lista"><div class="dv-lcab"><span>MINUTO A MINUTO</span><span data-dv="lcab">${cabLista(sn).replace(/^<span[^>]*>|<\/span>$/g, '')}</span></div>
           <div class="dv-filas" data-dv="filas">${filasHtml(ctx)}</div></div>
       </div>
-      <div class="dv-der" data-dv="der">${juegoHtml(ctx)}<div style="display:flex;flex-direction:column;gap:8px" data-dv="hoy">${hoyHtml()}</div></div>
+      <div class="dv-der" data-dv="der">${juegoHtml(ctx)}<div data-dv="ficha">${fichaHtml(ctx)}</div><div style="display:flex;flex-direction:column;gap:8px" data-dv="hoy">${hoyHtml()}</div></div>
     </div>`;
   }
   function pintarMarcador() {
@@ -1924,12 +2017,13 @@
     const gen = DV.gen;
     return new Promise(res => {
       const fin = () => { if (gen === DV.gen) { const m = /^(\d+)-(\d+)$/.exec(e.marcador || ''); if (m) DV.mostrado = { gl: +m[1], gv: +m[2] }; pintarMarcador();
-        DV.pendientes = Math.max(0, DV.pendientes - 1); if (!DV.pendientes) setTimeout(sincronizarMarcador, 1300); } res(); };
+        DV.pendientes = Math.max(0, DV.pendientes - 1); DV.finCortina = Date.now(); if (!DV.pendientes) setTimeout(sincronizarMarcador, 1300); } res(); };
       const caja = $('[data-dv="caja"]'), sn = snapDV();
       if (!ms || !caja || !sn || gen !== DV.gen) return fin();
-      const tmp = document.createElement('div'); tmp.innerHTML = cortinaHtml(ctxDirecto(sn), e);
+      const ctx = ctxDirecto(sn), tmp = document.createElement('div');
+      tmp.innerHTML = e.tipo === 'GOL' ? cortinaHtml(ctx, e) : e.tipo === 'FALTA' ? cortinaFaltaHtml(ctx, e) : cortinaTandaHtml(ctx, e);
       const el = tmp.firstElementChild; caja.appendChild(el);
-      setTimeout(() => { el.remove(); fin(); }, ms);
+      setTimeout(() => { el.remove(); fin(); }, e.tipo === 'GOL' ? ms : Math.min(ms, 2200));
     });
   }
   function actualizarDirecto() {
@@ -1938,10 +2032,18 @@
     const ctx = ctxDirecto(sn), ahora = Date.now();
     const fuente = fuenteNuevos(), nuevos = fuente.slice(DV.visto).filter(x => x.idp === DV.idp).map(x => x.ev);
     DV.visto = fuente.length;
-    nuevos.forEach(e => { DV.aparece[e.id] = ahora + (e.tipo === 'GOL' && MOV ? 2800 + DV.pendientes * 4000 : 0); if (e.tipo === 'GOL') { DV.pendientes++; DV.cola(e); } });
+    // goles y faltas se anuncian (cortina) y su fila entra al acabar; la tanda, ronda a ronda
+    nuevos.forEach(e => { const anuncia = e.tipo === 'GOL' || e.tipo === 'FALTA';
+      DV.aparece[e.id] = ahora + (anuncia && MOV ? (e.tipo === 'GOL' ? 2800 : 2200) + DV.pendientes * 4000 : 0); if (anuncia) { DV.pendientes++; DV.cola(e); } });
+    const porRonda = {};
+    ((sn.penaltis && sn.penaltis.tiros) || []).filter(x => !DV.tanda.has(x.lado + x.ronda)).forEach(x => { DV.tanda.add(x.lado + x.ronda); (porRonda[x.ronda] = porRonda[x.ronda] || []).push(x); });
+    Object.keys(porRonda).sort((a, b) => a - b).forEach(r => {
+      porRonda[r].forEach(x => { DV.aparece['tanda-' + x.lado + x.ronda] = ahora + (MOV ? 2200 + DV.pendientes * 4000 : 0); });
+      DV.pendientes++; DV.cola({ tipo: 'TANDA', id: 'tanda-' + r, ronda: +r, tiros: porRonda[r].sort((a, b) => (a.lado < b.lado ? -1 : 1)) });
+    });
     itemsFeed(ctx).forEach(([k, id]) => { if (k === 'div' && !DV.claves.has(id)) { DV.claves.add(id); DV.aparece['div-' + id] = ahora + (MOV ? DV.pendientes * 4000 : 0); } });
     contarTiros(ctx, nuevos.filter(e => e.tipo === 'GOL'));
-    pintarSituacion(ctx); pintarJuego(ctx); pintarHoy(); pintarFinal();
+    pintarSituacion(ctx); pintarJuego(ctx); pintarHoy(); pintarFinal(); pintarFicha(ctx); presentarSiToca(ctx);
     const ch = chipDirecto(sn), chip = $('[data-dv="chip"]');
     if (chip) { chip.classList.toggle('vivo', ch.vivo); chip.innerHTML = chipHtml(ch); }
     const [f1, f2] = rellenoDirecto(sn), e1 = $('[data-dv="f1"]'), e2 = $('[data-dv="f2"]');
@@ -1981,14 +2083,15 @@
     const { idp, e } = x;
     return new Promise(res => {
       const fin = () => { const m = /^(\d+)-(\d+)$/.exec(e.marcador || ''); if (m) BAR.mostrado[idp] = { gl: +m[1], gv: +m[2] }; pintarRodBarra(idp);
-        BAR.pendientes[idp] = Math.max(0, (BAR.pendientes[idp] || 0) - 1); res(); };
+        if (e.tipo === 'GOL') BAR.pendientes[idp] = Math.max(0, (BAR.pendientes[idp] || 0) - 1); res(); };
       const barra = $('#barra-directo'), sn = LIVE.snaps[idp];
       if (!ms || !barra || barra.hidden || !sn) return fin();
       const ctx = ctxDirecto(sn), d = document.createElement('div');
-      d.className = 'bd-gol' + (ctx.mp[e.lado] ? ' mp' : '');
-      d.innerHTML = `<b>GOL</b><strong>${esc(ctx.abr[e.lado])}</strong><span>${esc(quienD(ctx, e.lado, e.dorsal, e.jugador_corto, e.jugador))}</span>`;
+      const falta = e.tipo === 'FALTA';
+      d.className = 'bd-gol' + (falta ? ' falta' : ctx.mp[e.lado] ? ' mp' : '');
+      d.innerHTML = `<b>${falta ? 'EXCLUSIÓN ' + esc(fmin(e.min_sancion || 2)) : 'GOL'}</b><strong>${esc(ctx.abr[e.lado])}</strong><span>${esc(quienD(ctx, e.lado, e.dorsal, e.jugador_corto, e.jugador))}</span>`;
       barra.appendChild(d);
-      setTimeout(() => { d.remove(); fin(); }, ms);
+      setTimeout(() => { d.remove(); fin(); }, falta ? Math.min(ms, 2200) : ms);
     });
   }
   function barraDirecto() {
@@ -1999,8 +2102,9 @@
     const vivos = snaps.filter(sn => sn.estado === 'directo' || sn.estado === 'descanso');
     // goles nuevos a la cola (solo de partidos que ya se estaban viendo; lo de antes se pinta quieto)
     LIVE.nuevos.slice(BAR.visto).forEach(({ idp, ev }) => {
-      if (ev.tipo !== 'GOL' || !BAR.mostrado[idp]) return;
-      BAR.pendientes[idp] = (BAR.pendientes[idp] || 0) + 1; BAR.cola({ idp, e: ev });
+      if ((ev.tipo !== 'GOL' && ev.tipo !== 'FALTA') || !BAR.mostrado[idp]) return;
+      if (ev.tipo === 'GOL') BAR.pendientes[idp] = (BAR.pendientes[idp] || 0) + 1;
+      BAR.cola({ idp, e: ev });
     });
     BAR.visto = LIVE.nuevos.length;
     snaps.forEach(sn => { if (!BAR.mostrado[sn.idp] || (!BAR.pendientes[sn.idp] && (BAR.mostrado[sn.idp].gl !== (sn.gl || 0) || BAR.mostrado[sn.idp].gv !== (sn.gv || 0))))
