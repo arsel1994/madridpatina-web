@@ -1832,7 +1832,7 @@
     const liga = ((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase();
     const escB = (l, cls) => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; return `<i class="${cls}" style="box-shadow:0 0 0 3px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></i>`; };
     const el = document.createElement('div');
-    el.className = 'esc esc-pres' + (estr ? ' estr' : ''); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Alineación de ' + ctx.nombre[nos]);
+    el.className = 'escena esc-pres' + (estr ? ' estr' : ''); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Alineación de ' + ctx.nombre[nos]);
     el.innerHTML = `<div class="foco a"></div><div class="foco b"></div><div class="ep-stage"></div>
       <div class="esc-top"><div class="l">PRESENTACIÓN · ${esc(liga)}</div><div class="r">${sn.pista ? `<div class="pista"><i></i><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></div>` : ''}<button type="button" class="esc-saltar" data-esc-cierra>Saltar ›</button></div></div>`;
     document.body.appendChild(el);
@@ -1959,7 +1959,7 @@
       const d0 = new Date(), hoyDM = p2(d0.getDate()) + '/' + p2(d0.getMonth() + 1);
       const [dd, mm] = (sn.fecha || '').split('/'), cuando = sn.fecha && sn.fecha !== hoyDM && dd ? 'LA PISTA · ' + DIA[new Date(d0.getFullYear(), +mm - 1, +dd).getDay()] + ' ' + (+dd) + ' ' + MES[+mm - 1] : 'LA PISTA DE HOY';
       const el = document.createElement('div');
-      el.className = 'esc esc-pista'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'La pista: ' + key);
+      el.className = 'escena esc-pista'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'La pista: ' + key);
       el.innerHTML = `<div class="ep-mapa"></div><div class="ep-vig"></div><div class="ep-cam"><i></i><i></i><i></i><i></i></div>
         <div class="ep-hud"><span>${esc(cuando)}</span><b data-coord></b></div><button type="button" class="esc-saltar" data-esc-cierra>Saltar ›</button>
         <div class="ep-card"><div class="ep-k">PISTA</div><div class="ep-n">${key.split(' ').map((w, i) => `<span style="animation-delay:${(0.12 + i * 0.07).toFixed(2)}s">${esc(w)}</span>`).join(' ')}</div><div class="ep-s">${esc(lugarPista(v.display))}</div><div class="ep-bar"></div></div>`;
@@ -2208,7 +2208,7 @@
     const resueltos = new Set(tiros.slice(0, e.desde).map(x => x.lado + x.ronda));
     const goles = l => tiros.filter(x => x.lado === l && x.gol && resueltos.has(x.lado + x.ronda)).length;
     const el = document.createElement('div');
-    el.className = 'esc esc-pen' + (estr ? ' estr' : ''); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Tanda de penaltis');
+    el.className = 'escena esc-pen' + (estr ? ' estr' : ''); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Tanda de penaltis');
     const rod = l => `<div class="pn-rod"><div data-rod="${l}" style="transform:translateY(-${goles(l)}em)">${Array.from({ length: 16 }, (_, d) => `<div>${d}</div>`).join('')}</div></div>`;
     el.innerHTML = `<div class="esc-top"><div class="l">${sn._resumen ? 'RESUMEN' : '● EN DIRECTO'} · PENALTIS</div><div class="r">${sn.pista ? `<div class="pista"><i></i><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></div>` : ''}<button type="button" class="esc-saltar" data-esc-cierra>Saltar ›</button></div></div>
       <div class="pn"><div class="pn-k">TANDA DE PENALTIS</div>
@@ -2284,7 +2284,7 @@
         return `<i style="${x ? `background:${x.gol ? (ctx.mp[l] ? RED : '#F4F4F5') : '#3A3A3F'};${x.gol && !ctx.mp[l] ? 'color:#0D0D0E' : ''}` : ''}">${x && !x.gol ? '×' : ''}</i>`; }).join('')}</div>`).join('')}</div>`;
     }
     const el = document.createElement('div');
-    el.className = 'esc esc-res'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Resumen del partido');
+    el.className = 'escena esc-res'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Resumen del partido');
     el.style.background = `radial-gradient(ellipse at 50% -10%, ${r[2]} 0%, #0D0D0E 55%)`;
     el.innerHTML = `<div class="esc-top"><div class="l">RESUMEN · ${esc(fechaLarga(sn))}</div><div class="r"><button type="button" data-res="repetir">↺ Ver otra vez</button><button type="button" data-esc-cierra>Cerrar ✕</button></div></div>
       <div class="er"><div class="er-cab"><div class="k">FINAL · ${esc(((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase())}</div>

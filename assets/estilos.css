@@ -437,8 +437,9 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .bd-gol.falta { background: #FF8A3D; color: #0D0D0E; animation-duration: 2.2s; }
 
 /* ── 10a · La pista (escena a pantalla completa; prototipo «Pista intro.html») ── */
-.esc { position: fixed; inset: 0; z-index: 2000; background: #0D0D0E; color: #F4F4F5; overflow: hidden; container-type: size; }
-.esc.cierra { animation: mpFade .4s reverse both; }
+/* escenas a pantalla completa (ojo: «.esc» es el escudo de la intro, por eso «.escena») */
+.escena { position: fixed; inset: 0; z-index: 2000; background: #0D0D0E; color: #F4F4F5; overflow: hidden; container-type: size; }
+.escena.cierra { animation: mpFade .4s reverse both; }
 .esc-pista .ep-mapa { position: absolute; inset: 0; background: #0D0D0E; }
 .esc-pista .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(.62) contrast(1.15); }
 .esc-pista .leaflet-container { background: #0D0D0E; font-family: inherit; }
