@@ -2021,14 +2021,14 @@
       return true;
     }).catch(() => { ESC.cargando = false; return false; });
   }
-  // en la previa, o la primera vez que se abre el partido en esta sesión
-  function pistaSiToca(sn) {
+  // en la previa, o la primera vez que se abre el partido en esta sesión; en el resumen, siempre que empieza (es el principio de la historia)
+  function pistaSiToca(sn, siempre) {
     if (!sn || !sn.pista) return;
     const k = 'mp-pista-' + sn.idp;
     let visto = false;
     try { visto = sessionStorage.getItem(k) === '1'; } catch (e) { /* sin almacenamiento */ }
-    if (visto && sn.estado !== 'previa') return;
-    try { sessionStorage.setItem(k, '1'); } catch (e) { /* sin almacenamiento */ }
+    if (!siempre && visto && sn.estado !== 'previa') return;
+    try { sessionStorage.setItem(k, '1'); } catch (e) { /* sin almacenamiento */ }   // también cuando sale por empezar un resumen
     escenaPista(sn);
   }
   const pistaChip = sn => (sn && sn.pista ? `<button type="button" class="dv-pista" data-pista title="Ver la pista en el mapa"><i></i><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></button>` : '');
@@ -2126,7 +2126,7 @@
     contarTiros(ctx, []);
     excluidos(ctx).L.concat(excluidos(ctx).V).forEach(p => DV.penVistos.add(p.id));
     { const si = situacionPista(ctx, excluidos(ctx)); DV.situClave = si ? si.label + si.n : ''; }
-    setTimeout(() => { DV.listo = true; const c2 = ctxDirecto(snapDV() || sn); pintarSituacion(c2); pistaSiToca(c2.sn); presentarSiToca(c2); }, 0);
+    setTimeout(() => { DV.listo = true; const c2 = ctxDirecto(snapDV() || sn); pintarSituacion(c2); pistaSiToca(c2.sn, modo === 'resumen' && RSM.activo && RSM.fase === 'pista'); presentarSiToca(c2); }, 0);
     DV.claves = new Set(itemsFeed(ctx).map(([, id]) => id));
     const eqHtml = l => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
       return `<div class="dv-eq"><div class="dv-esc" data-dv="esc${l}" style="box-shadow:0 0 0 2px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div><span class="dv-abr">${esc(ctx.abr[l])}</span><div class="dv-pens" data-dv="pen${l}"></div></div>`; };
