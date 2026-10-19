@@ -1825,40 +1825,50 @@
   function escenaPresentacion(ctx) {
     const { sn } = ctx, P = sn.plantillas;
     if (!P || ESC.abierta || ESC.cargando || !A) return false;
-    const nos = ctx.mp.L ? 'L' : ctx.mp.V ? 'V' : null, riv = nos === 'L' ? 'V' : 'L';
-    if (!nos || !P[nos] || !P[nos].length) return false;
-    const mps = ordenPl(P[nos]).map(j => { const p = jugadorDe(ctx, nos, j.id_player, j.dorsal); return { j, foto: (p && p.foto) || '', ini: p ? ini(p.nombre, p.apellidos) : iniDe(j.jugador_corto || j.jugador) }; });
-    const rivs = P[riv] ? ordenPl(P[riv]) : [];
+    // en un derbi los dos equipos son nuestros: los dos se presentan igual, uno a uno (primero el local)
+    const derbi = ctx.mp.L && ctx.mp.V, nos = ctx.mp.L ? 'L' : ctx.mp.V ? 'V' : null, riv = nos === 'L' ? 'V' : 'L';
+    const lados = (derbi ? ['L', 'V'] : [nos]).filter(l => l && P[l] && P[l].length);
+    if (!lados.length) return false;
+    const plantillaDe = l => ordenPl(P[l]).map(j => { const p = jugadorDe(ctx, l, j.id_player, j.dorsal); return { j, foto: (p && p.foto) || '', ini: p ? ini(p.nombre, p.apellidos) : iniDe(j.jugador_corto || j.jugador) }; });
+    const rivs = !derbi && P[riv] ? ordenPl(P[riv]) : [];
     const estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8;
     const liga = ((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase();
     const escB = (l, cls) => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; return `<i class="${cls}" style="box-shadow:0 0 0 3px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></i>`; };
     const el = document.createElement('div');
-    el.className = 'escena esc-pres' + (estr ? ' estr' : ''); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Alineación de ' + ctx.nombre[nos]);
+    el.className = 'escena esc-pres' + (estr ? ' estr' : ''); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Alineación de ' + lados.map(l => ctx.nombre[l]).join(' y '));
     el.innerHTML = `<div class="foco a"></div><div class="foco b"></div><div class="ep-stage"></div>
       <div class="esc-top"><div class="l">PRESENTACIÓN · ${esc(liga)}</div><div class="r">${sn.pista ? `<div class="pista"><i></i><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></div>` : ''}<button type="button" class="esc-saltar" data-esc-cierra>Saltar ›</button></div></div>`;
     document.body.appendChild(el);
     document.documentElement.style.overflow = 'hidden';
     const stage = el.querySelector('.ep-stage'), timers = [], luego = (ms, f) => timers.push(setTimeout(f, ms));
     const cuando = [fechaLarga(sn), sn.hora].filter(Boolean).join(' · ');
-    // 1 · título
-    stage.innerHTML = `<div class="pr-tit">${escB(nos, 'e0')}<div class="k">ALINEACIÓN</div><div class="n">${esc(ctx.nombre[nos])}</div><div class="bar"></div><div class="s">${esc([liga, cuando].filter(Boolean).join(' · '))}</div></div>`;
-    // 2 · nuestros, uno a uno
-    let t = 1600;
-    luego(t, () => {
-      stage.innerHTML = `<div class="pr-mp"><div class="pr-hero"></div><div class="pr-rej">${mps.map(x => `<div>${x.foto ? `<div class="f" style="background-image:url('${esc(x.foto)}')"></div>` : `<div class="i">${esc(x.ini)}</div>`}<div class="d">${esc(x.j.dorsal)}</div></div>`).join('')}</div></div>`;
+    // 1 · título y 2 · los nuestros uno a uno, por cada equipo nuestro (en un derbi, los dos)
+    let t = 0;
+    lados.forEach(l => {
+      const mps = plantillaDe(l);
+      const titulo = `<div class="pr-tit">${escB(l, 'e0')}<div class="k">${derbi ? 'DERBI · ' : ''}ALINEACIÓN</div><div class="n">${esc(ctx.nombre[l])}</div><div class="bar"></div><div class="s">${esc([liga, cuando].filter(Boolean).join(' · '))}</div></div>`;
+      if (!t) stage.innerHTML = titulo; else luego(t, () => { stage.innerHTML = titulo; });
+      t += 1600;
+      luego(t, () => {
+        stage.innerHTML = `<div class="pr-mp"><div class="pr-hero"></div><div class="pr-rej" style="--cols:${Math.max(3, Math.ceil(mps.length / 3))}">${mps.map(x => `<div>${x.foto ? `<div class="f" style="background-image:url('${esc(x.foto)}')"></div>` : `<div class="i">${esc(x.ini)}</div>`}<div class="d">${esc(x.j.dorsal)}</div></div>`).join('')}</div></div>`;
+      });
+      mps.forEach((x, k) => luego(t + k * 1250, () => {
+        const hero = stage.querySelector('.pr-hero'), celdas = [...stage.querySelectorAll('.pr-rej > div')];
+        if (!hero) return;
+        const r = ROL_TXT[x.j.rol] || ['JUGADOR', '#26262A', '#F4F4F5'];
+        hero.innerHTML = `<div class="pr-big"><span>${esc(x.j.dorsal)}</span></div>
+          <div class="pr-foto">${x.foto ? `<div class="f" style="background-image:url('${esc(x.foto)}')"></div>` : `<div class="i">${esc(x.ini)}</div>`}<div class="d">${esc(x.j.dorsal)}</div></div>
+          <div class="pr-nom"><div class="rol" style="background:${r[1]};color:${r[2]}">${r[0]}</div><div class="nm">${esc(x.j.nombre || '')}</div><div class="ap">${esc((x.j.apellido || x.j.jugador_corto || '').toUpperCase())}</div>
+            <div class="cnt">${p2(k + 1)} / ${p2(mps.length)}</div></div>`;
+        // el apellido, siempre con sus palabras enteras: si alguna no cabe, se reduce la letra (y como último recurso, se parte)
+        const ap = hero.querySelector('.ap'); let fs = parseFloat(getComputedStyle(ap).fontSize);
+        while (ap.scrollWidth > ap.clientWidth + 1 && fs > 30) { fs -= 3; ap.style.fontSize = fs + 'px'; }
+        if (ap.scrollWidth > ap.clientWidth + 1) ap.style.overflowWrap = 'anywhere';
+        celdas.forEach((cl, q) => { cl.classList.toggle('on', q <= k); cl.classList.toggle('cur', q === k); });
+      }));
+      t += mps.length * 1250;
     });
-    mps.forEach((x, k) => luego(t + k * 1250, () => {
-      const hero = stage.querySelector('.pr-hero'), celdas = [...stage.querySelectorAll('.pr-rej > div')];
-      if (!hero) return;
-      const r = ROL_TXT[x.j.rol] || ['JUGADOR', '#26262A', '#F4F4F5'];
-      hero.innerHTML = `<div class="pr-big"><span>${esc(x.j.dorsal)}</span></div>
-        <div class="pr-foto">${x.foto ? `<div class="f" style="background-image:url('${esc(x.foto)}')"></div>` : `<div class="i">${esc(x.ini)}</div>`}<div class="d">${esc(x.j.dorsal)}</div></div>
-        <div class="pr-nom"><div class="rol" style="background:${r[1]};color:${r[2]}">${r[0]}</div><div class="nm">${esc(x.j.nombre || '')}</div><div class="ap">${esc((x.j.apellido || x.j.jugador_corto || '').toUpperCase())}</div>
-          <div class="cnt">${p2(k + 1)} / ${p2(mps.length)}</div></div>`;
-      celdas.forEach((cl, q) => { cl.classList.toggle('on', q <= k); cl.classList.toggle('cur', q === k); });
-    }));
-    t += mps.length * 1250;
-    // 3 · rival en lista
+    // 3 · rival en lista (no en un derbi)
     if (rivs.length) {
       luego(t, () => {
         const pos = j => (j.rol === 'P' ? 'POR' : j.rol === 'C' ? 'CAP' : j.rol === 'A' ? 'ASIS' : '');
