@@ -1201,6 +1201,9 @@
      atrás (días · horas · min, cada minuto). Una vez por sesión; se cierra con ✕, ENTRAR, Esc o deslizando hacia
      arriba, y el escudo de la cabecera la vuelve a abrir. No está en el menú. */
   const INTRO = 'mp-intro-visto';
+  // la cuenta atrás solo se abre sola en inicio: la web sin ruta (o Jornada). Con un enlace a otra página, no
+  const HASH_INICIAL = location.hash;
+  const esInicio = h => !h || h === '#' || h === '#/' || h === '#/jornada';
   let introEl = null, introReloj = null;
   // si al cargar no había nada que enseñar pero el directo trae enseguida lo ya jugado esta semana, se abre entonces (una vez)
   let introAbierta = false, introVistaCarga = true;
@@ -1383,7 +1386,10 @@
     if (animarAlCerrar) { animarAlCerrar = false; animar(view); }
     setTimeout(() => el.remove(), MOV ? 320 : 0);
   }
-  document.querySelector('.brand img').addEventListener('click', () => abrirIntro());
+  document.querySelector('.brand img').addEventListener('click', () => {   // el escudo del club: a inicio, y allí la cuenta atrás
+    if (!esInicio(location.hash)) location.hash = '#/jornada';
+    abrirIntro();
+  });
 
   document.addEventListener('animationend', e => {
     if (e.animationName !== 'mpReel') return;
@@ -1564,7 +1570,9 @@
     } else if (e.tipo === 'TIEMPO MUERTO') { tit = 'Tiempo muerto'; sub = nom; }
     else if (e.tipo === 'CAMBIO DE PORTERO') {
       if (e.nota === 'Portero fuera') { tit = 'Portero fuera' + (e.dorsal ? ' · ' + quienD(ctx, l, e.dorsal, e.sale_corto || e.jugador_corto, e.sale) : ''); sub = nom + ' · juega con 5 de pista'; }
-      else { tit = 'Entra ' + quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador); sub = [e.sale ? 'Sale ' + (e.sale_corto || e.sale) : '', nom].filter(Boolean).join(' · '); }
+      else if (e.ambiguo) { tit = 'Cambio de portero'; sub = [e.nota, nom, 'momento aproximado'].filter(Boolean).join(' · '); }
+      else { tit = 'Entra ' + quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador);
+        sub = [e.sale ? 'Sale ' + (e.sale_dorsal ? quienD(ctx, l, e.sale_dorsal, e.sale_corto, e.sale) : (e.sale_corto || e.sale)) : '', nom, e.aprox ? 'momento aproximado' : ''].filter(Boolean).join(' · '); }
     } else { tit = e.tipo.charAt(0) + e.tipo.slice(1).toLowerCase(); sub = nom; }
     const c = crest(nom), bg = (A.crests[nom] && A.crests[nom].bg) || 'transparent';
     return `<div class="dv-fila${e.tipo === 'GOL' && ctx.mp[l] ? ' mp' : ''}" style="${animDe(e.id, 'mpUp .45s cubic-bezier(.2,.8,.2,1) both')}">
@@ -2163,7 +2171,8 @@
   const DUR_GOL = { mp: 5000, riv: 4000 }, DUR_FALTA = 5000, DUR_CORTA = 2200;
   const T_TIRO = 2300, T_GANA = 3200;   // 10d: cada lanzamiento (tarjeta y, a los 1,3 s, el sello) y la tarjeta del ganador
   const durAnuncio = (ctx, e) => (e.tipo === 'GOL' ? (ctx.mp[e.lado] ? DUR_GOL.mp : DUR_GOL.riv) : e.tipo === 'FALTA' ? DUR_FALTA
-    : e.tipo === 'TANDA' ? e.nuevos.length * T_TIRO + (e.ganador ? T_GANA : 500) : DUR_CORTA);
+    : e.tipo === 'TANDA' ? e.nuevos.length * T_TIRO + (e.ganador ? T_GANA : 500) : e.tipo === 'CAMBIO DE PORTERO' ? 3600 : DUR_CORTA);
+  const anunciable = e => e.tipo === 'GOL' || e.tipo === 'FALTA' || (e.tipo === 'CAMBIO DE PORTERO' && e.jugador && !e.ambiguo);
   const iniDe = n => (n || '').replace(/\./g, '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
   function escenaGolHtml(ctx, e) {
     const l = e.lado, estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8 ? ' estr' : '';
@@ -2334,6 +2343,25 @@
   window.addEventListener('hashchange', () => { if (ESC.abierta) ESC.abierta.cerrar(); });
   document.addEventListener('click', e => { if (!e.target.closest('[data-ver-resumen]')) return; const S = RSM.final || LIVE.snaps[DV.idp]; if (S) escenaResumen(ctxDirecto(Object.assign({}, S, { _resumen: true }))); });
 
+  /* ── Cambio de portero a pantalla completa ─────────────────────────────────────────────────────────────────────
+     «CAMBIO DE PORTERO · equipo»: la tarjeta del que sale se apaga y entra la del nuevo (fotos a color si son nuestros;
+     del rival, su escudo). Si la hora se dedujo de los goles encajados, lo dice («momento aproximado»). */
+  function escenaCambioHtml(ctx, e) {
+    const l = e.lado, estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8 ? ' estr' : '';
+    const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
+    const tarjeta = (cls, rotulo, id, dorsal, corto, largo) => {
+      let dentro;
+      if (ctx.mp[l]) { const p = jugadorDe(ctx, l, id, dorsal); dentro = p && p.foto ? `<div class="f" style="background-image:url('${esc(p.foto)}')"></div>` : `<div class="i">${esc(p ? ini(p.nombre, p.apellidos) : iniDe(corto || largo))}</div>`; }
+      else dentro = `<div class="e" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>`;
+      const ring = cls === 'entra' && ctx.mp[l] ? 'box-shadow:0 0 0 3px #D3202A, 0 20px 50px rgba(0,0,0,.5)' : '';
+      return `<div class="ec-card ${cls}" style="${ring}">${dentro}<div class="pie"><small>${rotulo}</small><b>${esc(quienD(ctx, l, dorsal, corto, largo))}</b></div></div>`;
+    };
+    const sub = [ordinal(e.periodo) + (e.t ? ' · ' + e.t : ''), e.aprox ? 'momento aproximado' : ''].filter(Boolean).join(' · ');
+    return `<div class="esc-cambio${estr}" role="status" aria-label="Cambio de portero de ${esc(ctx.abr[l])}"><div class="ec-k">CAMBIO DE PORTERO · ${esc(ctx.abr[l])}</div>
+      <div class="ec-fila">${tarjeta('sale', 'SALE', e.sale_id_player, e.sale_dorsal, e.sale_corto, e.sale)}<div class="ec-flecha">›</div>${tarjeta('entra', 'ENTRA', e.id_player, e.dorsal, e.jugador_corto, e.jugador)}</div>
+      <div class="ec-sub">${esc(sub)}</div></div>`;
+  }
+
   // cola de goles: una cortina cada vez (2,8 s); al salir, el rodillo sube un número (con «reducir movimiento», directo)
   function mostrarGol(e, ms) {
     const gen = DV.gen;
@@ -2352,10 +2380,10 @@
         if (ESC.abierta || ESC.cargando) document.addEventListener('mp-escena-fin', mostrar, { once: true }); else mostrar();
         return;
       }
-      if (e.tipo === 'GOL' || e.tipo === 'FALTA') {   // 10c / 10f: a pantalla completa; se puede tocar para cerrarla antes
+      if (e.tipo === 'GOL' || e.tipo === 'FALTA' || e.tipo === 'CAMBIO DE PORTERO') {   // 10c / 10f / cambio: a pantalla completa; se puede tocar para cerrarla antes
         const mostrar = () => {
           if (gen !== DV.gen) return fin();
-          tmp.innerHTML = e.tipo === 'GOL' ? escenaGolHtml(ctx, e) : escenaFaltaHtml(ctx, e);
+          tmp.innerHTML = e.tipo === 'GOL' ? escenaGolHtml(ctx, e) : e.tipo === 'FALTA' ? escenaFaltaHtml(ctx, e) : escenaCambioHtml(ctx, e);
           const el = tmp.firstElementChild; document.body.appendChild(el);
           let hecho = false, tic = null;
           if (e.tipo === 'FALTA') {   // la sanción corre deprisa (×4) desde el segundo 1,6, para que se vea el reloj bajar
@@ -2363,6 +2391,7 @@
             tic = setInterval(() => { const rem = Math.max(0, total - Math.max(0, Date.now() - t0 - 1600) / 1000 * 4); r.textContent = mmssD(rem); b.style.width = (rem / total * 100).toFixed(1) + '%'; }, 100);
             setTimeout(() => el.classList.add('sale'), dur - 350);
           }
+          if (e.tipo === 'CAMBIO DE PORTERO') setTimeout(() => el.classList.add('sale-ya'), dur - 350);
           const acaba = () => { if (hecho) return; hecho = true; clearInterval(tic); el.remove(); fin(); };
           el.addEventListener('click', acaba); setTimeout(acaba, dur);
         };
@@ -2380,7 +2409,7 @@
     DV.visto = fuente.length;
     // goles y faltas se anuncian (cortina) y su fila entra al acabar; la tanda, ronda a ronda
     const turno = dur => { const ini0 = Math.max(ahora, DV.colaFin || 0), fin = ini0 + dur; DV.colaFin = fin + 1200; return fin; };
-    nuevos.forEach(e => { const anuncia = e.tipo === 'GOL' || e.tipo === 'FALTA';
+    nuevos.forEach(e => { const anuncia = anunciable(e);
       DV.aparece[e.id] = anuncia && MOV ? turno(durAnuncio(ctx, e)) : ahora; if (anuncia) { DV.pendientes++; DV.cola(e); } });
     const tanda = (sn.penaltis && sn.penaltis.tanda) || [], nuevosT = tanda.filter(x => !DV.tanda.has(x.lado + x.ronda)), gan = sn.penaltis && sn.penaltis.ganador;
     if (nuevosT.length || (gan && !DV.ganVisto)) {
@@ -2505,8 +2534,8 @@
     prevRoute = location.hash;
     let introVista = false;
     try { introVista = sessionStorage.getItem(INTRO) === '1'; } catch (e) { /* sin almacenamiento */ }
-    introVistaCarga = introVista;
-    if (!introVista) abrirIntro();
+    introVistaCarga = introVista || !esInicio(HASH_INICIAL);
+    if (!introVistaCarga) abrirIntro();
     render();
     arrancarDirecto();
     cargarSemana();

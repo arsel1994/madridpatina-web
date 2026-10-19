@@ -91,4 +91,5 @@
 @keyframes mpBars{0%{transform:translateY(-115%)}70%{transform:translateY(4%)}85%{transform:translateY(-2%)}100%{transform:none}}
 @keyframes mpDraw{to{stroke-dashoffset:0}}
 @keyframes mpRing{0%{transform:scale(.6);opacity:1}100%{transform:scale(3.2);opacity:0}}
+@keyframes mpSale{to{opacity:.38;transform:scale(.9)}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}}
