@@ -769,11 +769,11 @@
       </div>
       ${P.contexto && P.contexto.length ? `<div style="font-size:15px;line-height:1.5;color:#C9C9CE;margin-top:12px;max-width:860px">${P.contexto.map(esc).join(' ')}</div>` : ''}
       <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">${kpis}</div>
-      ${titulo2('FUERZA DE CADA PLANTILLA · PRONÓSTICO', 'Puntos (goles + asistencias) de sus jugadores la temporada pasada, ajustados al nivel')}
+      ${titulo2('FUERZA DE CADA PLANTILLA · PRONÓSTICO', 'Puntos (goles + asistencias) de sus jugadores la temporada pasada, pasados al nivel de esta liga con el FMPe')}
       <div class="card" style="padding:8px 12px">${fuerza}
         <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#A6A6AD;padding:10px 8px 6px"><span><span style="color:#C9C9CE">■</span> ya han jugado este año</span><span><span style="color:#55555B">■</span> de su plantilla 2025/26 que aún no han jugado (cuentan la mitad)</span></div></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:12px;align-items:start">
-        <div>${titulo2('JUGADORES MÁS PELIGROSOS', 'Puntos por partido en 2025/26 y 2024/25')}<div class="card" style="padding:6px 14px">${pel || '<div style="padding:12px 0;color:#A6A6AD">Sin datos todavía.</div>'}</div></div>
+        <div>${titulo2('JUGADORES MÁS PELIGROSOS', 'Puntos por partido en 2025/26 y 2024/25, al nivel de esta liga (FMPe)')}<div class="card" style="padding:6px 14px">${pel || '<div style="padding:12px 0;color:#A6A6AD">Sin datos todavía.</div>'}</div></div>
         <div>${titulo2('PORTEROS MÁS FIABLES', '% de paradas en 2025/26 y 2024/25')}<div class="card" style="padding:6px 14px">${gks || '<div style="padding:12px 0;color:#A6A6AD">Sin datos todavía.</div>'}</div></div>
       </div>
       ${(() => { const esc_ = escalera(L); return esc_ || mov ? `${titulo2('CÓMO LLEGAN LOS EQUIPOS', esc_ ? 'Quién sube y quién baja' : '')}<div class="card" style="padding:6px 20px">${esc_}${mov}</div>` : ''; })()}
@@ -903,23 +903,29 @@
   }
 
   /* ── 6. Ficha de jugador ────────────────────────────────── */
+  // FMPe (scripts/reporte/fmpe.py): puntos por partido × factor de su liga × 18, o sea, puntos en una temporada de Senior 1
+  const FMPE_PJ = 18;
+  const nivelSenior = liga => { const n = (liga || '').toUpperCase(), m = /SENIOR\s*(\d)/.exec(n); return m && !/FEMENIN/.test(n) ? 's' + m[1] : null; };
   function vJugador(k) {
     let p = A.jugadores[k] || Object.values(A.jugadores)[0];
     const hj = H && H.byTok[H.tok(p.nombre + ' ' + p.apellidos)];
-    const TS = Object.assign({}, p.temporadas);
-    if (hj) { const agg = {}; hj.temporadas.forEach(t => { const a = agg[t.temporada] || (agg[t.temporada] = { pj: 0, goles: 0, asistencias: 0, pim: 0, eqs: [] }); a.pj += t.pj; a.goles += t.g; a.asistencias += t.a; a.pim += t.pim || 0; const l = t.equipo.replace('MADRIDPATINA', 'MP'); if (!a.eqs.includes(l)) a.eqs.push(l); }); Object.keys(agg).forEach(t => { TS[t] = agg[t]; }); }
+    const TS = Object.assign({}, p.temporadas), FM = (H && H.fmpe) || {};
+    if (hj) { const agg = {}; hj.temporadas.forEach(t => { const a = agg[t.temporada] || (agg[t.temporada] = { pj: 0, goles: 0, asistencias: 0, pim: 0, eqs: [], fx: 0, fpj: 0 }); a.pj += t.pj; a.goles += t.g; a.asistencias += t.a; a.pim += t.pim || 0; const l = t.equipo.replace('MADRIDPATINA', 'MP'); if (!a.eqs.includes(l)) a.eqs.push(l);
+      const f = FM[nivelSenior(t.liga)]; if (f) { a.fx += (t.g + t.a) * f; a.fpj += t.pj; } }); Object.keys(agg).forEach(t => { const a = agg[t]; TS[t] = Object.assign(a, { fmpe: a.fpj >= 3 ? a.fx / a.fpj * FMPE_PJ : null }); }); }
     p = Object.assign({}, p, { temporadas: TS });
     const order = Object.keys(TS).sort().filter(t => TS[t] && (TS[t].pj || t === A.temporada));
     const max = Math.max(1, ...order.map(t => Math.max(TS[t].goles || 0, TS[t].asistencias || 0)));
     const car = hj ? hj.carrera : null;
     const t = equiposDe(p)[0] || teamOf(p.equipo);
+    const ya = TS[A.temporada], fy = t && FM[nivelSenior(t.liga)];
+    if (ya && fy && ya.pj >= 3) TS[A.temporada] = Object.assign({}, ya, { fmpe: ((ya.goles || 0) + (ya.asistencias || 0)) / ya.pj * fy * FMPE_PJ });
     const tags = [rolDe(p).toUpperCase(), p.edad ? p.edad + ' AÑOS' : null, p.rookie ? 'DEBUTANTE' : null].filter(Boolean);
     const tile = (k2, v, ink = '') => `<div style="padding:12px 16px;background:#121214;border-radius:8px"><div style="font-size:13px;color:#A6A6AD;font-weight:600">${k2}</div><div style="${BS}font-weight:900;font-size:48px;line-height:1;${ink}">${v}</div></div>`;
     const temps = order.map((kk, ti) => { const s = p.temporadas[kk]; const g = s.goles || 0, a = s.asistencias || 0;
       return `<div style="display:grid;grid-template-columns:72px minmax(0,1fr) 120px;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid #26262A">
         <div><div style="${BS}font-weight:800;font-size:22px;line-height:1">${kk}</div><div style="font-size:13px;color:#A6A6AD">${s.pj} PJ${s.parcial ? ' · en curso' : (s.eqs ? ' · ' + esc(s.eqs.join(', ')) : '')}${s.pim ? ' · ' + fmin(s.pim) + ' de sanción' : ''}</div></div>
         <div style="display:flex;flex-direction:column;gap:4px"><div data-anim="mpWipe .6s cubic-bezier(.2,.8,.2,1) ${ti * 150}ms" style="height:12px;border-radius:2px;background:${RED};width:${Math.max(2, g / max * 100)}%;transform-origin:left"></div><div data-anim="mpWipe .6s cubic-bezier(.2,.8,.2,1) ${ti * 150 + 80}ms" style="height:12px;border-radius:2px;background:#8A8A8F;width:${Math.max(2, a / max * 100)}%;transform-origin:left"></div></div>
-        <div style="display:flex;gap:12px;justify-content:flex-end;${BS}font-weight:800;font-size:28px;line-height:1"><span style="color:#FF6B63">${g}<span style="font-size:14px"> G</span></span><span>${a}<span style="font-size:14px"> A</span></span></div></div>`; }).join('');
+        <div style="text-align:right"><div style="display:flex;gap:12px;justify-content:flex-end;${BS}font-weight:800;font-size:28px;line-height:1"><span style="color:#FF6B63">${g}<span style="font-size:14px"> G</span></span><span>${a}<span style="font-size:14px"> A</span></span></div>${TS[kk].fmpe != null ? `<div title="Puntos que habría hecho en una temporada de Liga Senior 1 (18 partidos)" style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.08em;color:#A6A6AD">FMPe ${dec(Math.round(TS[kk].fmpe * 10) / 10)}</div>` : ''}</div></div>`; }).join('');
     const partidos = p.partidos.map(x => box(hM(x.mid), 'background:#18181B;border-radius:10px;padding:14px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px', `
         ${disc(crest(x.rival), 48)}<div style="flex:1;min-width:0"><div style="font-size:13px;color:#A6A6AD">vs</div><span style="${BS}font-weight:800;font-size:22px;letter-spacing:.04em;line-height:1;white-space:nowrap">${esc(abr(x.rival))}</span></div>
         <div style="${BS}font-weight:800;font-size:24px;text-align:right">${x.pct != null ? dec(x.pct) + '%' : x.g + 'G ' + x.a + 'A'}</div>${x.pim ? `<div style="flex-basis:100%;margin-top:-6px;padding-left:60px;font-size:13px;font-weight:600;color:#A6A6AD">${fmin(x.pim)} de sanción</div>` : ''}`)).join('');
@@ -937,7 +943,7 @@
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${tags.map(tg => `<span style="font-size:13px;font-weight:700;letter-spacing:.06em;padding:4px 10px;border-radius:4px;background:#26262A">${tg}</span>`).join('')}</div>
           </div>
           ${car ? `<div data-anim="mpUp .4s cubic-bezier(.2,.8,.2,1) .6s" style="display:flex;gap:10px;flex-wrap:wrap">${tile('Goles en el club', car.g, 'color:#FF6B63')}${tile('Asistencias', car.a)}${tile('Partidos', car.pj)}${tile('Temporadas', car.temporadas)}${tile('Sanción', fmin((car.pim || 0) + ((p.temporadas[A.temporada] || {}).pim || 0)))}</div>` : ''}
-          <div data-grupo data-espera="900">${lab('POR TEMPORADA', 'margin-bottom:12px')}${temps}</div>
+          <div data-grupo data-espera="900">${lab('POR TEMPORADA', 'margin-bottom:' + (order.some(kk => TS[kk].fmpe != null) ? '2px' : '12px'))}${order.some(kk => TS[kk].fmpe != null) ? '<div style="font-size:13px;color:#A6A6AD;margin-bottom:10px">FMPe: los puntos que habría hecho en una temporada de Liga Senior 1, para comparar ligas distintas</div>' : ''}${temps}</div>
         </div>
       </div>
       ${p.partidos.length ? `${lab('PARTIDOS 2026/27', 'margin:28px 0 10px')}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">${partidos}</div>` : ''}`;
@@ -1547,20 +1553,27 @@
     const u = Object.values(x.u).reduce((a, v) => [a[0] + v[0], a[1] + v[1], a[2] + v[2]], [0, 0, 0]);   // todas sus categorías
     return { g: x.c[1] + tg, tg, pj: u[0] + est.length, mg: u[1] + tg, ma: u[2] + ta };
   }
-  const catDe = liga => { const n = (liga || '').toLowerCase(); return /senior|femenin/.test(n) ? 's' : /juvenil/.test(n) ? 'j' : /junior/.test(n) ? 'n' : /infantil/.test(n) ? 'i' : /alev/.test(n) ? 'a' : /benjam/.test(n) ? 'b' : ''; };
-  // Rivales peligrosos (presentación): puntos por partido en la categoría del partido, esta temporada antes del partido y
-  // la pasada juntas (4 partidos o más, o 2 de esta temporada); los 3 mejores del rival que pasen de 0,4. El motivo, de esta temporada si ya llevan 2 partidos.
+  const catDe = liga => { const n = (liga || '').toLowerCase(), m = /senior\s*(\d)/.exec(n);
+    return /senior/.test(n) && /femenin/.test(n) ? 'sf' : m ? 's' + m[1] : /senior/.test(n) ? 's' : /juvenil/.test(n) ? 'j' : /junior/.test(n) ? 'n' : /infantil/.test(n) ? 'i' : /alev/.test(n) ? 'a' : /benjam/.test(n) ? 'b' : ''; };
+  // Rivales peligrosos (presentación): puntos por partido, esta temporada antes del partido y la pasada juntas (4 partidos o
+  // más, o 2 de esta temporada); los 3 mejores del rival que pasen de 0,4. En senior cuentan todas las ligas senior, con los
+  // puntos pasados a la liga del partido con el FMPe (uno de Senior 2 vale el doble que uno de Senior 3); si no, su categoría.
+  // El motivo, con sus números de verdad: de esta temporada si ya llevan 2 partidos; si no, de la pasada (y en qué liga).
   function peligrosos(sn, l) {
-    const f = isoDe(sn), k = catDe(sn.liga), out = new Map(), cand = [];
+    const f = isoDe(sn), k = catDe(sn.liga), out = new Map(), cand = [], fm = (HIT && HIT.fmpe) || {};
     if (!HIT || !f || !k || (new Date(f) - new Date(HIT.actualizado)) / 864e5 > 8) return out;
+    const peso = c => (fm[k] && fm[c] ? fm[c] / fm[k] : c === k ? 1 : 0), liga = c => (/^s\d$/.test(c) ? 'Senior ' + c[1] : '');
     ((sn.plantillas || {})[l] || []).forEach(j => {
       const x = j.id_player && j.rol !== 'P' && HIT.j[j.id_player];
       if (!x) return;
-      const t = x.t.filter(p => p[0] < f && p[3] === k), u = x.u[k] || [0, 0, 0];
-      const tg = t.reduce((a, p) => a + p[1], 0), ta = t.reduce((a, p) => a + p[2], 0), pj = t.length + u[0];
+      const t = x.t.filter(p => p[0] < f && peso(p[3]) > 0), u = Object.entries(x.u).filter(([c]) => peso(c) > 0);
+      const pjU = u.reduce((a, [, v]) => a + v[0], 0), pj = t.length + pjU;
       if (pj < 4 && t.length < 2) return;
-      cand.push({ id: j.id_player, ppg: (tg + ta + u[1] + u[2]) / pj,
-        motivo: t.length >= 2 ? `${tg} G ${ta} A en ${t.length} PJ esta temporada` : `${num2((u[1] + u[2]) / u[0])} puntos por partido en ${HIT.pasada}` });
+      const eq = t.reduce((a, p) => a + (p[1] + p[2]) * peso(p[3]), 0) + u.reduce((a, [c, v]) => a + (v[1] + v[2]) * peso(c), 0);
+      const tg = t.reduce((a, p) => a + p[1], 0), ta = t.reduce((a, p) => a + p[2], 0);
+      let motivo = `${tg} G ${ta} A en ${t.length} PJ esta temporada`;
+      if (t.length < 2) { const [c, v] = u.sort((a, b) => b[1][0] - a[1][0])[0]; motivo = `${num2((v[1] + v[2]) / v[0])} puntos por partido en ${HIT.pasada}${c !== k && liga(c) ? ' (en ' + liga(c) + ')' : ''}`; }
+      cand.push({ id: j.id_player, ppg: eq / pj, motivo });
     });
     cand.filter(x => x.ppg >= 0.4).sort((a, b) => b.ppg - a.ppg).slice(0, 3).forEach(x => out.set(x.id, x));
     return out;
