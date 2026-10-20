@@ -828,6 +828,7 @@
           <div style="${BS}font-weight:900;font-size:clamp(72px,12vw,150px);line-height:.85;font-variant-numeric:tabular-nums;white-space:nowrap" data-grupo>${rodillo(p.gl, '1.1s')}<span style="color:#55555B">–</span>${rodillo(p.gv, '1.3s')}</div>
           ${team(p.visitante, hT(p.visitante))}
         </div>
+        ${p.idp ? videoPartido(p.idp) : ''}
         ${p.nuestro && p.idp ? `<div style="display:flex;justify-content:center;margin-top:22px"><a class="dv-alin" href="#/directo/${encodeURIComponent(p.idp)}/resumen" title="El partido contado otra vez desde el acta: pista, alineaciones, goles, faltas, penaltis y resumen final">▶ Ver resumen</a></div>` : ''}
         ${hasTiros ? `<div style="max-width:640px;margin:28px auto 0">
           <div style="display:flex;justify-content:space-between;${BS}font-weight:800;font-size:28px;line-height:1"><span>${p.tl}</span><span class="lab" style="align-self:center">TIROS A PUERTA</span><span>${p.tv}</span></div>
@@ -1232,8 +1233,8 @@
     jugadores: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.2" cy="9" r="2.6"/><path d="M16.5 14.1c2.8.3 5 2.3 5 5.9"/>',
     legado: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 6h3a3 3 0 0 1-3 3.5M7 6H4a3 3 0 0 0 3 3.5"/>',
   };
-  const TOP = { directo: 'jornada', jornada: 'jornada', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'pretemporada', metodo: 'metodo' };
-  const TITLES = { directo: 'En directo', jornada: 'Jornada', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos' };
+  const TOP = { directo: 'jornada', jornada: 'jornada', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'pretemporada', metodo: 'metodo', sincronizar: 'jornada' };
+  const TITLES = { directo: 'En directo', jornada: 'Jornada', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', sincronizar: 'Sincronizar vídeo' };
   let prevRoute = null, navReset = false, goingBack = false;
   // 7a · la píldora roja se desliza desde la sección anterior (y se recoloca si cambia el ancho de la ventana)
   let pilAntes = null, secAntes = null, animarAlCerrar = false;
@@ -1278,10 +1279,12 @@
     else if (v === 'pretemporada') html = vPretemporada(parts[1]);
     else if (v === 'directo') html = vDirecto(parts[1], parts[2]);
     else if (v === 'metodo') html = vMetodo();
+    else if (v === 'sincronizar') html = vSincronizar(parts[1]);
     else html = vJornada(parts[1]);
     const back = S.hist.length && v !== 'jornada' ? '<a class="back" href="#" data-back>← Volver</a>' : '';
     const pie = `<footer class="pie"><span>MADRIDPATINA · Temporada ${esc(A.temporada)}</span><span><a href="#/metodo">Cómo lo calculamos</a> · Datos: Federación Madrileña de Patinaje · actualizado ${fdc(A.actualizado).toLowerCase()}</span></footer>`;
     view.innerHTML = back + html + pie;
+    if (!VID) cargarVideos().then(() => { if (/^#\/partido\//.test(location.hash)) render(); });
     if (v === 'metodo' && parts[1]) setTimeout(() => { const el = document.getElementById('m-' + parts[1]); if (el) el.scrollIntoView({ block: 'start' }); }, 60);
     // el contenido que no trae su propia animación entra con fundido + subida, en cascada de 60 ms
     let k = 0;
@@ -1648,6 +1651,159 @@
     const n = l => fuera[l].filter(x => x.fin > tg).length, d = n(otro(g.lado)) - n(g.lado);
     return d > 0 ? 'En superioridad' : d < 0 ? 'En inferioridad' : '';
   }
+  /* ── Vídeo del partido (YouTube), sincronizado jugada a jugada ─────────────────────────────────────────────────────
+     data/videos.json: { idp: { yt, canal, partes: {1, 2}, ev: { id del evento: { s, tipo, p, t, lado, q, m } } } }, que se
+     rellena con la herramienta #/sincronizar/{idp}. El reloj del partido se para en cada pitido (1,2–1,7 minutos reales por
+     minuto de juego), así que no basta con saber dónde empieza cada parte: se marca cada jugada. */
+  let VID = null, vidP = null;
+  const cargarVideos = () => vidP || (vidP = fetch('data/videos.json?v=' + encodeURIComponent(A.actualizado || ''), { cache: 'no-store' })
+    .then(r => (r.ok ? r.json() : {})).catch(() => ({})).then(d => { VID = d || {}; return VID; }));
+  const ANTES_JUGADA = 8;   // la jugada se empieza a ver unos segundos antes
+  const segVideo = (idp, e) => { const v = VID && VID[idp], x = v && v.ev && e && v.ev[e.id]; return x ? x.s : null; };
+  const botonVer = (idp, e, txt = '▶') => { const t = segVideo(idp, e);
+    return t == null ? '' : `<button type="button" class="dv-ver" data-ver="${esc(idp)}|${t}" title="Ver la jugada en el vídeo" aria-label="Ver la jugada en el vídeo">${txt}</button>`; };
+  function abrirVideo(idp, t) {
+    const v = VID && VID[idp];
+    if (!v) return;
+    let el = $('#vid-panel');
+    if (!el) { el = document.createElement('div'); el.id = 'vid-panel'; el.className = 'vid-panel'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Vídeo del partido'); document.body.appendChild(el); }
+    el.innerHTML = `<div class="vp-cab"><span>VÍDEO DEL PARTIDO${v.canal ? ' · ' + esc(v.canal) : ''}</span><button type="button" data-vid-cierra aria-label="Cerrar el vídeo">✕</button></div>
+      <div class="vp-marco"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.yt)}?start=${Math.max(0, Math.round(t - ANTES_JUGADA))}&autoplay=1&rel=0&playsinline=1" title="Vídeo del partido" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
+  }
+  const cerrarVideo = () => { const el = $('#vid-panel'); if (el) el.remove(); };
+  // antes que nadie (las escenas se cierran al tocarlas): abre el vídeo en esa jugada
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-ver]');
+    if (b) { e.preventDefault(); e.stopPropagation(); const [idp, t] = b.dataset.ver.split('|'); if (ESC.abierta) ESC.abierta.cerrar(); abrirVideo(idp, +t); return; }
+    if (e.target.closest('[data-vid-cierra]')) cerrarVideo();
+  }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarVideo(); });
+  // capítulos del vídeo en la página del partido (sin depender del directo: el fichero trae cómo contar cada jugada)
+  const TIPO_VID = { GOL: 'Gol', FALTA: 'Exclusión', 'TIEMPO MUERTO': 'Tiempo muerto', 'CAMBIO DE PORTERO': 'Cambio de portero' };
+  function videoPartido(idp) {
+    const v = VID && VID[idp];
+    if (!v) return '';
+    const caps = Object.entries(v.ev || {}).map(([id, x]) => ({ id, ...x })).sort((a, b) => a.s - b.s);
+    const ini = (v.partes && (v.partes['1'] ?? v.partes[1])) || 0;
+    return `<div class="vid-caps"><div class="cab"><span class="lab">VÍDEO DEL PARTIDO${v.canal ? ' · ' + esc(v.canal) : ''}</span><button type="button" class="dv-alin" data-ver="${esc(idp)}|${ini + ANTES_JUGADA}">▶ Verlo desde el principio</button></div>
+      <div class="lista">${caps.map(x => `<button type="button" class="cap${x.tipo === 'GOL' ? ' gol' : ''}" data-ver="${esc(idp)}|${x.s}"><span class="t">${esc(ordinal(x.p) + ' ' + (x.t || ''))}</span><span class="k">${esc(TIPO_VID[x.tipo] || x.tipo)}</span><span class="q">${esc(x.q || '')}</span><span class="m">${esc((x.m || '').replace('-', '–'))}</span><i>▶</i></button>`).join('')}</div></div>`;
+  }
+
+  /* ── Sincronizar el vídeo de un partido (#/sincronizar/{idp}) ──────────────────────────────────────────────────────
+     Se pega el enlace de YouTube; la página va jugada por jugada (inicio de cada parte, goles, exclusiones, tiempos muertos,
+     cambios de portero), lleva el vídeo a unos segundos antes del momento estimado y basta con pulsar «¡Ahora!». Cada marca
+     afina la estimación de la siguiente. Al final da un código que se añade a data/videos.json (scripts/reporte/videos.json). */
+  const SY = { idp: null, S: null, items: [], i: 0, yt: '', canal: '', player: null };
+  const RITMO_VIDEO = 1.45;   // minutos de vídeo por minuto de juego (senior, medido en octubre de 2026)
+  const ytId = u => { const m = /(?:youtu\.be\/|[?&]v=|\/live\/|\/shorts\/|\/embed\/)([\w-]{11})/.exec(u || '') || /^\s*([\w-]{11})\s*$/.exec(u || ''); return m ? m[1] : null; };
+  const mmssV = t => { t = Math.max(0, Math.round(t)); const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, x = t % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+  const cargarYT = () => (window.YT && window.YT.Player ? Promise.resolve() : window._ytP || (window._ytP = new Promise(res => {
+    window.onYouTubeIframeAPIReady = res; const sc = document.createElement('script'); sc.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(sc); })));
+  function itemsSync(S) {
+    const ctx = ctxDirecto(S), out = [];
+    const quien = e => (e.tipo === 'TIEMPO MUERTO' ? ctx.abr[e.lado] : (e.tipo === 'CAMBIO DE PORTERO' ? 'Entra ' : '') + quienD(ctx, e.lado, e.dorsal, e.jugador_corto, e.jugador) + ' (' + ctx.abr[e.lado] + ')');
+    const evs = (S.eventos || []).filter(e => e.periodo && e.t && !/^pc-/.test(e.id || '') && TIPO_VID[e.tipo]);
+    [1, 2].forEach(p => {
+      out.push({ id: 'inicio-' + p, ancla: true, p, g: 0, tipo: 'INICIO', txt: 'Empieza la ' + ordinal(p) + ' parte' });
+      evs.filter(e => e.periodo === p).sort((a, b) => segs(a.t) - segs(b.t)).forEach(e => out.push({ id: e.id, p, g: segs(e.t), tipo: e.tipo, e, q: quien(e),
+        txt: e.tipo === 'TIEMPO MUERTO' ? 'Tiempo muerto · ' + ctx.abr[e.lado] : (TIPO_VID[e.tipo] || e.tipo) + ' · ' + quien(e) + (e.tipo === 'GOL' && e.marcador ? ' · ' + e.marcador.replace('-', '–') : '') }));
+    });
+    return out;
+  }
+  function estimaSync(k) {
+    const it = SY.items[k], hechos = SY.items.slice(0, k).filter(x => x.s != null), ult = hechos[hechos.length - 1];
+    if (!ult) return 0;
+    if (ult.p === it.p) {
+      const ini = SY.items.find(x => x.p === it.p && x.ancla && x.s != null);
+      const r = ini && ult !== ini && ult.g > 60 ? (ult.s - ini.s) / ult.g : RITMO_VIDEO;
+      return ult.s + (it.g - ult.g) * Math.max(1, Math.min(2.2, r));
+    }
+    const dur = SY.S.duracion_periodo || 1500;   // otra parte: lo que quedaba de la anterior y unos minutos de descanso
+    return ult.s + Math.max(0, dur - ult.g) * RITMO_VIDEO + 300 + it.g * RITMO_VIDEO;
+  }
+  const guardaSync = () => { try { localStorage.setItem('mp-sync-' + SY.idp, JSON.stringify({ yt: SY.yt, canal: SY.canal, m: Object.fromEntries(SY.items.filter(x => x.s != null).map(x => [x.id, x.s])) })); } catch (e) { /* sin almacenamiento: no pasa nada */ } };
+  function codigoSync() {
+    const ev = {}, partes = {};
+    SY.items.forEach(x => { if (x.s == null) return; if (x.ancla) partes[x.p] = Math.round(x.s);
+      else ev[x.id] = { s: Math.round(x.s), tipo: x.tipo, p: x.p, t: x.e.t, lado: x.e.lado, q: x.q, m: x.e.marcador || null }; });
+    return JSON.stringify({ [SY.idp]: { yt: SY.yt, canal: SY.canal || null, partes, ev } });
+  }
+  function pintarSync() {
+    const lista = $('#sy-lista'), act = $('#sy-actual'), cod = $('#sy-codigo');
+    if (!lista) return;
+    const it = SY.items[SY.i];
+    act.innerHTML = it ? `<span class="n">${SY.i + 1}/${SY.items.length}</span><b>${esc(it.txt)}</b><span class="t">${it.ancla ? '' : esc(ordinal(it.p) + ' parte · minuto ' + it.e.t + ' de juego')}${it.s != null ? ' · marcado en ' + mmssV(it.s) : ''}</span>`
+      : '<b>¡Listo! Copia el código de abajo y pásamelo.</b>';
+    lista.innerHTML = SY.items.map((x, k) => `<button type="button" class="sy-it${k === SY.i ? ' on' : ''}${x.s != null ? ' ok' : ''}${x.ancla ? ' ancla' : ''}" data-sy="ir" data-k="${k}"><span class="s">${x.s != null ? mmssV(x.s) : '—'}</span><span>${esc(x.txt)}</span></button>`).join('');
+    const hechas = SY.items.filter(x => x.s != null && !x.ancla).length;
+    cod.value = hechas ? codigoSync() : '';
+    $('#sy-n').textContent = hechas + ' de ' + SY.items.filter(x => !x.ancla).length + ' jugadas marcadas';
+  }
+  function irSync(k, buscar = true) {
+    SY.i = Math.max(0, Math.min(SY.items.length, k));
+    const it = SY.items[SY.i];
+    if (buscar && it && SY.player && SY.player.seekTo) { SY.player.seekTo(Math.max(0, (it.s != null ? it.s : estimaSync(SY.i)) - (it.s != null ? 3 : 15)), true); SY.player.playVideo(); }
+    pintarSync();
+  }
+  function arrancarSync(idp) {
+    const S = SY.S;
+    if (!S) return;
+    SY.items = itemsSync(S);
+    let previo = null;
+    try { previo = JSON.parse(localStorage.getItem('mp-sync-' + idp) || 'null'); } catch (e) { previo = null; }
+    const v = (VID && VID[idp]) || null;
+    if (previo) { SY.yt = previo.yt; SY.canal = previo.canal || ''; SY.items.forEach(x => { if (previo.m[x.id] != null) x.s = previo.m[x.id]; }); }
+    else if (v) { SY.yt = v.yt; SY.canal = v.canal || ''; SY.items.forEach(x => { const y = x.ancla ? (v.partes || {})[x.p] : (v.ev[x.id] || {}).s; if (y != null) x.s = y; }); }
+    SY.i = Math.max(0, SY.items.findIndex(x => x.s == null));
+    if (SY.i < 0) SY.i = SY.items.length;
+    $('#sy-url').value = SY.yt ? 'https://youtu.be/' + SY.yt : '';
+    $('#sy-canal').value = SY.canal;
+    pintarSync();
+    if (SY.yt) cargarPlayer();
+  }
+  function cargarPlayer() {
+    cargarYT().then(() => {
+      if (SY.player && SY.player.loadVideoById) { SY.player.loadVideoById(SY.yt); return; }
+      SY.player = new YT.Player('sy-player', { videoId: SY.yt, playerVars: { rel: 0, playsinline: 1 }, events: { onReady: () => irSync(SY.i) } });
+    });
+  }
+  function vSincronizar(idp) {
+    if (SY.idp !== idp) Object.assign(SY, { idp, S: null, items: [], i: 0, yt: '', canal: '', player: null });
+    const S = (RSM.final && RSM.final.idp === idp && RSM.final) || LIVE.snaps[idp] || SY.S;
+    if (!S) {
+      const url = DIRECTO_EJEMPLO ? DIRECTO_URL : DIRECTO_URL + '?idp=' + encodeURIComponent(idp);
+      fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(d => {
+        SY.S = (d.partidos || []).find(p => p.idp === idp) || null;
+        if (location.hash.indexOf('#/sincronizar/' + idp) === 0) render();
+      }).catch(() => { const w = $('[data-sy-espera]'); if (w) w.textContent = 'Sin conexión con el acta de la federación.'; });
+      return '<div class="loading" data-sy-espera>Cargando el acta del partido…</div>';
+    }
+    SY.S = S;
+    cargarVideos().then(() => setTimeout(() => arrancarSync(idp), 0));
+    return `<div class="sy"><div class="lab" style="color:#FF6B63">SINCRONIZAR VÍDEO</div><h1>${esc(S.local)} <span>${S.gl ?? ''}–${S.gv ?? ''}</span> ${esc(S.visitante)}</h1>
+      <p class="sy-ayuda">1. Pega el enlace de YouTube y pulsa «Cargar». 2. Para cada jugada el vídeo salta a unos segundos antes de cuando debería ser: dale al play y pulsa <b>¡Ahora!</b> justo cuando pasa (el gol entra, el árbitro pita la exclusión…). Si no se ve, «Saltar». 3. Al final copia el código y pásamelo.</p>
+      <div class="sy-form"><input id="sy-url" type="url" placeholder="Enlace de YouTube (https://youtu.be/…)" aria-label="Enlace de YouTube"><input id="sy-canal" type="text" placeholder="Canal (opcional)" aria-label="Canal de YouTube"><button type="button" class="dv-alin" data-sy="cargar">Cargar</button></div>
+      <div class="sy-cols"><div><div class="sy-marco"><div id="sy-player"></div></div>
+        <div class="sy-actual" id="sy-actual"></div>
+        <div class="sy-botones"><button type="button" data-sy="atras">◀ Atrás</button><button type="button" data-sy="estima">Ir a la estimación</button><button type="button" class="ahora" data-sy="ahora">¡Ahora!</button><button type="button" data-sy="menos">−2 s</button><button type="button" data-sy="mas">+2 s</button><button type="button" data-sy="saltar">Saltar ▶</button></div></div>
+        <div class="sy-lado"><div class="sy-n" id="sy-n"></div><div class="sy-lista" id="sy-lista"></div></div></div>
+      <div class="sy-cod"><div class="lab">CÓDIGO PARA LA WEB</div><textarea id="sy-codigo" readonly rows="4" aria-label="Código para la web"></textarea><button type="button" class="dv-alin" data-sy="copiar">Copiar el código</button></div></div>`;
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-sy]');
+    if (!b) return;
+    const a = b.dataset.sy, it = SY.items[SY.i], now = () => (SY.player && SY.player.getCurrentTime ? SY.player.getCurrentTime() : null);
+    if (a === 'cargar') { const id = ytId($('#sy-url').value); SY.canal = $('#sy-canal').value.trim(); if (!id) { $('#sy-url').focus(); return; } SY.yt = id; guardaSync(); cargarPlayer(); pintarSync(); }
+    else if (a === 'ahora' && it) { const t = now(); if (t == null) return; it.s = t; guardaSync(); irSync(SY.i + 1); }
+    else if (a === 'menos' && it && it.s != null) { it.s = Math.max(0, it.s - 2); guardaSync(); irSync(SY.i); }
+    else if (a === 'mas' && it && it.s != null) { it.s += 2; guardaSync(); irSync(SY.i); }
+    else if (a === 'saltar') irSync(SY.i + 1);
+    else if (a === 'atras') irSync(SY.i - 1);
+    else if (a === 'estima' && it) { const t = estimaSync(SY.i); if (SY.player && SY.player.seekTo) { SY.player.seekTo(Math.max(0, t - 15), true); SY.player.playVideo(); } }
+    else if (a === 'ir') irSync(+b.dataset.k);
+    else if (a === 'copiar') { const t = $('#sy-codigo'); if (!t.value) return; t.select(); (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(() => { b.textContent = '✓ Copiado'; }).catch(() => document.execCommand('copy')); }
+  });
+
   /* ── Hitos de cada gol ──────────────────────────────────────────────────────────────────────────────────────────
      «SU PRIMER GOL» (ninguno en la FMP desde 2016/17) o «1.er GOL DE LA TEMPORADA»; hat trick, póker, manita; «SUPERA SU
      MEDIA» al llegar a 2 o más y al menos el doble de su media por partido (temporada pasada y esta antes del partido,
@@ -1773,7 +1929,7 @@
     const c = crest(nom), bg = (A.crests[nom] && A.crests[nom].bg) || 'transparent';
     return `<div class="dv-fila${e.tipo === 'GOL' && ctx.mp[l] ? ' mp' : ''}" style="${animDe(e.id, 'mpUp .45s cubic-bezier(.2,.8,.2,1) both')}">
       <span class="t">${esc(ordinal(e.periodo) + (e.t ? ' ' + e.t : ''))}</span><span class="tag" style="background:${t[1]};color:${t[2]}">${esc(t[0])}</span>
-      <div style="min-width:0"><div class="tit">${esc(tit)}${hitos.map(x => `<span class="dv-hito">${esc(x)}</span>`).join('')}</div><div class="sub">${esc(sub)}</div></div>
+      <div style="min-width:0"><div class="tit">${esc(tit)}${hitos.map(x => `<span class="dv-hito">${esc(x)}</span>`).join('')}${botonVer(ctx.sn.idp, e)}</div><div class="sub">${esc(sub)}</div></div>
       <div class="der"><div style="box-shadow:0 0 0 1.5px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div><span>${e.tipo === 'GOL' && e.marcador ? esc(e.marcador.replace('-', '–')) : ''}</span></div></div>`;
   }
   // filas en orden cronológico (la lista las muestra al revés) con separadores deducidos del estado: el portal no da inicio/fin
@@ -2384,7 +2540,7 @@
       const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
       const sub = [...hitosGol(e, ctx.sn.eventos, ctx.sn).tags, hayA ? 'Asist. ' + asWho : 'Sin asistencia', parte, marc].filter(Boolean).join(' · ');
       return `<div class="esc-gol riv${estr}" role="status" aria-label="Gol de ${esc(ctx.abr[l])}"><div class="eg-cortina"><div class="eg-esc" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>
-        <div class="eg-tx"><div class="eg-gol">GOL</div><div class="eg-quien">${esc(quien)}</div><div class="eg-sub">${esc(sub)}</div></div></div></div>`;
+        <div class="eg-tx"><div class="eg-gol">GOL</div><div class="eg-quien">${esc(quien)}</div><div class="eg-sub">${esc(sub)}</div>${botonVer(ctx.sn.idp, e, '▶ VER EL GOL')}</div></div></div>`;
     }
     const foto = (p, nombre) => (p && p.foto ? `<div class="f" style="background-image:url('${esc(p.foto)}')"></div>` : `<div class="i">${esc(p ? ini(p.nombre, p.apellidos) : iniDe(nombre))}</div>`);
     const s1 = jugadorDe(ctx, l, e.id_player, e.dorsal), a1 = hayA ? jugadorDe(ctx, l, e.assist_id_player, e.asist_dorsal) : null;
@@ -2395,7 +2551,7 @@
         <div class="eg-sc">${foto(s1, e.jugador_corto || e.jugador)}<div class="d">${esc(e.dorsal || '')}</div></div>
       </div>
       <div class="eg-tx"><div class="eg-gol">GOL</div><div class="eg-quien">${esc(quien)}</div>${hayA ? `<div class="eg-asis">Asistencia de <b>${esc(asWho)}</b>${h.asist ? ' · ' + esc(h.asist) : ''}</div>` : ''}
-        <div class="eg-chips">${h.tags.map(x => `<span class="hito">${esc(x)}</span>`).join('')}${[parte, marc, nota.toUpperCase()].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}</div></div>
+        <div class="eg-chips">${botonVer(ctx.sn.idp, e, '▶ VER EL GOL')}${h.tags.map(x => `<span class="hito">${esc(x)}</span>`).join('')}${[parte, marc, nota.toUpperCase()].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}</div></div>
     </div></div>`;
   }
 
@@ -2490,7 +2646,7 @@
       else ph = `<div class="e" style="${escR(l)}"></div>`;
       const sub = [hayA ? 'Asist. ' + quienD(ctx, l, e.asist_dorsal, e.asist_corto, e.asist_jugador) + (h.asist ? ' (' + h.asist + ')' : '') : 'Sin asistencia', situacionGol(e, sn.eventos, ctx.dur)].filter(Boolean).join(' · ');
       return `<div class="er-gol${mp ? ' mp' : ''}" style="animation-delay:${(0.7 + q * 0.12).toFixed(2)}s"><span class="t">${esc(ordinal(e.periodo) + ' ' + (e.t || ''))}</span><div class="erf">${ph}</div>
-        <div class="q"><b>${esc(quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador))}${h.tags.map(x => `<span class="dv-hito">${esc(x)}</span>`).join('')}</b><span>${esc(sub)}</span></div><span class="m">${esc((e.marcador || '').replace('-', '–'))}</span></div>`;
+        <div class="q"><b>${esc(quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador))}${h.tags.map(x => `<span class="dv-hito">${esc(x)}</span>`).join('')}${botonVer(sn.idp, e)}</b><span>${esc(sub)}</span></div><span class="m">${esc((e.marcador || '').replace('-', '–'))}</span></div>`;
     }).join('');
     const pors = (sn.porteros || []).filter(p => p.tiros).map((p, q) => {
       const mp = ctx.mp[p.lado], pj = mp ? jugadorDe(ctx, p.lado, p.id_player, p.dorsal) : null, pc = pctP(p);
@@ -2546,7 +2702,7 @@
     setTimeout(() => { if (DV.idp === idp && DV.gen === gen && RSM.activo) escenaResumen(ctxDirecto(Object.assign({}, RSM.final, { _resumen: true }))); }, ya || !MOV ? 0 : 1800);
   }
   // si se cambia de página con una escena abierta, se cierra
-  window.addEventListener('hashchange', () => { if (ESC.abierta) ESC.abierta.cerrar(); });
+  window.addEventListener('hashchange', () => { if (ESC.abierta) ESC.abierta.cerrar(); cerrarVideo(); });
   document.addEventListener('click', e => { if (!e.target.closest('[data-ver-resumen]')) return; const S = RSM.final || LIVE.snaps[DV.idp]; if (S) escenaResumen(ctxDirecto(Object.assign({}, S, { _resumen: true }))); });
 
   /* ── Cambio de portero a pantalla completa ─────────────────────────────────────────────────────────────────────
