@@ -123,6 +123,126 @@
     "lado": "L",
     "q": "#77 C. Arceo (MP D)",
     "m": "5-5"
+   },
+   "pen-1-L": {
+    "s": 5540,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "L",
+    "q": "#5 M. Alegre (MP D)",
+    "m": "fallo",
+    "ronda": 1
+   },
+   "pen-1-V": {
+    "s": 5572,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "V",
+    "q": "#23 A. López (MP C)",
+    "m": "fallo",
+    "ronda": 1
+   },
+   "pen-2-L": {
+    "s": 5608,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "L",
+    "q": "#94 M. Giner (MP D)",
+    "m": "fallo",
+    "ronda": 2
+   },
+   "pen-2-V": {
+    "s": 5640,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "V",
+    "q": "#46 U. López (MP C)",
+    "m": "fallo",
+    "ronda": 2
+   },
+   "pen-3-L": {
+    "s": 5668,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "L",
+    "q": "#77 C. Arceo (MP D)",
+    "m": "fallo",
+    "ronda": 3
+   },
+   "pen-3-V": {
+    "s": 5698,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "V",
+    "q": "#88 R. Grande (MP C)",
+    "m": "fallo",
+    "ronda": 3
+   },
+   "pen-4-L": {
+    "s": 5724,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "L",
+    "q": "#76 E. Mazón (MP D)",
+    "m": "fallo",
+    "ronda": 4
+   },
+   "pen-4-V": {
+    "s": 5756,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "V",
+    "q": "#24 F. Soriano (MP C)",
+    "m": "fallo",
+    "ronda": 4
+   },
+   "pen-5-L": {
+    "s": 5794,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "L",
+    "q": "#8 J. García (MP D)",
+    "m": "fallo",
+    "ronda": 5
+   },
+   "pen-5-V": {
+    "s": 5822,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "V",
+    "q": "#31 C. Vázquez (MP C)",
+    "m": "fallo",
+    "ronda": 5
+   },
+   "pen-6-L": {
+    "s": 5849,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "L",
+    "q": "#4 J. Rodríguez (MP D)",
+    "m": "gol",
+    "ronda": 6
+   },
+   "pen-6-V": {
+    "s": 5882,
+    "tipo": "PENALTI",
+    "p": 3,
+    "t": null,
+    "lado": "V",
+    "q": "#84 F. Navas (MP C)",
+    "m": "fallo",
+    "ronda": 6
    }
   }
  }

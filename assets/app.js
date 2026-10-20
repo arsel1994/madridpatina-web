@@ -829,7 +829,7 @@
           ${team(p.visitante, hT(p.visitante))}
         </div>
         ${p.idp ? videoPartido(p.idp) : ''}
-        ${p.nuestro && p.idp ? `<div style="display:flex;justify-content:center;margin-top:22px"><a class="dv-alin" href="#/directo/${encodeURIComponent(p.idp)}/resumen" title="El partido contado otra vez desde el acta: pista, alineaciones, goles, faltas, penaltis y resumen final">▶ Ver resumen</a></div>` : ''}
+        ${p.nuestro && p.idp && !(VID && VID[p.idp]) ? `<div style="display:flex;justify-content:center;margin-top:22px"><a class="dv-alin" href="#/directo/${encodeURIComponent(p.idp)}/resumen" title="El partido contado otra vez desde el acta: pista, alineaciones, goles, faltas, penaltis y resumen final">▶ Ver resumen</a></div>` : ''}
         ${hasTiros ? `<div style="max-width:640px;margin:28px auto 0">
           <div style="display:flex;justify-content:space-between;${BS}font-weight:800;font-size:28px;line-height:1"><span>${p.tl}</span><span class="lab" style="align-self:center">TIROS A PUERTA</span><span>${p.tv}</span></div>
           <div style="display:flex;gap:3px;height:10px;margin-top:8px" data-grupo data-espera="1300"><div data-anim="mpWipe .6s" style="flex:${p.tl};background:${ours(p.local) ? RED : '#6B6B70'};border-radius:3px;transform-origin:right"></div><div data-anim="mpWipe .6s" style="flex:${p.tv};background:${ours(p.visitante) ? RED : '#6B6B70'};border-radius:3px;transform-origin:left"></div></div>
@@ -976,7 +976,7 @@
     // 1 · los datos
     const datos = sec('datos', '01', 'LOS DATOS', 'Todo sale del acta', 'Cada número de la web sale de las actas de la Federación Madrileña de Patinaje (FMP), desde 2016/17. Se actualiza cada semana; los partidos en directo, al momento.', `
       <div class="mt-dos">
-        <div class="mt-caja"><h3 style="color:#3DD27E">LO QUE TRAE EL ACTA</h3>${lista(['Quién marca y quién asiste (una asistencia por gol)', 'Las exclusiones, con su minuto y su duración', 'Tiempos muertos y cambios de portero', 'De cada portero, los tiros que recibe y los goles que encaja'], '✓', '#3DD27E')}</div>
+        <div class="mt-caja"><h3 style="color:#3DD27E">LO QUE TRAE EL ACTA</h3>${lista(['Quién marca y quién asiste (una asistencia por gol)', 'Las expulsiones, con su minuto y su duración', 'Tiempos muertos y cambios de portero', 'De cada portero, los tiros que recibe y los goles que encaja'], '✓', '#3DD27E')}</div>
         <div class="mt-caja"><h3 style="color:#FF6B63">LO QUE NO TRAE</h3>${lista(['Más/menos', 'Minutos jugados', 'Quién estaba en pista en cada gol', 'Los tiros de los jugadores de campo'], '✕')}<p class="mt-nota">Por eso nada de lo que publicamos los usa.</p></div>
       </div>
       ${lista(['Desde 2025/26 el acta no da el código del jugador que asiste, solo su nombre y su dorsal: lo identificamos por su dorsal en la alineación de ese partido.', 'Si la FMP escribe mal un nombre, lo corregimos a mano (por ejemplo, Sánchez Müller-Magg).', 'Menores de edad: nunca foto ni edad.'])}`);
@@ -1024,7 +1024,7 @@
     const hito = (t, x) => `<div class="mt-hito"><span class="dv-hito">${t}</span><span>${x}</span></div>`;
     const directo = sec('directo', '04', 'EN DIRECTO', 'Lo que avisa el directo', 'Mientras se juega, y luego en el resumen de cada partido, el minuto a minuto marca la situación de cada gol, sus hitos y a los rivales que hay que vigilar.', `
       ${H('Superioridad e inferioridad')}
-      <div class="mt-dos al"><div>${pista}</div><div>${lista(['Las exclusiones de 1\'30\'\', 2 y 5 minutos dejan al equipo con uno menos; las de 10 no, porque entra otro.', 'Si coinciden dos, se suman.', 'La de 2 minutos o menos se acaba si marca el que está con uno más.', 'Si no ha acabado al descanso, sigue en la segunda parte.', '«Portería vacía», cuando el acta apunta que sale el portero y no entra otro.'])}</div></div>
+      <div class="mt-dos al"><div>${pista}</div><div>${lista(['Las expulsiones de 1\'30\'\', 2 y 5 minutos dejan al equipo con uno menos; las de 10 no, porque entra otro.', 'Si coinciden dos, se suman.', 'La de 2 minutos o menos se acaba si marca el que está con uno más.', 'Si no ha acabado al descanso, sigue en la segunda parte.', '«Portería vacía», cuando el acta apunta que sale el portero y no entra otro.'])}</div></div>
       ${H('Hitos de cada gol')}
       <div class="mt-hitos">
         ${hito('SU PRIMER GOL', 'El primero que tenemos de esa persona en la FMP, desde 2016/17.')}
@@ -1233,8 +1233,8 @@
     jugadores: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.2" cy="9" r="2.6"/><path d="M16.5 14.1c2.8.3 5 2.3 5 5.9"/>',
     legado: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 6h3a3 3 0 0 1-3 3.5M7 6H4a3 3 0 0 0 3 3.5"/>',
   };
-  const TOP = { directo: 'jornada', jornada: 'jornada', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'pretemporada', metodo: 'metodo', sincronizar: 'jornada' };
-  const TITLES = { directo: 'En directo', jornada: 'Jornada', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', sincronizar: 'Sincronizar vídeo' };
+  const TOP = { directo: 'jornada', jornada: 'jornada', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'pretemporada', metodo: 'metodo', sincronizar: 'jornada', video: 'jornada' };
+  const TITLES = { directo: 'En directo', jornada: 'Jornada', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido' };
   let prevRoute = null, navReset = false, goingBack = false;
   // 7a · la píldora roja se desliza desde la sección anterior (y se recoloca si cambia el ancho de la ventana)
   let pilAntes = null, secAntes = null, animarAlCerrar = false;
@@ -1258,6 +1258,7 @@
     if (v === 'jugador' && !A.jugadores[parts[1]]) { history.replaceState(null, '', '#/jugadores'); prevRoute = location.hash; return render(); }
     if (v === 'liga' && parts[2] === 'llega') { history.replaceState(null, '', hPre(parts[1])); prevRoute = location.hash; return render(); }
     if (v === 'partido' && !A.partidos[parts[1]]) { history.replaceState(null, '', '#/jornada'); prevRoute = location.hash; return render(); }
+    if (v === 'directo' && parts[2] === 'resumen' && VID && VID[parts[1]]) { pararResumen(); if (ESC.abierta) ESC.abierta.cerrar(); history.replaceState(null, '', '#/video/' + encodeURIComponent(parts[1])); prevRoute = location.hash; return render(); }
     const nav = [['pretemporada', 'Pretemporada', hPre('club')], ['jornada', 'Jornada', '#/jornada'], ['equipos', 'Equipos', hEq(S.eq || A.equipos[0].id)], ['ligas', 'Ligas', hLg(S.lg || A.ligas[0].id)], ['jugadores', 'Jugadores', '#/jugadores'], ['legado', 'Legado', '#/legado']];
     $('#nav').innerHTML = '<span class="pildora" aria-hidden="true"></span>' + nav.map(([k, l, h]) => `<a href="${h}" data-nav${TOP[v] === k ? ' aria-current="page"' : ''}>${l}</a>`).join('');
     // «?»: Cómo lo calculamos, siempre a mano
@@ -1280,11 +1281,12 @@
     else if (v === 'directo') html = vDirecto(parts[1], parts[2]);
     else if (v === 'metodo') html = vMetodo();
     else if (v === 'sincronizar') html = vSincronizar(parts[1]);
+    else if (v === 'video') html = vVideo(parts[1], parts[2]);
     else html = vJornada(parts[1]);
     const back = S.hist.length && v !== 'jornada' ? '<a class="back" href="#" data-back>← Volver</a>' : '';
     const pie = `<footer class="pie"><span>MADRIDPATINA · Temporada ${esc(A.temporada)}</span><span><a href="#/metodo">Cómo lo calculamos</a> · Datos: Federación Madrileña de Patinaje · actualizado ${fdc(A.actualizado).toLowerCase()}</span></footer>`;
     view.innerHTML = back + html + pie;
-    if (!VID) cargarVideos().then(() => { if (/^#\/partido\//.test(location.hash)) render(); });
+    if (!VID) cargarVideos().then(() => { const m = /^#\/directo\/([^/]+)\/resumen/.exec(location.hash); if (/^#\/partido\//.test(location.hash) || (m && VID[decodeURIComponent(m[1])])) render(); });
     if (v === 'metodo' && parts[1]) setTimeout(() => { const el = document.getElementById('m-' + parts[1]); if (el) el.scrollIntoView({ block: 'start' }); }, 60);
     // el contenido que no trae su propia animación entra con fundido + subida, en cascada de 60 ms
     let k = 0;
@@ -1598,8 +1600,8 @@
   const FALTA_TXT = { SP: 'Golpear con la punta del stick', BE: 'Golpear con el taco', SL: 'Golpear con el stick', SA: 'Stick alto', CC: 'Carga con stick',
     EG: 'Enganchar', AG: 'Agarrar', CG: 'Carga', CE: 'Carga por la espalda', VI: 'Violencia innecesaria', MC: 'Mala conducta', ZC: 'Zancadilla', CZ: 'Codazo',
     RZ: 'Rodillazo', CA: 'Conducta antideportiva', IF: 'Interferencia', CI: 'Cambio ilegal', PB: 'Penalización de banquillo', EI: 'Equipación incorrecta',
-    RJ: 'Retraso en el juego', SR: 'Stick roto', PP: 'Penalización de partido', EX: 'Exclusión' };
-  const motivoFalta = e => (e.falta_tipo && FALTA_TXT[e.falta_tipo] ? FALTA_TXT[e.falta_tipo] + ' (' + e.falta_tipo + ')' : 'Exclusión');
+    RJ: 'Retraso en el juego', SR: 'Stick roto', PP: 'Penalización de partido', EX: 'Expulsión' };
+  const motivoFalta = e => (e.falta_tipo && FALTA_TXT[e.falta_tipo] ? FALTA_TXT[e.falta_tipo] + ' (' + e.falta_tipo + ')' : 'Expulsión');
   const minFuera = m => (m % 1 ? fmin(m) : m + ' min');
   const segs = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : null; };
   const ordinal = p => (p ? p + 'ª' : '');
@@ -1625,8 +1627,8 @@
     const p = jugadorMP(ctx, lado, dorsal);
     return ((dorsal ? '#' + dorsal + ' ' : '') + (p ? iniApe(p) : corto || largo || '')).trim();
   }
-  // gol en superioridad (el rival con una exclusión en curso) o a portería vacía (el que encaja había sacado al portero)
-  // Superioridad o inferioridad al marcar, contando jugadores en pista: dejan al equipo con uno menos las exclusiones de
+  // gol en superioridad (el rival con una expulsión en curso) o a portería vacía (el que encaja había sacado al portero)
+  // Superioridad o inferioridad al marcar, contando jugadores en pista: dejan al equipo con uno menos las expulsiones de
   // 1'30'', 2' y 5' (las de 10' no: entra otro), que se suman si coinciden; la de 2' o menos se acaba si el otro equipo
   // marca mientras dura; pasan de una parte a la otra. En el mismo segundo manda el orden del acta.
   const exclusion = f => f.tipo === 'FALTA' && (f.min_sancion || 2) < 10;
@@ -1662,35 +1664,413 @@
   const segVideo = (idp, e) => { const v = VID && VID[idp], x = v && v.ev && e && v.ev[e.id]; return x ? x.s : null; };
   const botonVer = (idp, e, txt = '▶') => { const t = segVideo(idp, e);
     return t == null ? '' : `<button type="button" class="dv-ver" data-ver="${esc(idp)}|${t}" title="Ver la jugada en el vídeo" aria-label="Ver la jugada en el vídeo">${txt}</button>`; };
-  function abrirVideo(idp, t) {
-    const v = VID && VID[idp];
-    if (!v) return;
-    let el = $('#vid-panel');
-    if (!el) { el = document.createElement('div'); el.id = 'vid-panel'; el.className = 'vid-panel'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Vídeo del partido'); document.body.appendChild(el); }
-    el.innerHTML = `<div class="vp-cab"><span>VÍDEO DEL PARTIDO${v.canal ? ' · ' + esc(v.canal) : ''}</span><button type="button" data-vid-cierra aria-label="Cerrar el vídeo">✕</button></div>
-      <div class="vp-marco"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.yt)}?start=${Math.max(0, Math.round(t - ANTES_JUGADA))}&autoplay=1&rel=0&playsinline=1" title="Vídeo del partido" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
-  }
-  const cerrarVideo = () => { const el = $('#vid-panel'); if (el) el.remove(); };
-  // antes que nadie (las escenas se cierran al tocarlas): abre el vídeo en esa jugada
+  // cada «▶» lleva al vídeo en grande (modo retransmisión), unos segundos antes de la jugada; antes que nadie, porque las
+  // escenas se cierran al tocarlas
+  const abrirVideo = (idp, t) => { location.hash = '#/video/' + encodeURIComponent(idp) + '/' + Math.max(0, Math.round(t - ANTES_JUGADA)); };
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-ver]');
-    if (b) { e.preventDefault(); e.stopPropagation(); const [idp, t] = b.dataset.ver.split('|'); if (ESC.abierta) ESC.abierta.cerrar(); abrirVideo(idp, +t); return; }
-    if (e.target.closest('[data-vid-cierra]')) cerrarVideo();
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const [idp, t] = b.dataset.ver.split('|');
+    if (ESC.abierta) ESC.abierta.cerrar();
+    abrirVideo(idp, +t);
   }, true);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarVideo(); });
-  // capítulos del vídeo en la página del partido (sin depender del directo: el fichero trae cómo contar cada jugada)
-  const TIPO_VID = { GOL: 'Gol', FALTA: 'Exclusión', 'TIEMPO MUERTO': 'Tiempo muerto', 'CAMBIO DE PORTERO': 'Cambio de portero' };
+  const TIPO_VID = { GOL: 'Gol', FALTA: 'Expulsión', 'TIEMPO MUERTO': 'Tiempo muerto', 'CAMBIO DE PORTERO': 'Cambio de portero', PENALTI: 'Penalti' };
+  const capsVideo = (v, accion) => Object.entries(v.ev || {}).map(([id, x]) => ({ id, ...x })).sort((a, b) => a.s - b.s)
+    .map(x => { const pen = x.tipo === 'PENALTI', t = pen ? 'Tanda · R' + (x.ronda || '') : ordinal(x.p) + ' ' + (x.t || ''), m = pen ? (x.m === 'gol' ? 'GOL' : 'FALLA') : (x.m || '').replace('-', '–');
+      return `<button type="button" class="cap${x.tipo === 'GOL' || (pen && x.m === 'gol') ? ' gol' : ''}" ${accion(x)}><span class="t">${esc(t)}</span><span class="k">${esc(TIPO_VID[x.tipo] || x.tipo)}</span><span class="q">${esc(x.q || '')}</span><span class="m">${esc(m)}</span><i>▶</i></button>`; }).join('');
+  // en la página del partido: la entrada al modo retransmisión y las jugadas como capítulos
   function videoPartido(idp) {
     const v = VID && VID[idp];
     if (!v) return '';
-    const caps = Object.entries(v.ev || {}).map(([id, x]) => ({ id, ...x })).sort((a, b) => a.s - b.s);
-    const ini = (v.partes && (v.partes['1'] ?? v.partes[1])) || 0;
-    return `<div class="vid-caps"><div class="cab"><span class="lab">VÍDEO DEL PARTIDO${v.canal ? ' · ' + esc(v.canal) : ''}</span><button type="button" class="dv-alin" data-ver="${esc(idp)}|${ini + ANTES_JUGADA}">▶ Verlo desde el principio</button></div>
-      <div class="lista">${caps.map(x => `<button type="button" class="cap${x.tipo === 'GOL' ? ' gol' : ''}" data-ver="${esc(idp)}|${x.s}"><span class="t">${esc(ordinal(x.p) + ' ' + (x.t || ''))}</span><span class="k">${esc(TIPO_VID[x.tipo] || x.tipo)}</span><span class="q">${esc(x.q || '')}</span><span class="m">${esc((x.m || '').replace('-', '–'))}</span><i>▶</i></button>`).join('')}</div></div>`;
+    return `<div class="vid-caps"><div class="cab"><span class="lab">VÍDEO DEL PARTIDO${v.canal ? ' · ' + esc(v.canal) : ''}</span><a class="dv-alin" href="#/video/${encodeURIComponent(idp)}">▶ Ver resumen</a></div>
+      <div class="lista">${capsVideo(v, x => `data-ver="${esc(idp)}|${x.s}"`)}</div></div>`;
   }
 
+  /* ── Modo retransmisión (#/video/{idp}[/{segundo}]) ───────────────────────────────────────────────────────────────
+     El vídeo en grande y, encima, como en la tele: el marcador con el tiempo (avanza con el vídeo) y, por la derecha, cada
+     jugada cuando pasa, con foto, asistente e hitos. El marcador y los anuncios van exactos a la marca de cada jugada; el
+     reloj, aproximado entre jugada y jugada (se interpola entre marcas). Pantalla completa propia: la de YouTube taparía la
+     capa. */
+  const TV = { idp: null, S: null, ctx: null, dur: 1500, player: null, timer: null, t: 0, start: 0, marcas: [], hasta: 0, finVisto: false, modo: 'entero', k: 0 };
+  // resumen: cuánto se ve de cada jugada después de su marca (antes, ANTES_JUGADA)
+  const DESPUES = { GOL: 7, FALTA: 5, 'TIEMPO MUERTO': 3, 'CAMBIO DE PORTERO': 4, ancla: 4, PENALTI: 4 };
+  const despues = x => (x.ancla ? DESPUES.ancla : x.pen ? DESPUES.PENALTI : DESPUES[x.e.tipo] || 4);
+  function irTV(t) { if (!TV.player || !TV.player.seekTo) return; TV.t = t; tapaTV(); TV.player.seekTo(t, true); TV.player.playVideo(); }
+  // tras cada salto (y al seguir tras una pausa) YouTube saca 4-5 s su título y su logo, y no hay forma de quitarlos: los
+  // tapan una banda arriba y una esquina abajo, que luego se van
+  function tapaTV() { const m = TV.modo === 'resumen' && $('#tv-marco'); clearTimeout(TV.tTapa); TV.tTapa = 0; if (m) m.classList.add('tapa'); }
+  const PRES_DUR = 32, PRES_MIN = 12, CELEBRA = 20;   // y los segundos de vídeo que se ven tras el final   // segundos de presentación antes del saque, y el mínimo de vídeo previo para hacerla
+  function presentarTV() {   // alineaciones sobre el calentamiento: un cuadro por jugador, local a la izquierda, visitante a la derecha y «VS» en medio
+    const ctx = TV.ctx, P = TV.S.plantillas || {}, el = $('#tv-pres'), m = $('#tv-marco');
+    if (!el || !TV.pres) return jugadaTV(0);
+    const escP = l => { const n = ctx.nombre[l], cr = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; return `<i class="esc" style="box-shadow:0 0 0 2px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${cr ? `background-image:url('${esc(cr)}')` : ''}"></i>`; };
+    // la foto llena el cuadro (sin foto, las iniciales); dentro, el dorsal, el nombre y P de portero, C de capitán o A de asistente
+    const ROL_CORTO = { P: 'Portero', C: 'Capitán', A: 'Asistente' };
+    const eq = l => `<div class="tp-eqp ${l === 'L' ? 'l' : 'v'}"><div class="tp-eq">${escP(l)}<b>${esc(ctx.nombre[l])}</b></div><div class="tp-rej">${ordenPl(P[l] || []).map((j, q) => {
+      const pj = ctx.mp[l] ? jugadorDe(ctx, l, j.id_player, j.dorsal) : null, rol = ROL_CORTO[j.rol] ? j.rol : '', foto = pj && pj.foto;
+      return `<div class="tp-t${ctx.mp[l] ? ' mp' : ''}${foto ? '' : ' sin'}" style="${foto ? `background-image:url('${esc(foto)}');` : ''}animation-delay:${(0.8 + q * 0.14).toFixed(2)}s">${foto ? '' : `<i class="ini">${esc(pj ? ini(pj.nombre, pj.apellidos) : iniDe(j.jugador_corto || j.jugador))}</i>`}<b class="d">${esc(j.dorsal || '')}</b>${rol ? `<b class="r ${rol.toLowerCase()}" title="${ROL_CORTO[rol]}">${rol}</b>` : ''}<span class="n">${esc(j.jugador_corto || j.jugador || '')}</span></div>`; }).join('')}</div></div>`;
+    el.innerHTML = `<div class="tp-cab">ALINEACIONES</div><div class="tp-vs"><b aria-label="contra">VS</b></div>${eq('L')}${eq('V')}`;
+    el.dataset.n = Math.max((P.L || []).length, (P.V || []).length, 1);
+    el.classList.remove('sale'); el.classList.add('on'); m.classList.add('en-pres');
+    medidaPres();
+    TV.k = -1;
+    const cont = $('#tv-cont'); if (cont) cont.textContent = 'PRESENTACIÓN';
+    irTV(TV.pres.desde);
+  }
+  // el cuadro más grande que quepa: prueba de 2 a 7 columnas con lo que mide ahora el vídeo (cambia al girar o ir a pantalla completa)
+  function medidaPres() {
+    const el = $('#tv-pres'), g = el && el.closest('.tv-giro');
+    if (!g || !el.classList.contains('on')) return;
+    const W = g.clientWidth, H = g.clientHeight, n = +el.dataset.n || 12, hueco = 0.007 * W;
+    const ancho = 0.43 * W, alto = H - 0.024 * W - (0.028 * W + Math.min(40, Math.max(28, 0.029 * W))) - 0.05 * W;
+    let mejor = { t: 0, c: 4 };
+    for (let c = 2; c <= 7; c++) { const f = Math.ceil(n / c), t = Math.min((ancho - (c - 1) * hueco) / c, (alto - (f - 1) * hueco) / f); if (t > mejor.t) mejor = { t, c }; }
+    el.style.setProperty('--t', Math.floor(mejor.t) + 'px'); el.style.setProperty('--cols', mejor.c);
+  }
+  function quitarPres() { const el = $('#tv-pres'), m = $('#tv-marco'); if (el) { el.classList.add('sale'); setTimeout(() => el.classList.remove('on', 'sale'), 450); } if (m) m.classList.remove('en-pres'); }
+  function jugadaTV(k) {   // resumen: a la jugada k (unos segundos antes); al acabarlas, el resultado
+    TV.k = k; TV.acabado = false; TV.finHasta = 0;
+    if (k < TV.marcas.length) { clearTimeout(TV.tCortina); cortinaTV(true, 'RESUMEN EN VÍDEO'); }   // el salto, tapado
+    lanzaTV(null);
+    const x = TV.marcas[k], cont = $('#tv-cont');
+    if (!x) {   // el resultado, y el vídeo sigue unos 20 s (la celebración) antes de pararse
+      TV.finVisto = true; anunciarTV(...anuncioFinal()); if (cont) cont.textContent = 'FINAL';
+      const p = TV.player, t = p && p.getCurrentTime ? p.getCurrentTime() : 0, total = p && p.getDuration ? p.getDuration() : 0;
+      TV.finHasta = Math.min(total ? total - 1 : t + CELEBRA, t + CELEBRA);
+      return;
+    }
+    if (cont) cont.textContent = 'RESUMEN · ' + (k + 1) + '/' + TV.marcas.length;
+    pintarPausa();
+    const el = $('#tv-anuncio');   // el anuncio de la jugada anterior se va al saltar
+    if (el && el.classList.contains('entra')) { el.classList.remove('entra'); el.classList.add('sale'); TV.hasta = 0; }
+    irTV(Math.max(0, x.s - (x.ancla ? 2 : ANTES_JUGADA)));
+    if (x.pen && TV.modo === 'resumen') setTimeout(() => { if (TV.k === k) lanzaTV(anuncioLanza(x)); }, 500);
+  }
+  function partidoSN(idp, ruta) {   // el partido del acta (servicio del directo); al llegar se repinta la ruta
+    const S = (RSM.final && RSM.final.idp === idp && RSM.final) || LIVE.snaps[idp];
+    if (S) return S;
+    const url = DIRECTO_EJEMPLO ? DIRECTO_URL : DIRECTO_URL + '?idp=' + encodeURIComponent(idp);
+    fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(d => {
+      const x = (d.partidos || []).find(p => p.idp === idp);
+      if (x) { RSM.final = x; if (location.hash.indexOf(ruta) === 0) render(); return; }
+      const w = $('[data-espera]'); if (w) w.textContent = 'No encuentro este partido en el acta de la federación.';
+    }).catch(() => { const w = $('[data-espera]'); if (w) w.textContent = 'Sin conexión con el acta de la federación.'; });
+    return null;
+  }
+  function pararTV() {
+    pararMusica();
+    if (TV.timer) clearInterval(TV.timer);
+    TV.timer = null;
+    try { if (TV.player && TV.player.destroy) TV.player.destroy(); } catch (e) { /* ya no está */ }
+    TV.player = null;
+  }
+  function estadoTV(t) {
+    const M = TV.marcas, dur = TV.dur, a2 = M.find(x => x.ancla && x.p === 2), goles = { L: 0, V: 0 };
+    M.forEach(x => { if (x.e && x.e.tipo === 'GOL' && x.s <= t) goles[x.e.lado]++; });
+    const antes = M.filter(x => x.s <= t), u = antes[antes.length - 1];
+    if (!u) return { goles, fase: 'previa', reloj: 'ANTES DEL PARTIDO', fuera: [] };
+    if (u.p === 3) {   // tanda de penaltis: el marcador del partido se queda y el reloj pasa a la tanda
+      const pen = penTV(t), ult = M.filter(x => x.pen).pop();
+      return { goles, fase: ult && t > ult.s + 6 ? 'final' : 'penaltis', reloj: (ult && t > ult.s + 6 ? 'FINAL · PEN ' : 'PENALTIS ') + pen.L + '–' + pen.V, fuera: [] };
+    }
+    const sig = M.find(x => x.s > t && x.p === u.p);
+    let G = sig ? u.G + (t - u.s) * (sig.G - u.G) / Math.max(1, sig.s - u.s) : u.G + (t - u.s) / RITMO_VIDEO;
+    G = Math.min(G, u.p * dur);
+    const fase = G < u.p * dur ? 'p' + u.p : u.p === 1 ? (a2 && t >= a2.s ? 'p2' : 'descanso') : M.some(x => x.pen) ? 'tiempo' : 'final';   // con tanda, aún no es el final
+    const reloj = fase === 'descanso' ? 'DESCANSO' : fase === 'tiempo' ? 'FIN DEL TIEMPO' : fase === 'final' ? 'FINAL' : ordinal(u.p) + ' · ' + mmssV(G - (u.p - 1) * dur);
+    const fuera = fase[0] === 'p' ? M.filter(x => x.e && exclusion(x.e) && x.s <= t && G < x.G + (x.e.min_sancion || 2) * 60)
+      .map(x => ({ lado: x.e.lado, queda: x.G + (x.e.min_sancion || 2) * 60 - G })) : [];
+    return { goles, fase, reloj, fuera };
+  }
+  // portero que defendía en la tanda: el último que entró (cambios de portero del acta o deducidos); si no, el de más tiros
+  function porteroTanda(lado) {
+    const S = TV.S, ps = (S.porteros || []).filter(p => p.lado === lado);
+    const cambio = (S.eventos || []).filter(e => e.tipo === 'CAMBIO DE PORTERO' && e.lado === lado && !e.ambiguo && (e.id_player || e.dorsal)).pop();
+    if (cambio) return ps.find(p => (cambio.id_player && p.id_player === cambio.id_player) || p.dorsal === cambio.dorsal) || { dorsal: cambio.dorsal, id_player: cambio.id_player, jugador_corto: cambio.jugador_corto, jugador: cambio.jugador };
+    return ps.slice().sort((a, b) => (b.tiros || 0) - (a.tiros || 0))[0] || null;
+  }
+  // penalti: nada más saltar a él, quién lanza, pequeño y bajo el marcador; en la marca, el resultado
+  function anuncioLanza(x) {
+    const ctx = TV.ctx, y = x.pen, l = y.lado, mp = ctx.mp[l], r = penTV(x.s - 0.5);
+    const pj = mp ? jugadorDe(ctx, l, y.id_player, y.dorsal) : null, n = ctx.nombre[l], cr = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
+    const cara = mp ? (pj && pj.foto ? `<div class="f" style="background-image:url('${esc(pj.foto)}')"></div>` : `<div class="f ini">${esc(pj ? ini(pj.nombre, pj.apellidos) : iniDe(y.jugador_corto || y.jugador))}</div>`)
+      : `<div class="f riv"><i class="esc" style="box-shadow:0 0 0 2px #FFFFFF;background-color:${bg};${cr ? `background-image:url('${esc(cr)}')` : ''}"></i></div>`;
+    return `<div class="tl${mp ? ' mp' : ''}">${cara}<div class="q"><span class="k">LANZA · PENALTI ${y.ronda}</span><b>${esc(quienD(ctx, l, y.dorsal, y.jugador_corto, y.jugador))}</b><span>${esc(ctx.nombre[l])}</span></div><em>${esc(ctx.abr.L)} ${r.L}–${r.V} ${esc(ctx.abr.V)}</em></div>`;
+  }
+  function lanzaTV(html) {   // null: se va
+    const el = $('#tv-lanza');
+    if (!el) return;
+    if (html) { el.innerHTML = html; el.classList.add('on'); } else el.classList.remove('on');
+  }
+  const penTV = t => { const r = { L: 0, V: 0 }; TV.marcas.forEach(x => { if (x.pen && x.pen.gol && x.s <= t) r[x.pen.lado]++; }); return r; };
+  function pintarTV(st) {
+    const gl = $('#tv-gl'), gv = $('#tv-gv'), rl = $('#tv-reloj'), ex = $('#tv-excl');
+    if (!gl) return;
+    if (gl.textContent !== String(st.goles.L)) { gl.textContent = st.goles.L; gl.classList.remove('salta'); void gl.offsetWidth; gl.classList.add('salta'); }
+    if (gv.textContent !== String(st.goles.V)) { gv.textContent = st.goles.V; gv.classList.remove('salta'); void gv.offsetWidth; gv.classList.add('salta'); }
+    rl.textContent = st.reloj;
+    ex.innerHTML = st.fuera.map(f => `<span class="${TV.ctx.mp[f.lado] ? 'mp' : ''}">${esc(TV.ctx.abr[f.lado])} · UNO MENOS · ${mmssV(f.queda)}</span>`).join('');
+  }
+  function anunciarTV(html, ms) {
+    const el = $('#tv-anuncio');
+    if (!el) return;
+    el.innerHTML = html; el.classList.remove('sale'); void el.offsetWidth; el.classList.add('entra');
+    TV.hasta = Date.now() + ms;
+  }
+  function anuncioJugada(x) {
+    const ctx = TV.ctx, escTV = l => { const n = ctx.nombre[l], cr = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; return `<i class="esc" style="box-shadow:0 0 0 2px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${cr ? `background-image:url('${esc(cr)}')` : ''}"></i>`; };
+    if (x.ancla) return [`<div class="tv-card inicio"><div class="cab"><span class="k">EMPIEZA</span></div><b class="gr">${x.p === 3 ? 'LA TANDA DE PENALTIS' : 'LA ' + ordinal(x.p).toUpperCase() + ' PARTE'}</b><div class="eqs">${escTV('L')}<span>${esc(ctx.abr.L)}</span><em>${x.p === 3 ? (TV.S.gl ?? 0) + '–' + (TV.S.gv ?? 0) : 'vs'}</em><span>${esc(ctx.abr.V)}</span>${escTV('V')}</div></div>`, 5000];
+    if (x.pen) {   // un lanzamiento: gol o fallo, y cómo va la tanda
+      const y = x.pen, l = y.lado, mp = ctx.mp[l], pj = mp ? jugadorDe(ctx, l, y.id_player, y.dorsal) : null, r = penTV(x.s);
+      const cara = mp ? (pj && pj.foto ? `<div class="f" style="background-image:url('${esc(pj.foto)}')"></div>` : `<div class="f ini">${esc(pj ? ini(pj.nombre, pj.apellidos) : iniDe(y.jugador_corto || y.jugador))}</div>`) : `<div class="f riv">${escTV(l)}</div>`;
+      if (!y.gol && TV.modo === 'resumen') {   // el fallo, contado como la parada del portero que defendía
+        const o = l === 'L' ? 'V' : 'L', g = porteroTanda(o), mpo = ctx.mp[o], pg = g && mpo ? jugadorDe(ctx, o, g.id_player, g.dorsal) : null;
+        const caraG = mpo ? (pg && pg.foto ? `<div class="f" style="background-image:url('${esc(pg.foto)}')"></div>` : `<div class="f ini">${esc(pg ? ini(pg.nombre, pg.apellidos) : iniDe(g ? g.jugador_corto || g.jugador : ''))}</div>`) : `<div class="f riv">${escTV(o)}</div>`;
+        return [`<div class="tv-card pen parada${mpo ? ' mp' : ''}"><div class="cab"><span class="k">¡PARADA!</span><span class="m">PENALTI · RONDA ${y.ronda}</span></div>
+          <div class="cuerpo">${caraG}<div class="q"><b>${esc(g ? quienD(ctx, o, g.dorsal, g.jugador_corto, g.jugador) : 'Portero de ' + ctx.abr[o])}</b><span>Para el penalti de ${esc(quienD(ctx, l, y.dorsal, y.jugador_corto, y.jugador))}</span><em>TANDA ${esc(ctx.abr.L)} ${r.L}–${r.V} ${esc(ctx.abr.V)}</em></div></div></div>`, 4500];
+      }
+      return [`<div class="tv-card pen${y.gol ? ' gol' : ' falla'}${mp ? ' mp' : ''}"><div class="cab"><span class="k">${y.gol ? '¡GOL!' : 'SIN GOL'}</span><span class="m">PENALTI · RONDA ${y.ronda}</span></div>
+        <div class="cuerpo">${cara}<div class="q"><b>${esc(quienD(ctx, l, y.dorsal, y.jugador_corto, y.jugador))}</b><span>${esc(ctx.nombre[l])}</span><em>TANDA ${esc(ctx.abr.L)} ${r.L}–${r.V} ${esc(ctx.abr.V)}</em></div></div></div>`, 4500];
+    }
+    const e = x.e, l = e.lado, quien = esc(quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador));
+    if (e.tipo === 'GOL') {
+      const mp = ctx.mp[l], h = hitosGol(e, TV.S.eventos, TV.S), pj = mp ? jugadorDe(ctx, l, e.id_player, e.dorsal) : null, sit = situacionGol(e, TV.S.eventos, TV.dur);
+      const cara = mp ? (pj && pj.foto ? `<div class="f" style="background-image:url('${esc(pj.foto)}')"></div>` : `<div class="f ini">${esc(pj ? ini(pj.nombre, pj.apellidos) : iniDe(e.jugador_corto || e.jugador))}</div>`) : `<div class="f riv">${escTV(l)}</div>`;
+      const hayA = !!(e.asist_dorsal || e.asist_jugador), asis = hayA ? 'Asistencia de ' + quienD(ctx, l, e.asist_dorsal, e.asist_corto, e.asist_jugador) + (h.asist ? ' · ' + h.asist : '') : 'Sin asistencia';
+      const pa = mp && hayA ? jugadorDe(ctx, l, e.assist_id_player, e.asist_dorsal) : null;
+      const caraA = mp && hayA ? `<div class="fa">${pa && pa.foto ? `<div class="f" style="background-image:url('${esc(pa.foto)}')"></div>` : `<div class="f ini">${esc(pa ? ini(pa.nombre, pa.apellidos) : iniDe(e.asist_corto || e.asist_jugador))}</div>`}<small>ASIST.</small></div>` : '';
+      return [`<div class="tv-card gol${mp ? ' mp' : ''}"><div class="cab"><span class="k">GOL</span><span class="m">${esc(ctx.abr.L)} ${esc((e.marcador || '').replace('-', '–'))} ${esc(ctx.abr.V)}</span></div>
+        <div class="cuerpo">${cara}${caraA}<div class="q"><b>${quien}</b><span>${esc(asis)}</span>${[...h.tags, sit ? sit.toUpperCase() : ''].filter(Boolean).map(t2 => `<em>${esc(t2)}</em>`).join('')}</div></div></div>`, 8000];
+    }
+    if (e.tipo === 'FALTA') return [`<div class="tv-card falta"><div class="cab"><span class="k">EXPULSIÓN</span><span class="m">${esc(fmin(e.min_sancion || 2))}</span></div>
+      <div class="cuerpo"><div class="f riv">${escTV(l)}</div><div class="q"><b>${quien}</b><span>${esc(motivoFalta(e))}</span></div></div></div>`, 6500];
+    if (e.tipo === 'TIEMPO MUERTO') return [`<div class="tv-card tm"><div class="cab"><span class="k">TIEMPO MUERTO</span></div><div class="cuerpo"><div class="f riv">${escTV(l)}</div><div class="q"><b>${esc(ctx.nombre[l])}</b></div></div></div>`, 5000];
+    return [`<div class="tv-card tm"><div class="cab"><span class="k">CAMBIO DE PORTERO</span></div><div class="cuerpo"><div class="f riv">${escTV(l)}</div><div class="q"><b>Entra ${quien}</b></div></div></div>`, 5000];
+  }
+  function anuncioFinal() {
+    const S = TV.S, ctx = TV.ctx, pen = S.penaltis;
+    return [`<div class="tv-card inicio"><div class="cab"><span class="k">FINAL</span></div><b class="gr">${esc(ctx.abr.L)} ${S.gl ?? 0}–${S.gv ?? 0} ${esc(ctx.abr.V)}</b>${pen ? `<div class="eqs"><span>PENALTIS ${pen.gl}–${pen.gv}${pen.ganador ? ' · GANA ' + esc(ctx.abr[pen.ganador]) : ''}</span></div>` : ''}</div>`, 9000];
+  }
+  function tickTV() {
+    if (location.hash.indexOf('#/video/' + TV.idp) !== 0) { pararTV(); return; }
+    const p = TV.player;
+    if (!p || !p.getCurrentTime) return;
+    const t = p.getCurrentTime(), prev = TV.t;
+    TV.t = t;
+    const st = estadoTV(t);
+    pintarTV(st);
+    if (t > prev && t - prev < 2) {   // el vídeo avanza solo (no un salto): la jugada que acaba de pasar
+      const x = TV.marcas.find(m => m.s > prev && m.s <= t);
+      if (x) { if (x.pen) lanzaTV(null); anunciarTV(...anuncioJugada(x)); }
+      else if (TV.modo === 'entero' && st.fase === 'final' && !TV.finVisto) { TV.finVisto = true; anunciarTV(...anuncioFinal()); }
+    }
+    if (TV.hasta && Date.now() > TV.hasta) { TV.hasta = 0; const el = $('#tv-anuncio'); if (el) { el.classList.remove('entra'); el.classList.add('sale'); } }
+    if (TV.modo === 'resumen' && TV.k >= TV.marcas.length && TV.finHasta && t >= TV.finHasta) {   // vista la celebración, fin
+      TV.finHasta = 0; TV.acabado = true; p.pauseVideo(); const cont = $('#tv-cont'); if (cont) cont.textContent = 'FIN DEL RESUMEN';
+    }
+    if (TV.modo === 'resumen' && TV.k < TV.marcas.length && p.getPlayerState() === 1) {   // acabada la jugada, a la siguiente
+      if (TV.k === -1) { if (t >= TV.pres.hasta) { quitarPres(); jugadaTV(0); } return; }   // presentación hasta el saque
+      const x = TV.marcas[TV.k];
+      if (t >= x.s + despues(x)) jugadaTV(TV.k + 1);
+    }
+  }
+  const ICO_ANT = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="2.5" height="14" rx="1"/><path d="M19 5v14L8.5 12z"/></svg>';
+  const ICO_SIG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="16.5" y="5" width="2.5" height="14" rx="1"/><path d="M5 5v14l10.5-7z"/></svg>';
+  // #/video/{idp} (resumen), #/video/{idp}/{segundo} (resumen desde esa jugada) y, escondido, #/video/{idp}/entero
+  function vVideo(idp, seg) {
+    if (!VID) { cargarVideos().then(() => { if (location.hash.indexOf('#/video/' + idp) === 0) render(); }); return '<div class="loading">Cargando el vídeo…</div>'; }
+    const v = VID[idp];
+    if (!v) return '<div class="loading">Este partido aún no tiene vídeo sincronizado.</div>';
+    const S = partidoSN(idp, '#/video/' + idp);
+    if (!S) return '<div class="loading" data-espera>Cargando el acta del partido…</div>';
+    cargarHitos();
+    pararTV();
+    const ctx = ctxDirecto(S), dur = S.duracion_periodo || 1500;
+    const tanda = (S.penaltis && S.penaltis.tanda) || [];
+    const marcas = [1, 2, 3].filter(p => v.partes && v.partes[p] != null).map(p => ({ s: v.partes[p], G: (p - 1) * dur, p, ancla: true }))
+      .concat(Object.entries(v.ev || {}).map(([id, x]) => {
+        const m = /^pen-(\d+)-([LV])$/.exec(id);
+        if (m) return { s: x.s, G: 2 * dur, p: 3, pen: tanda.find(y => y.ronda === +m[1] && y.lado === m[2]) };
+        return { s: x.s, G: (x.p - 1) * dur + (segs(x.t) || 0), p: x.p, e: (S.eventos || []).find(e => e.id === id) };
+      }).filter(x => x.e || x.pen))
+      .sort((a, b) => a.s - b.s);
+    const modo = seg === 'entero' ? 'entero' : 'resumen';
+    const desde = /^\d+$/.test(seg || '') ? Math.max(0, marcas.findIndex(x => x.s >= +seg)) : 0;   // desde un «▶»: esa jugada
+    const saque = v.partes && v.partes[1];   // presentación solo si se empieza por el principio y el vídeo trae calentamiento
+    const pres = modo === 'resumen' && desde === 0 && saque >= PRES_MIN && (S.plantillas || {}).L ? { desde: Math.max(0, saque - PRES_DUR), hasta: saque - 3 } : null;
+    Object.assign(TV, { idp, S, ctx, dur, marcas, modo, k: desde, t: 0, start: 0, hasta: 0, finVisto: false, listo: false, pres, bloqueado: false });
+    setTimeout(() => cargarYT().then(() => {
+      if (location.hash.indexOf('#/video/' + idp) !== 0) return;
+      const pv = modo === 'resumen'   // en el resumen, sin los controles de YouTube: solo nuestra pausa
+        ? { autoplay: 0, controls: 0, disablekb: 1, fs: 0, rel: 0, playsinline: 1, modestbranding: 1, iv_load_policy: 3 }
+        : { autoplay: 1, rel: 0, playsinline: 1, fs: 0, modestbranding: 1 };
+      TV.player = new YT.Player('tv-player', { host: 'https://www.youtube-nocookie.com', videoId: v.yt, playerVars: pv,
+        events: { onReady: ev => { TV.listo = true; if (modo !== 'resumen') ev.target.playVideo(); },
+          onStateChange: () => pintarPausa() } });
+      TV.timer = setInterval(tickTV, 250);
+    }), 0);
+    const escB = l => { const n = ctx.nombre[l], cr = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; return `<i style="background-color:${bg};${cr ? `background-image:url('${esc(cr)}')` : ''}"></i>`; };
+    return `<div class="tv"><div class="tv-tit"><div><div class="lab" style="color:#FF6B63">RESUMEN EN VÍDEO${v.canal ? ' · ' + esc(v.canal) : ''}</div>
+        <h1>${esc(S.local)} <span>${S.gl ?? ''}–${S.gv ?? ''}</span> ${esc(S.visitante)}</h1></div></div>
+      <div class="tv-marco${modo === 'resumen' ? ' bloq' : ''}" id="tv-marco"><div class="tv-giro"><div id="tv-player"></div>
+        <div class="tv-capa">
+          ${modo === 'resumen' ? '<div class="tv-tapa" aria-hidden="true"></div><div class="tv-cortina on" id="tv-cortina"><i></i><b>MADRIDPATINA</b><span id="tv-cortina-t">RESUMEN EN VÍDEO</span></div>' : ''}
+          <div class="tv-pres" id="tv-pres" aria-live="polite"></div>
+          <div class="tv-bug"><div class="eq">${escB('L')}<span>${esc(ctx.abr.L)}</span><b id="tv-gl">0</b></div><div class="eq v"><b id="tv-gv">0</b><span>${esc(ctx.abr.V)}</span>${escB('V')}</div><div class="rl" id="tv-reloj">ANTES DEL PARTIDO</div></div>
+          <div class="tv-excl" id="tv-excl"></div>
+          <div class="tv-anuncio" id="tv-anuncio" role="status" aria-live="polite"></div>
+          <div class="tv-lanza" id="tv-lanza" role="status" aria-live="polite"></div>
+          <button type="button" class="tv-full" data-tv="full" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
+          ${modo === 'resumen' ? `<div class="tv-res"><span id="tv-cont">RESUMEN</span></div>
+          <div class="tv-ctrl"><button type="button" data-tv="prev" aria-label="Atrasar evento" title="Atrasar evento">${ICO_ANT}</button><button type="button" data-tv="next" aria-label="Adelantar evento" title="Adelantar evento">${ICO_SIG}</button></div>
+          <button type="button" class="tv-empieza" id="tv-empieza" data-tv="empieza"><b>▶</b><span>Ver el resumen</span><small>En el móvil se verá a pantalla completa y en horizontal</small></button>` : ''}
+        </div></div></div></div>`;
+  }
+  /* Música de fondo del resumen: la toca el propio navegador (Web Audio), así que no es de nadie y no tiene derechos. Baja,
+     en bucle de 4 compases (la menor, fa, do, sol a 96 pulsos): acordes suaves, bajo, un arpegio que entra y sale, y bombo,
+     palmas y charles flojitos. Se para y sigue con el vídeo. */
+  const MUS = { ctx: null, master: null, timer: 0, t: 0, n: 0, quiere: false, ruido: null };
+  const MUS_VOL = 0.11, MUS_BPM = 96;
+  const ACORDES = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];   // notas MIDI: la menor, fa, do, sol
+  const hz = n => 440 * Math.pow(2, (n - 69) / 12);
+  function vozM(tipo, f, t, ataque, dur, vol, corte, desafina) {
+    const c = MUS.ctx, o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
+    o.type = tipo; o.frequency.value = f; o.detune.value = desafina || 0;
+    lp.type = 'lowpass'; lp.frequency.value = corte;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + ataque); g.gain.exponentialRampToValueAtTime(0.0001, t + ataque + dur);
+    o.connect(lp); lp.connect(g); g.connect(MUS.master); o.start(t); o.stop(t + ataque + dur + 0.05);
+  }
+  function ruidoM(t, tipo, corte, dur, vol) {
+    const c = MUS.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = MUS.ruido; f.type = tipo; f.frequency.value = corte;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(MUS.master); src.start(t); src.stop(t + dur + 0.02);
+  }
+  function corcheaM(n, t) {   // la corchea n del bucle (8 por compás)
+    const c = MUS.ctx, q = 30 / MUS_BPM, i = n % 8, ac = ACORDES[Math.floor(n / 8) % 4], vuelta = Math.floor(n / 32);
+    if (i === 0) ac.forEach(x => [-7, 7].forEach(d => vozM('sawtooth', hz(x), t, 0.4, 8 * q, 0.022, 900, d)));   // acordes
+    if ([0, 3, 4, 6].includes(i)) vozM('triangle', hz((i === 6 ? ac[2] : ac[0]) - 12), t, 0.01, 0.9 * q, 0.2, 700);   // bajo
+    if (i === 0 || i === 4) {   // bombo
+      const o = c.createOscillator(), g = c.createGain();
+      o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+      g.gain.setValueAtTime(0.32, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+      o.connect(g); g.connect(MUS.master); o.start(t); o.stop(t + 0.3);
+    }
+    if (i === 2 || i === 6) ruidoM(t, 'bandpass', 1700, 0.14, 0.09);   // palmas
+    if (i % 2) ruidoM(t, 'highpass', 8000, 0.04, 0.04);   // charles
+    if (vuelta % 4) vozM('triangle', hz([ac[0], ac[1], ac[2], ac[0] + 12, ac[2], ac[1], ac[2], ac[0] + 12][i] + 12), t, 0.005, 0.3, 0.035, 2600);   // arpegio
+  }
+  function programaM() {   // va dejando sonando lo de la próxima media décima
+    const c = MUS.ctx;
+    if (!c || c.state !== 'running') return;
+    if (MUS.t < c.currentTime) MUS.t = c.currentTime + 0.05;   // si la pestaña estuvo dormida, no recupera lo perdido
+    while (MUS.t < c.currentTime + 0.35) { corcheaM(MUS.n, MUS.t); MUS.t += 30 / MUS_BPM; MUS.n++; }
+  }
+  function musica(on) {
+    MUS.quiere = on;
+    if (on && !MUS.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      try {
+        const c = new AC(), m = c.createGain(), comp = c.createDynamicsCompressor();
+        m.gain.value = 0.0001; m.connect(comp); comp.connect(c.destination);
+        const b = c.createBuffer(1, c.sampleRate, c.sampleRate), d = b.getChannelData(0);
+        for (let k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1;
+        Object.assign(MUS, { ctx: c, master: m, ruido: b, t: c.currentTime + 0.1, n: 0 });
+        MUS.timer = setInterval(programaM, 100);
+      } catch (e) { return; }
+    }
+    const c = MUS.ctx;
+    if (!c) return;
+    const g = MUS.master.gain, ahora = c.currentTime;
+    g.cancelScheduledValues(ahora); g.setValueAtTime(Math.max(0.0001, g.value), ahora);
+    if (on) { if (c.state !== 'running') c.resume(); g.exponentialRampToValueAtTime(MUS_VOL, ahora + 1.2); }
+    else { g.exponentialRampToValueAtTime(0.0001, ahora + 0.3); setTimeout(() => { if (!MUS.quiere && MUS.ctx === c) c.suspend(); }, 350); }
+  }
+  function pararMusica() {
+    clearInterval(MUS.timer);
+    if (MUS.ctx) try { MUS.ctx.close(); } catch (e) { /* ya cerrado */ }
+    Object.assign(MUS, { ctx: null, master: null, timer: 0, quiere: false });
+  }
+  // pantalla completa de la caja del vídeo (la capa va dentro); en el iPhone, que no la deja, ocupa la ventana
+  function pantallaTV(entrar) {
+    const m = $('#tv-marco');
+    if (!m) return;
+    const caja = m.closest('.tv');   // su animación de entrada deja un transform que haría de marco a la ventana entera
+    if (!entrar) { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); m.classList.remove('tv-max'); caja.classList.remove('sin-anim'); return; }
+    const bloquea = () => { try { screen.orientation.lock('landscape').then(() => { TV.bloqueado = true; ajustarGiro(); }).catch(ajustarGiro); } catch (e) { ajustarGiro(); } };
+    const ventana = () => { caja.classList.add('sin-anim'); m.classList.add('tv-max'); ajustarGiro(); };
+    if (m.requestFullscreen) m.requestFullscreen().then(bloquea).catch(ventana);
+    else ventana();
+  }
+  const esMovil = () => matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820;
+  function pintarPausa() {
+    const p = TV.player;
+    if (!p || !p.getPlayerState || TV.modo !== 'resumen' || !TV.empezado) return;
+    const st = p.getPlayerState();
+    if (st === 1) musica(true); else if (st === 2 || st === 0) musica(false);   // la música, con el vídeo
+    // cortina: en pausa (YouTube enseña su título y otros vídeos) y mientras carga tras un salto; al correr, se va
+    // (la primera vez espera 3 s: el título de YouTube sale al arrancar)
+    clearTimeout(TV.tCortina);
+    if (st === 2) cortinaTV(true, TV.acabado ? 'FIN DEL RESUMEN' : 'EN PAUSA');
+    else if (st === 1) TV.tCortina = setTimeout(() => cortinaTV(false), TV.primera ? 1200 : 450), TV.primera = false;
+    if (st === 1) { clearTimeout(TV.tTapa); TV.tTapa = setTimeout(() => { const m = $('#tv-marco'); if (m) m.classList.remove('tapa'); }, 5600); }
+    else tapaTV();
+  }
+  function cortinaTV(on, txt) {
+    const el = $('#tv-cortina');
+    if (!el) return;
+    if (txt) { const t = $('#tv-cortina-t'); if (t) t.textContent = txt; }
+    el.classList.toggle('on', on);
+    el.classList.toggle('pausa', on && txt === 'EN PAUSA');
+  }
+  function saltaTV(k) {
+    const pres = $('#tv-pres');
+    if (k === -1 && TV.pres) { presentarTV(); return; }
+    if (pres && pres.classList.contains('on')) quitarPres();
+    jugadaTV(Math.max(0, Math.min(k, TV.marcas.length)));
+  }
+  // horizontal sin pedir nada: si el móvil sigue en vertical (el iPhone no deja girar la pantalla desde una web), la imagen
+  // se dibuja girada 90° ocupando toda la pantalla; si el móvil se gira de verdad, vuelve a lo normal
+  const vertical = matchMedia('(orientation: portrait)');
+  function ajustarGiro() {
+    const m = $('#tv-marco'), g = m && m.querySelector('.tv-giro');
+    if (!g) return;
+    const lleno = document.fullscreenElement === m || m.classList.contains('tv-max');
+    if (!(lleno && esMovil() && vertical.matches)) { g.removeAttribute('style'); m.classList.remove('rot'); medidaPres(); return; }
+    const r = m.getBoundingClientRect();
+    m.classList.add('rot');
+    Object.assign(g.style, { inset: 'auto', top: '0', left: '0', width: r.height + 'px', height: r.width + 'px', transformOrigin: 'top left', transform: `translateX(${r.width}px) rotate(90deg)` });
+    medidaPres();
+  }
+  if (vertical.addEventListener) vertical.addEventListener('change', () => setTimeout(ajustarGiro, 120));
+  window.addEventListener('resize', () => { if ($('#tv-marco')) ajustarGiro(); });
+  document.addEventListener('fullscreenchange', () => { const m = $('#tv-marco'); if (!m) return; if (!document.fullscreenElement) { try { screen.orientation.unlock(); } catch (e) { /* nada que soltar */ } } setTimeout(ajustarGiro, 120); });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-tv]');
+    if (!b) {   // un toque en el vídeo: pausa / sigue (sin botón a la vista)
+      const p = TV.player;
+      if (TV.empezado && p && p.getPlayerState && e.target.closest('.tv-marco.bloq .tv-capa')) { if (p.getPlayerState() === 1) p.pauseVideo(); else p.playVideo(); }
+      return;
+    }
+    const p = TV.player, a = b.dataset.tv;
+    if (a === 'empieza' && p && TV.listo) {   // un toque: con sonido y, en el móvil, a pantalla completa y en horizontal
+      b.remove();
+      TV.empezado = true; TV.primera = true;
+      if (esMovil()) pantallaTV(true);
+      p.unMute();
+      musica(true);   // el audio solo arranca con un toque: aquí
+      if (TV.pres) presentarTV(); else jugadaTV(TV.k);
+    }
+    if (!TV.empezado) return;
+    if (a === 'prev') saltaTV(TV.k <= 0 ? (TV.pres ? -1 : 0) : TV.k - 1);
+    if (a === 'next') saltaTV(TV.k + 1);
+    if (a === 'full') { const m = $('#tv-marco'); pantallaTV(!(document.fullscreenElement === m || m.classList.contains('tv-max'))); }
+  });
+
   /* ── Sincronizar el vídeo de un partido (#/sincronizar/{idp}) ──────────────────────────────────────────────────────
-     Se pega el enlace de YouTube; la página va jugada por jugada (inicio de cada parte, goles, exclusiones, tiempos muertos,
+     Se pega el enlace de YouTube; la página va jugada por jugada (inicio de cada parte, goles, expulsiones, tiempos muertos,
      cambios de portero), lleva el vídeo a unos segundos antes del momento estimado y basta con pulsar «¡Ahora!». Cada marca
      afina la estimación de la siguiente. Al final da un código que se añade a data/videos.json (scripts/reporte/videos.json). */
   const SY = { idp: null, S: null, items: [], i: 0, yt: '', canal: '', player: null };
@@ -1708,11 +2088,18 @@
       evs.filter(e => e.periodo === p).sort((a, b) => segs(a.t) - segs(b.t)).forEach(e => out.push({ id: e.id, p, g: segs(e.t), tipo: e.tipo, e, q: quien(e),
         txt: e.tipo === 'TIEMPO MUERTO' ? 'Tiempo muerto · ' + ctx.abr[e.lado] : (TIPO_VID[e.tipo] || e.tipo) + ' · ' + quien(e) + (e.tipo === 'GOL' && e.marcador ? ' · ' + e.marcador.replace('-', '–') : '') }));
     });
+    const tanda = ((S.penaltis && S.penaltis.tanda) || []).slice().sort((a, b) => a.ronda - b.ronda || (a.lado === 'L' ? -1 : 1));
+    if (tanda.length) {
+      out.push({ id: 'tanda', ancla: true, p: 3, g: 0, tipo: 'TANDA', txt: 'Empieza la tanda de penaltis' });
+      tanda.forEach((y, k) => { const q = quienD(ctx, y.lado, y.dorsal, y.jugador_corto, y.jugador) + ' (' + ctx.abr[y.lado] + ')';
+        out.push({ id: 'pen-' + y.ronda + '-' + y.lado, p: 3, g: k + 1, tipo: 'PENALTI', pen: y, q, txt: 'Penalti · ronda ' + y.ronda + ' · ' + q + ' · ' + (y.gol ? 'gol' : 'falla') }); });
+    }
     return out;
   }
   function estimaSync(k) {
     const it = SY.items[k], hechos = SY.items.slice(0, k).filter(x => x.s != null), ult = hechos[hechos.length - 1];
     if (!ult) return 0;
+    if (it.p === 3) return ult.p === 3 ? ult.s + 40 : ult.s + Math.max(0, (SY.S.duracion_periodo || 1500) - ult.g) * RITMO_VIDEO + 120;   // la tanda: tras el final, un lanzamiento cada ~40 s
     if (ult.p === it.p) {
       const ini = SY.items.find(x => x.p === it.p && x.ancla && x.s != null);
       const r = ini && ult !== ini && ult.g > 60 ? (ult.s - ini.s) / ult.g : RITMO_VIDEO;
@@ -1725,6 +2112,7 @@
   function codigoSync() {
     const ev = {}, partes = {};
     SY.items.forEach(x => { if (x.s == null) return; if (x.ancla) partes[x.p] = Math.round(x.s);
+      else if (x.pen) ev[x.id] = { s: Math.round(x.s), tipo: 'PENALTI', p: 3, t: null, lado: x.pen.lado, q: x.q, m: x.pen.gol ? 'gol' : 'fallo', ronda: x.pen.ronda };
       else ev[x.id] = { s: Math.round(x.s), tipo: x.tipo, p: x.p, t: x.e.t, lado: x.e.lado, q: x.q, m: x.e.marcador || null }; });
     return JSON.stringify({ [SY.idp]: { yt: SY.yt, canal: SY.canal || null, partes, ev } });
   }
@@ -1732,7 +2120,7 @@
     const lista = $('#sy-lista'), act = $('#sy-actual'), cod = $('#sy-codigo');
     if (!lista) return;
     const it = SY.items[SY.i];
-    act.innerHTML = it ? `<span class="n">${SY.i + 1}/${SY.items.length}</span><b>${esc(it.txt)}</b><span class="t">${it.ancla ? '' : esc(ordinal(it.p) + ' parte · minuto ' + it.e.t + ' de juego')}${it.s != null ? ' · marcado en ' + mmssV(it.s) : ''}</span>`
+    act.innerHTML = it ? `<span class="n">${SY.i + 1}/${SY.items.length}</span><b>${esc(it.txt)}</b><span class="t">${it.ancla ? '' : it.pen ? 'Tanda de penaltis' : esc(ordinal(it.p) + ' parte · minuto ' + it.e.t + ' de juego')}${it.s != null ? ' · marcado en ' + mmssV(it.s) : ''}</span>`
       : '<b>¡Listo! Copia el código de abajo y pásamelo.</b>';
     lista.innerHTML = SY.items.map((x, k) => `<button type="button" class="sy-it${k === SY.i ? ' on' : ''}${x.s != null ? ' ok' : ''}${x.ancla ? ' ancla' : ''}" data-sy="ir" data-k="${k}"><span class="s">${x.s != null ? mmssV(x.s) : '—'}</span><span>${esc(x.txt)}</span></button>`).join('');
     const hechas = SY.items.filter(x => x.s != null && !x.ancla).length;
@@ -1781,7 +2169,7 @@
     SY.S = S;
     cargarVideos().then(() => setTimeout(() => arrancarSync(idp), 0));
     return `<div class="sy"><div class="lab" style="color:#FF6B63">SINCRONIZAR VÍDEO</div><h1>${esc(S.local)} <span>${S.gl ?? ''}–${S.gv ?? ''}</span> ${esc(S.visitante)}</h1>
-      <p class="sy-ayuda">1. Pega el enlace de YouTube y pulsa «Cargar». 2. Para cada jugada el vídeo salta a unos segundos antes de cuando debería ser: dale al play y pulsa <b>¡Ahora!</b> justo cuando pasa (el gol entra, el árbitro pita la exclusión…). Si no se ve, «Saltar». 3. Al final copia el código y pásamelo.</p>
+      <p class="sy-ayuda">1. Pega el enlace de YouTube y pulsa «Cargar». 2. Para cada jugada el vídeo salta a unos segundos antes de cuando debería ser: dale al play y pulsa <b>¡Ahora!</b> justo cuando pasa (el gol entra, el árbitro pita la expulsión…). Si no se ve, «Saltar». 3. Al final copia el código y pásamelo.</p>
       <div class="sy-form"><input id="sy-url" type="url" placeholder="Enlace de YouTube (https://youtu.be/…)" aria-label="Enlace de YouTube"><input id="sy-canal" type="text" placeholder="Canal (opcional)" aria-label="Canal de YouTube"><button type="button" class="dv-alin" data-sy="cargar">Cargar</button></div>
       <div class="sy-cols"><div><div class="sy-marco"><div id="sy-player"></div></div>
         <div class="sy-actual" id="sy-actual"></div>
@@ -1957,7 +2345,7 @@
     if (LIVE.ok === false) return '<span class="off">sin conexión · reintentando</span>';
     return `<span>${n} ${n === 1 ? 'evento' : 'eventos'} · ${DIRECTO_EJEMPLO ? 'datos de ejemplo' : 'cada 15 s'}</span>`;
   }
-  /* ── 9c · Exclusiones en curso y situación en pista ──────────────────────────────────────────
+  /* ── 9c · Expulsiones en curso y situación en pista ──────────────────────────────────────────
      La cuenta atrás necesita el reloj de la parte: sin reloj del portal no se muestran (no se inventan). La portería vacía
      sale de los eventos («Portero fuera») y sí se muestra. Todo termina al cumplirse el tiempo o al cambiar de parte. */
   const mmssD = x => p2(Math.floor(x / 60)) + ':' + p2(Math.floor(x % 60));
@@ -2075,7 +2463,7 @@
     });
   }
 
-  /* ── 9h · En juego: tiros, paradas, minutos de exclusión y goles en superioridad (goles/ocasiones) ── */
+  /* ── 9h · En juego: tiros, paradas, minutos de expulsión y goles en superioridad (goles/ocasiones) ── */
   function datosJuego(ctx) {
     const { sn } = ctx, filas = [];
     const sumP = (l, f) => sn.porteros.filter(p => p.lado === l).reduce((a, p) => a + f(p), 0);
@@ -2085,7 +2473,7 @@
       filas.push(['PARADAS', pl, pv, pl, pv]);
     }
     const ex = l => sn.eventos.filter(e => e.tipo === 'FALTA' && e.lado === l).reduce((a, e) => a + (e.min_sancion || 2), 0);
-    filas.push(['MIN. EXCLUSIÓN', fmin(ex('L')), fmin(ex('V')), ex('L'), ex('V')]);
+    filas.push(['MIN. EXPULSIÓN', fmin(ex('L')), fmin(ex('V')), ex('L'), ex('V')]);
     if (ctx.dur) {
       const ppG = l => sn.eventos.filter(e => e.tipo === 'GOL' && e.lado === l && situacionGol(e, sn.eventos, ctx.dur) === 'En superioridad').length;
       const ppO = l => sn.eventos.filter(e => exclusion(e) && e.lado !== l).length;
@@ -2149,7 +2537,8 @@
   function pintarTanda(ctx) { const c = $('[data-dv="tanda"]'), h = tandaHtml(ctx); if (c && c._h !== h) { c.innerHTML = h; c._h = h; } }
   // plantilla de un equipo: porteros primero y luego por dorsal; C capitán, A asistente, P portero
   const nomPres = (ctx, l, j) => quienD(ctx, l, j.dorsal, j.jugador_corto, j.jugador).replace(/^#\d+\s+/, '');
-  const ordenPl = pl => pl.slice().sort((a, b) => ((b.rol === 'P') - (a.rol === 'P')) || ((+a.dorsal || 99) - (+b.dorsal || 99)));
+  const RANGO_ROL = { P: 0, C: 1, A: 2 };   // porteros, capitán, asistentes y el resto; en cada grupo, por dorsal
+  const ordenPl = pl => pl.slice().sort((a, b) => ((RANGO_ROL[a.rol] ?? 3) - (RANGO_ROL[b.rol] ?? 3)) || ((+a.dorsal || 99) - (+b.dorsal || 99)));
   const posHtml = j => (j.rol === 'P' ? '<i class="dv-pos">P</i>' : j.rol === 'C' ? '<i class="dv-pos c">C</i>' : j.rol === 'A' ? '<i class="dv-pos a">A</i>' : '');
   const escFicha = (ctx, l) => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
     return `<i style="--ring:${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></i>`; };
@@ -2557,7 +2946,7 @@
 
   /* ── 10f · Falta a pantalla completa ────────────────────────────────────────────────────────────────────────────
      Foto del sancionado en blanco y negro (la única escena en B/N) y caen 6 barrotes con rebote y 2 travesaños; rival sin
-     foto: su escudo entre rejas. «EXCLUSIÓN · equipo», cuenta atrás grande (la sanción, corriendo deprisa) con barra naranja,
+     foto: su escudo entre rejas. «EXPULSIÓN · equipo», cuenta atrás grande (la sanción, corriendo deprisa) con barra naranja,
      nombre y «Motivo (COD)». Sin candado. */
   function escenaFaltaHtml(ctx, e) {
     const l = e.lado, estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8 ? ' estr' : '';
@@ -2565,11 +2954,11 @@
     if (ctx.mp[l]) { const p = jugadorDe(ctx, l, e.id_player, e.dorsal); dentro = p && p.foto ? `<div class="f" style="background-image:url('${esc(p.foto)}')"></div>` : `<div class="i">${esc(p ? ini(p.nombre, p.apellidos) : iniDe(e.jugador_corto || e.jugador))}</div>`; }
     else { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; dentro = `<div class="e" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>`; }
     const sub = [motivoFalta(e), ordinal(e.periodo) + (e.t ? ' · ' + e.t : '')].filter(Boolean).join(' · ');
-    return `<div class="esc-falta${estr}" role="status" aria-label="Exclusión de ${esc(ctx.abr[l])}">
+    return `<div class="esc-falta${estr}" role="status" aria-label="Expulsión de ${esc(ctx.abr[l])}">
       <div class="ef-foto"><div class="ef-caja">${dentro}<div class="velo"></div>
         <div class="ef-rejas">${[0, 1, 2, 3, 4, 5].map(k => `<i style="animation-delay:${(0.45 + k * 0.07).toFixed(2)}s"></i>`).join('')}</div>
         <div class="ef-trav a"></div><div class="ef-trav b"></div><div class="d">${esc(e.dorsal || '')}</div></div></div>
-      <div class="ef-tx"><div class="ef-pill">EXCLUSIÓN · ${esc(ctx.abr[l])}</div><div class="ef-reloj">${mmssD((e.min_sancion || 2) * 60)}</div><div class="ef-barra"><i></i></div>
+      <div class="ef-tx"><div class="ef-pill">EXPULSIÓN · ${esc(ctx.abr[l])}</div><div class="ef-reloj">${mmssD((e.min_sancion || 2) * 60)}</div><div class="ef-barra"><i></i></div>
         <div class="ef-quien">${esc(quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador))}</div><div class="ef-sub">${esc(sub)}</div></div>
     </div>`;
   }
@@ -2702,7 +3091,7 @@
     setTimeout(() => { if (DV.idp === idp && DV.gen === gen && RSM.activo) escenaResumen(ctxDirecto(Object.assign({}, RSM.final, { _resumen: true }))); }, ya || !MOV ? 0 : 1800);
   }
   // si se cambia de página con una escena abierta, se cierra
-  window.addEventListener('hashchange', () => { if (ESC.abierta) ESC.abierta.cerrar(); cerrarVideo(); });
+  window.addEventListener('hashchange', () => { if (ESC.abierta) ESC.abierta.cerrar(); if (location.hash.indexOf('#/video/') !== 0) pararTV(); });
   document.addEventListener('click', e => { if (!e.target.closest('[data-ver-resumen]')) return; const S = RSM.final || LIVE.snaps[DV.idp]; if (S) escenaResumen(ctxDirecto(Object.assign({}, S, { _resumen: true }))); });
 
   /* ── Cambio de portero a pantalla completa ─────────────────────────────────────────────────────────────────────
@@ -2829,7 +3218,7 @@
       const ctx = ctxDirecto(sn), d = document.createElement('div');
       const falta = e.tipo === 'FALTA';
       d.className = 'bd-gol' + (falta ? ' falta' : ctx.mp[e.lado] ? ' mp' : '');
-      d.innerHTML = `<b>${falta ? 'EXCLUSIÓN ' + esc(fmin(e.min_sancion || 2)) : 'GOL'}</b><strong>${esc(ctx.abr[e.lado])}</strong><span>${esc(quienD(ctx, e.lado, e.dorsal, e.jugador_corto, e.jugador))}</span>`;
+      d.innerHTML = `<b>${falta ? 'EXPULSIÓN ' + esc(fmin(e.min_sancion || 2)) : 'GOL'}</b><strong>${esc(ctx.abr[e.lado])}</strong><span>${esc(quienD(ctx, e.lado, e.dorsal, e.jugador_corto, e.jugador))}</span>`;
       barra.appendChild(d);
       setTimeout(() => { d.remove(); fin(); }, falta ? Math.min(ms, 2200) : ms);
     });
@@ -2882,6 +3271,28 @@
     if (e2) e2.style.width = f2 + '%';
     pintarSituacion(ctxDirecto(sn));
   }, 1000);
+
+  /* ── Versión nueva ──────────────────────────────────────── */
+  // GitHub Pages deja la página en la caché del navegador hasta 10 minutos, y con ella la versión anterior de la web. Al abrirla
+  // se mira la página real: si ya es otra versión, se recarga con la nueva. Si llega mientras se usa (al volver a la pestaña),
+  // se avisa en vez de recargar de golpe (podría estar viendo un directo).
+  const VERSION = (((document.querySelector('script[src*="assets/app.js"]') || {}).src || '').split('v=')[1] || '').split('&')[0];
+  const conVersion = v => location.pathname + '?v=' + encodeURIComponent(v) + location.hash;
+  function versionNueva(alAbrir) {
+    if (!VERSION) return;
+    fetch('index.html?_=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(t => {
+      const v = (/assets\/app\.js\?v=([\w-]+)/.exec(t) || [])[1];
+      if (!v || v === VERSION) return;
+      if (alAbrir && location.search.indexOf('v=' + v) < 0) { location.replace(conVersion(v)); return; }
+      if ($('#aviso-version')) return;
+      const el = document.createElement('div'); el.id = 'aviso-version'; el.className = 'aviso-version'; el.setAttribute('role', 'status');
+      el.innerHTML = 'Hay una versión nueva de la web <button type="button">Actualizar</button>';
+      el.querySelector('button').addEventListener('click', () => location.replace(conVersion(v)));
+      document.body.appendChild(el);
+    }).catch(() => { /* sin conexión: ya se mirará */ });
+  }
+  versionNueva(true);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) versionNueva(false); });
 
   /* ── Carga ──────────────────────────────────────────────── */
   // historico.json se pide a la vez que app.json y la web se pinta cuando están los dos (si el histórico falla, sin él):

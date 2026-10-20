@@ -877,12 +877,6 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .dv-ver:hover { background: #FF3B3B; }
 .eg-chips .dv-ver, .eg-tx > .dv-ver { height: auto; padding: 5px 10px; margin: 0; font-size: 12px; border-radius: 5px; background: #FFFFFF; color: #D3202A; }
 .eg-tx > .dv-ver { margin-top: 14px; }
-.vid-panel { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 3000; width: min(480px, calc(100vw - 32px)); border-radius: 14px; overflow: hidden; background: #0D0D0E; border: 1px solid #3A3A40; box-shadow: 0 24px 60px rgba(0,0,0,.6); animation: mpUp .3s cubic-bezier(.2,.8,.2,1) both; }
-.vp-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px 8px 14px; font-size: 11px; font-weight: 700; letter-spacing: .14em; color: #A6A6AD; }
-.vp-cab button { width: 30px; height: 30px; border-radius: 50%; background: #26262A; color: #F4F4F5; font-size: 14px; }
-.vp-marco { position: relative; aspect-ratio: 16 / 9; background: #000; }
-.vp-marco iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-@media (max-width: 720px) { .vid-panel { left: 0; right: 0; width: auto; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); border-radius: 14px 14px 0 0; } }
 .vid-caps { max-width: 760px; margin: 26px auto 0; padding: 16px 18px; border-radius: 14px; background: #121214; border: 1px solid #26262A; }
 .vid-caps .cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
 .vid-caps .lista { display: grid; gap: 2px; }
@@ -926,3 +920,169 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .sy-cod { margin-top: 18px; display: grid; gap: 8px; max-width: 760px; }
 .sy-cod textarea { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #3A3A40; background: #121214; color: #C9C9CE; font: 12px/1.4 ui-monospace, Consolas, monospace; resize: vertical; }
 .sy-cod .dv-alin { justify-self: start; }
+
+/* ── Aviso de versión nueva (si llega mientras se usa la web) ── */
+.aviso-version { position: fixed; left: 50%; top: calc(12px + env(safe-area-inset-top, 0px)); z-index: 4000; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border-radius: 999px; background: #F4F4F5; color: #0D0D0E; font-size: 14px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: mpUp .3s cubic-bezier(.2,.8,.2,1) both; }
+.aviso-version button { padding: 6px 12px; border-radius: 999px; background: #D3202A; color: #FFFFFF; font-weight: 700; }
+
+/* ── Modo retransmisión (#/video/{idp}): vídeo en grande y, encima, marcador, reloj y anuncios de cada jugada ── */
+.tv { margin-top: 16px; }
+.tv-tit { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin-bottom: 12px; }
+.tv-tit h1 { margin: 4px 0 0; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: clamp(26px, 4vw, 46px); line-height: .95; }
+.tv-tit h1 span { color: #FF6B63; }
+.tv-marco { position: relative; container-type: inline-size; width: 100%; max-width: calc((100vh - 150px) * 16 / 9); margin: 0 auto 4px; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #000; }
+.tv-marco > div:first-child, .tv-marco iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.tv-marco:fullscreen { max-width: none; width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; }
+.tv-marco.tv-max { position: fixed; inset: 0; z-index: 5000; max-width: none; width: 100vw; height: 100vh; height: 100dvh; aspect-ratio: auto; border-radius: 0; }
+.tv-capa { position: absolute; inset: 0; pointer-events: none; font-family: 'IBM Plex Sans Condensed', sans-serif; }
+.tv-bug { position: absolute; left: 2.2cqw; top: 2.6cqw; display: flex; align-items: stretch; border-radius: .6cqw; overflow: hidden; background: rgba(13,13,14,.9); box-shadow: 0 .6cqw 2cqw rgba(0,0,0,.45); font-family: 'Big Shoulders Display', sans-serif; font-size: clamp(13px, 2.3cqw, 34px); line-height: 1; }
+.tv-bug .eq { display: flex; align-items: center; gap: .45em; padding: .35em .5em; }
+.tv-bug .eq i { width: 1.25em; height: 1.25em; border-radius: 50%; background: center / contain no-repeat; box-shadow: 0 0 0 2px #FFFFFF; }
+.tv-bug .eq span { font-weight: 800; letter-spacing: .03em; }
+.tv-bug .eq b { min-width: 1.1em; padding: .12em .25em; border-radius: .2em; background: #D3202A; color: #FFFFFF; font-weight: 900; text-align: center; font-variant-numeric: tabular-nums; }
+.tv-bug .eq.v b { background: #F4F4F5; color: #0D0D0E; }
+.tv-bug .eq b.salta { animation: tvSalta .6s cubic-bezier(.3,1.6,.5,1); }
+.tv-bug .rl { display: flex; align-items: center; padding: .35em .6em; background: #26262A; font-weight: 800; letter-spacing: .04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tv-excl { position: absolute; left: 2.2cqw; top: calc(2.6cqw + clamp(28px, 4.6cqw, 62px)); display: flex; flex-direction: column; gap: .4cqw; font-size: clamp(10px, 1.3cqw, 18px); }
+.tv-excl span { padding: .3em .6em; border-radius: .3em; background: #FF8A3D; color: #0D0D0E; font-weight: 800; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+.tv-anuncio { position: absolute; right: 2.2cqw; top: 50%; width: min(40cqw, 460px); transform: translateY(-50%); font-size: clamp(11px, 1.55cqw, 22px); opacity: 0; }
+.tv-anuncio.entra { animation: tvEntra .5s cubic-bezier(.2,.8,.2,1) forwards; }
+.tv-anuncio.sale { animation: tvSale .4s ease-in forwards; }
+.tv-card { border-radius: .8em; overflow: hidden; background: rgba(13,13,14,.92); box-shadow: 0 1em 3em rgba(0,0,0,.55); }
+.tv-card .cab { display: flex; align-items: center; justify-content: space-between; gap: .6em; padding: .5em .8em; background: #26262A; }
+.tv-card .cab .k { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 2.1em; line-height: .9; letter-spacing: .03em; color: #FFFFFF; }
+.tv-card .cab .m { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 1.35em; font-variant-numeric: tabular-nums; color: #FFFFFF; }
+.tv-card.gol .cab { background: #F4F4F5; } .tv-card.gol .cab .k, .tv-card.gol .cab .m { color: #0D0D0E; }
+.tv-card.gol.mp .cab { background: #D3202A; } .tv-card.gol.mp .cab .k, .tv-card.gol.mp .cab .m { color: #FFFFFF; }
+.tv-card.falta .cab { background: #FF8A3D; } .tv-card.falta .cab .k, .tv-card.falta .cab .m { color: #0D0D0E; }
+.tv-card .cuerpo { display: flex; align-items: center; gap: .8em; padding: .7em .8em .8em; }
+.tv-card .f { flex: none; width: 4.6em; aspect-ratio: 4 / 5; border-radius: .5em; background: #26262A 50% 18% / cover no-repeat; }
+.tv-card .f.ini { display: grid; place-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 1.6em; width: 2.9em; color: #8A8A8F; }
+.tv-card .f.riv { width: 3.2em; aspect-ratio: 1; display: grid; place-items: center; background: transparent; }
+.tv-card .f.riv .esc, .tv-card .eqs .esc { display: block; width: 2.6em; height: 2.6em; border-radius: 50%; background: center / contain no-repeat; }
+.tv-card .q { min-width: 0; display: flex; flex-direction: column; gap: .2em; align-items: flex-start; }
+.tv-card .q b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 1.55em; line-height: 1.05; color: #FFFFFF; }
+.tv-card .q span { font-size: .95em; color: #C9C9CE; }
+.tv-card .q em { margin-top: .15em; padding: .15em .5em; border-radius: .25em; background: #FFFFFF; color: #0D0D0E; font-style: normal; font-size: .75em; font-weight: 800; letter-spacing: .1em; }
+.tv-card.gol.mp .q em { background: #D3202A; color: #FFFFFF; }
+.tv-card.inicio { padding-bottom: .8em; text-align: center; }
+.tv-card.inicio .cab { justify-content: center; }
+.tv-card .gr { display: block; padding: .3em .6em 0; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 2.4em; line-height: 1; color: #FFFFFF; font-variant-numeric: tabular-nums; }
+.tv-card .eqs { display: flex; align-items: center; justify-content: center; gap: .5em; margin-top: .5em; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 1.2em; color: #FFFFFF; }
+.tv-card .eqs .esc { width: 1.6em; height: 1.6em; }
+.tv-card .eqs em { font-style: normal; color: #8A8A8F; }
+.tv-full { position: absolute; right: 1.6cqw; top: 1.6cqw; pointer-events: auto; width: clamp(30px, 3.4cqw, 46px); height: clamp(30px, 3.4cqw, 46px); border-radius: 50%; background: rgba(13,13,14,.75); color: #FFFFFF; font-size: clamp(14px, 1.8cqw, 24px); line-height: 1; }
+.tv-full:hover { background: #D3202A; }
+@keyframes tvEntra { from { opacity: 0; transform: translate(30%, -50%); } to { opacity: 1; transform: translate(0, -50%); } }
+@keyframes tvSale { from { opacity: 1; transform: translate(0, -50%); } to { opacity: 0; transform: translate(30%, -50%); } }
+@keyframes tvSalta { 0% { transform: scale(1); } 40% { transform: scale(1.45); } 100% { transform: scale(1); } }
+/* vídeo estrecho (móvil): el anuncio, una banda abajo a lo ancho y sin foto; el contador del resumen, arriba */
+@container (max-width: 560px) {
+  .tv-anuncio { left: 2cqw; right: 2cqw; top: auto; bottom: 3cqw; width: auto; transform: none; font-size: 11px; }
+  .tv-anuncio.entra { animation-name: tvEntraB; }
+  .tv-anuncio.sale { animation-name: tvSaleB; }
+  .tv-card { display: flex; align-items: stretch; border-radius: 6px; }
+  .tv-card .cab { flex: none; flex-direction: column; justify-content: center; gap: 2px; padding: 4px 8px; }
+  .tv-card .cab .k { font-size: 18px; }
+  .tv-card .cab .m { font-size: 11px; }
+  .tv-card .cuerpo { flex: 1; min-width: 0; gap: 6px; padding: 4px 8px; }
+  .tv-card .f { display: none; }
+  .tv-card .q { gap: 1px; }
+  .tv-card .q b { font-size: 15px; }
+  .tv-card .q span { font-size: 11px; }
+  .tv-card .q em { font-size: 9px; padding: 1px 5px; }
+  .tv-card.inicio { display: block; padding-bottom: 6px; }
+  .tv-card.inicio .cab { flex-direction: row; }
+  .tv-card .gr { font-size: 20px; }
+  .tv-card .eqs { font-size: 12px; margin-top: 2px; }
+  .tv-capa .tv-res { bottom: auto; top: calc(1.6cqw + 36px); }
+}
+@keyframes tvEntraB { from { opacity: 0; transform: translateY(40%); } to { opacity: 1; transform: none; } }
+@keyframes tvSaleB { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(40%); } }
+@media (prefers-reduced-motion: reduce) { .tv-anuncio.entra { animation: none; opacity: 1; } .tv-anuncio.sale { animation: none; opacity: 0; } .tv-bug .eq b.salta { animation: none; } }
+.tv-res { position: absolute; right: 1.6cqw; bottom: 2.4cqw; display: flex; align-items: center; gap: .6cqw; pointer-events: auto; font-size: clamp(10px, 1.25cqw, 17px); }
+.tv-res span { padding: .35em .7em; border-radius: .35em; background: rgba(13,13,14,.82); color: #FFFFFF; font-weight: 800; letter-spacing: .12em; }
+.tv-card.pen.gol .cab { background: #3DD27E; } .tv-card.pen.gol .cab .k, .tv-card.pen.gol .cab .m { color: #0D0D0E; }
+.tv-card.pen.gol.mp .cab { background: #D3202A; } .tv-card.pen.gol.mp .cab .k, .tv-card.pen.gol.mp .cab .m { color: #FFFFFF; }
+.tv-card.pen.falla .cab { background: #3A3A40; }
+/* resumen: el vídeo no se toca (ni menú de YouTube ni gestos), solo nuestra pausa */
+.tv-marco.bloq .tv-capa { pointer-events: auto; }
+.tv-tapa { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .7s; }
+.tv-marco.tapa .tv-tapa { opacity: 1; transition: opacity .15s; }
+.tv-tapa::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: max(60px, 13%); background: linear-gradient(#0D0D0E, #0D0D0E 66%, rgba(13,13,14,0)); }
+.tv-tapa::after { content: ''; position: absolute; right: 0; bottom: 0; width: max(170px, 18%); height: max(60px, 12%); background: linear-gradient(to top left, #0D0D0E 45%, rgba(13,13,14,0) 80%); }
+.tv-empieza { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; background: radial-gradient(ellipse at 50% 50%, rgba(13,13,14,.35) 0%, rgba(13,13,14,.82) 75%); color: #FFFFFF; }
+.tv-empieza b { display: grid; place-items: center; width: clamp(64px, 10cqw, 120px); height: clamp(64px, 10cqw, 120px); border-radius: 50%; background: #D3202A; font-size: clamp(26px, 4cqw, 48px); padding-left: .15em; box-shadow: 0 10px 40px rgba(211,32,42,.5); }
+.tv-empieza span { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: clamp(22px, 3.4cqw, 44px); text-transform: uppercase; }
+.tv-empieza small { font-size: clamp(11px, 1.3cqw, 15px); color: #C9C9CE; }
+.tv-card.pen.parada .cab { background: #F4F4F5; } .tv-card.pen.parada .cab .k, .tv-card.pen.parada .cab .m { color: #0D0D0E; }
+.tv-card.pen.parada.mp .cab { background: #D3202A; } .tv-card.pen.parada.mp .cab .k, .tv-card.pen.parada.mp .cab .m { color: #FFFFFF; }
+@media (prefers-reduced-motion: reduce) { }
+.tv.sin-anim { animation: none !important; transform: none !important; }
+/* la caja del vídeo y la capa: es la que gira en el móvil en vertical (y la que mide los cqw de la capa) */
+.tv-giro { position: absolute; inset: 0; container-type: size; }
+.tv-giro > #tv-player, .tv-giro > iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.tv-marco.rot { background: #000; }
+/* presentación: alineaciones sobre el calentamiento, el local por la izquierda y el visitante por la derecha */
+.tv-pres { position: absolute; inset: 0; display: none; pointer-events: none; }
+.tv-pres.on { display: block; background: linear-gradient(90deg, rgba(13,13,14,.6), rgba(13,13,14,.2) 44%, rgba(13,13,14,.2) 56%, rgba(13,13,14,.6)); animation: mpFade .4s both; }
+.tv-pres.sale { animation: tvPresSale .45s ease-in forwards; }
+.tv-marco.en-pres .tv-bug, .tv-marco.en-pres .tv-excl { opacity: 0; transition: opacity .3s; }
+.tp-cab { position: absolute; top: 1.6cqw; left: 0; right: 0; margin-inline: auto; width: max-content; padding: .45em 1em; border-radius: .45em; background: rgba(13,13,14,.88); font-family: 'Big Shoulders Display', sans-serif; font-size: clamp(9px, 1.15cqw, 17px); font-weight: 800; letter-spacing: .24em; color: #FF6B63; animation: mpUp .5s .2s both; }
+.tp-vs { position: absolute; top: 0; bottom: 0; left: 44cqw; right: 44cqw; display: grid; place-items: center; }
+.tp-vs b { display: grid; place-items: center; width: clamp(70px, 8cqw, 140px); aspect-ratio: 1; border-radius: 50%; background: #0D0D0E; box-shadow: 0 0 0 3px #D3202A, 0 .3em 1.4em rgba(0,0,0,.55); font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: clamp(26px, 3.4cqw, 60px); letter-spacing: .02em; color: #FFFFFF; animation: tpVs .5s .2s cubic-bezier(.2,.8,.2,1) both; }
+.tp-eqp { position: absolute; top: 2.4cqw; bottom: calc(2.8cqw + clamp(28px, 2.9cqw, 40px)); width: 43cqw; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .9cqw; }
+.tp-eqp.l { left: 1cqw; }
+.tp-eqp.v { right: 1cqw; }
+.tp-eq { display: flex; align-items: center; gap: .55em; padding: .35em .8em; border-radius: .45em; background: rgba(13,13,14,.92); font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: clamp(11px, 1.6cqw, 26px); line-height: 1; color: #FFFFFF; animation: mpSlideL .5s .4s both; }
+.tp-eqp.v .tp-eq { flex-direction: row-reverse; animation-name: mpSlideR; }
+.tp-eq .esc { width: 1.5em; height: 1.5em; border-radius: 50%; background: center / contain no-repeat; }
+.tp-rej { display: flex; flex-wrap: wrap; justify-content: center; gap: .7cqw; width: calc(var(--cols, 4) * var(--t, 100px) + (var(--cols, 4) - 1) * .7cqw); }
+.tp-t { position: relative; flex: none; width: var(--t, 100px); height: var(--t, 100px); border-radius: calc(var(--t, 100px) * .07); overflow: hidden; background: #2A2A2E 50% 15% / cover no-repeat; box-shadow: 0 0 0 2px rgba(255,255,255,.25), 0 .5em 1.2em rgba(0,0,0,.4); font-size: calc(var(--t, 100px) / 7.2); color: #FFFFFF; animation: tpPopL .5s cubic-bezier(.2,.8,.2,1) both; }
+.tp-t.mp { box-shadow: 0 0 0 2px #D3202A, 0 .5em 1.2em rgba(0,0,0,.4); }
+.tp-eqp.v .tp-t { animation-name: tpPopR; }
+.tp-t.sin { background: linear-gradient(160deg, #303035, #18181B); }
+.tp-t .ini { position: absolute; inset: 0 0 18% 0; display: grid; place-items: center; font-family: 'Big Shoulders Display', sans-serif; font-style: normal; font-weight: 900; font-size: 2.6em; color: #55555B; }
+.tp-t .d { position: absolute; left: .3em; top: .3em; min-width: 1.2em; padding: .08em .22em; border-radius: .18em; background: rgba(13,13,14,.85); font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 1.45em; line-height: 1; text-align: center; }
+.tp-t.mp .d { color: #FF6B63; }
+.tp-t .r { position: absolute; right: .35em; top: .35em; display: grid; place-items: center; width: 1.55em; height: 1.55em; border-radius: .3em; background: #F4F4F5; color: #0D0D0E; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 1.05em; line-height: 1; }
+.tp-t .r.c { background: #D3202A; color: #FFFFFF; }
+.tp-t .n { position: absolute; left: 0; right: 0; bottom: 0; padding: 1.1em .4em .35em; background: linear-gradient(rgba(13,13,14,0), rgba(13,13,14,.92) 60%); font-weight: 700; font-size: .95em; line-height: 1.1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@keyframes tpPopL { from { opacity: 0; transform: translateX(-25%) scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes tpPopR { from { opacity: 0; transform: translateX(25%) scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes tpVs { from { opacity: 0; transform: scale(1.8); } to { opacity: 1; transform: none; } }
+@keyframes tvPresSale { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tp-t, .tp-eq, .tp-cab, .tp-vs b, .tv-pres.on { animation: none; } }
+/* foto de quien asiste, más pequeña, junto a la del goleador */
+.tv-card .fa { position: relative; flex: none; align-self: flex-end; }
+.tv-card .fa .f { width: 3.1em; }
+.tv-card .fa small { position: absolute; left: 50%; bottom: -.45em; transform: translateX(-50%); padding: .05em .4em; border-radius: .25em; background: #F4F4F5; color: #0D0D0E; font-size: .6em; font-weight: 800; letter-spacing: .08em; }
+/* controles: anterior · pausa · siguiente · jugadas */
+.tv-ctrl { position: absolute; left: 1.6cqw; bottom: 1.8cqw; display: flex; gap: .3cqw; opacity: .38; transition: opacity .25s; }
+.tv-ctrl:hover, .tv-ctrl:focus-within { opacity: .95; }
+.tv-ctrl button { display: grid; place-items: center; width: clamp(28px, 2.9cqw, 40px); height: clamp(28px, 2.9cqw, 40px); border-radius: 50%; background: rgba(13,13,14,.45); color: #FFFFFF; }
+.tv-ctrl button:hover { background: rgba(13,13,14,.8); }
+.tv-ctrl button svg { width: 44%; height: 44%; fill: currentColor; }
+.tv-marco.en-pres .tv-res { opacity: 0; }
+.tv-lanza { position: absolute; left: 2.2cqw; top: calc(2.6cqw + clamp(28px, 4.6cqw, 62px) + .8cqw); max-width: 56cqw; transform: translateY(-.6em); opacity: 0; visibility: hidden; transition: opacity .35s, transform .35s, visibility .35s; font-size: clamp(9px, 1.1cqw, 15px); }
+.tv-lanza.on { opacity: 1; visibility: visible; transform: none; }
+.tv-lanza .tl { display: flex; align-items: center; gap: .7em; padding: .3em .45em .3em .3em; border-radius: 999px; background: rgba(13,13,14,.86); color: #FFFFFF; box-shadow: 0 .3em 1.2em rgba(0,0,0,.35); white-space: nowrap; }
+.tv-lanza .f { flex: none; width: 2.7em; height: 2.7em; border-radius: 50%; background: #26262A 50% 18% / cover no-repeat; display: grid; place-items: center; box-shadow: 0 0 0 2px rgba(255,255,255,.7); }
+.tv-lanza .mp .f { box-shadow: 0 0 0 2px #D3202A; }
+.tv-lanza .f.ini { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 1em; width: 2.7em; color: #C9C9CE; }
+.tv-lanza .f.riv { background: transparent; box-shadow: none; }
+.tv-lanza .f.riv .esc { display: block; width: 2.5em; height: 2.5em; border-radius: 50%; background: center / contain no-repeat; }
+.tv-lanza .q { display: grid; line-height: 1.15; min-width: 0; }
+.tv-lanza .q .k { font-size: .72em; font-weight: 800; letter-spacing: .16em; color: #FF6B63; }
+.tv-lanza .q b { font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+.tv-lanza .q span:last-child { font-size: .82em; color: #C9C9CE; overflow: hidden; text-overflow: ellipsis; }
+.tv-lanza em { flex: none; font-style: normal; font-weight: 800; font-size: .82em; letter-spacing: .06em; padding: .35em .7em; border-radius: 999px; background: #26262A; }
+@media (prefers-reduced-motion: reduce) { .tv-lanza { transition: none; } }
+/* cortina con el escudo: tapa a YouTube al arrancar, en cada salto y en la pausa */
+.tv-cortina { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: .5em; background: #0D0D0E; color: #FFFFFF; font-size: clamp(12px, 1.6cqw, 22px); opacity: 0; visibility: hidden; transition: opacity .35s, visibility .35s; }
+.tv-cortina.on { opacity: 1; visibility: visible; transition: opacity .15s; }
+.tv-cortina.pausa { background: rgba(13,13,14,.9); }
+.tv-cortina i { width: 4.5em; height: 4.5em; border-radius: 50%; background: url('../escudos/badge/madridpatina.png') center / contain no-repeat; box-shadow: 0 0 0 3px #D3202A; }
+.tv-cortina b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 2em; letter-spacing: .04em; }
+.tv-cortina span { font-size: .75em; font-weight: 700; letter-spacing: .24em; color: #FF6B63; }
+@container (max-width: 560px) { .tv-ctrl { left: auto; right: calc(1.6cqw + 38px); bottom: auto; top: 1.6cqw; gap: 2px; } .tv-ctrl button { width: 28px; height: 28px; } .tv-lanza { font-size: 10px; max-width: 92cqw; } }
