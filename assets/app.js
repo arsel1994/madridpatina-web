@@ -511,13 +511,14 @@
   }
   // 7q · movimientos entre equipos: cada jugador sale de su equipo de 2025/26 y viaja en línea recta al de 2026/27; al final
   // los que llegaron suben a ocupar el hueco. Gris: entre nuestros equipos · verde: llega de otro club · rojo: se va a otro club.
-  function tablero() {
+  const quien = x => [x.k, ((x.nombre || '') + ' ' + (x.apellidos || '')).trim().toLowerCase()].filter(Boolean);
+  function tablero(vistos) {
     const sen = A.equipos.filter(e => !e.cantera), ids = sen.map(e => e.id), OUT = sen.length, moves = [];
     const nom = (a, b) => ((a || '').split(' ')[0] + ' ' + (b || '').split(' ')[0]).trim();
     sen.forEach((e, di) => (e.altas || []).forEach(a => { const j = A.jugadores[a.k] || {};
       const from = a.desde && ours(a.desde) ? ids.indexOf(a.desde.split(' ').pop()) : a.desde ? OUT : -1;
-      if (from >= 0) moves.push({ from, to: di, nombre: nom(j.nombre, j.apellidos), foto: j.foto, tipo: from === OUT ? 'in' : 'int' }); }));
-    sen.forEach((e, fi) => (e.bajas || []).forEach(b => { if (b.destino && !ours(b.destino)) moves.push({ from: fi, to: OUT, nombre: nom(b.nombre, b.apellidos), foto: b.foto, tipo: 'out' }); }));
+      if (from >= 0) { moves.push({ from, to: di, nombre: nom(j.nombre, j.apellidos), foto: j.foto, tipo: from === OUT ? 'in' : 'int' }); quien({ k: a.k, ...j }).forEach(q => vistos.add(q)); } }));
+    sen.forEach((e, fi) => (e.bajas || []).forEach(b => { if (b.destino && !ours(b.destino)) { moves.push({ from: fi, to: OUT, nombre: nom(b.nombre, b.apellidos), foto: b.foto, tipo: 'out' }); quien(b).forEach(q => vistos.add(q)); } }));
     if (!moves.length) return '';
     const BW = anchoUtil(16), NARROW = BW < 760;
     const dep = {}, arr = {}; moves.forEach(m => { dep[m.from] = (dep[m.from] || 0) + 1; arr[m.to] = (arr[m.to] || 0) + 1; });
@@ -595,9 +596,10 @@
   }
   // 8c · «Se busca»: senior con MP la temporada pasada que aún no tienen equipo (nunca menores ni quien cambió de papel)
   function seBusca(fe) {
-    const vistos = new Set(), out = [];
+    const vistos = new Set(), out = [], rol = new Set();
+    A.ligas.forEach(L => ((L.pre && L.pre.equipos) || []).forEach(e => (e.bajas || []).forEach(b => { if (b.estado === 'otro_rol') rol.add((b.nombre + ' ' + b.apellidos).toLowerCase()); })));
     A.equipos.filter(e => !e.cantera && (!fe || e.id === fe.id)).forEach(e => (e.bajas || []).forEach(b => {
-      if (b.destino || b.estado === 'otro_rol') return;
+      if (b.destino || b.estado === 'otro_rol' || rol.has((b.nombre + ' ' + b.apellidos).toLowerCase())) return;
       const k = (b.nombre + ' ' + b.apellidos).toLowerCase(); if (vistos.has(k)) return; vistos.add(k);
       const hj = H && H.byTok[H.tok(b.nombre + ' ' + b.apellidos)];
       if (hj && hj.adulto === false) return;
@@ -620,8 +622,9 @@
       </div></div></div>`;
   }
   // los dos cromos de Pretemporada (también en Jugadores, bajo la franja de rookies); en el móvil, carrusel
-  function seccionCromos(fe) {
+  function seccionCromos(fe, vistos) {
     const vu = vuelven(fe), sb = H ? seBusca(fe) : [];
+    if (vistos) { vu.forEach(v => quien({ k: v.j.k, ...v.j }).forEach(q => vistos.add(q))); sb.forEach(m => quien(m.b).forEach(q => vistos.add(q))); }
     if (!vu.length && !sb.length) return '';
     return `<div style="--fondo:#0D0D0E">
       ${vu.length ? `${lab('BILLETE DE VUELTA · ' + vu.length, 'margin:28px 0 2px;color:#3DD27E')}<div style="font-size:13px;color:#A6A6AD">Vuelven a MADRIDPATINA tras un tiempo fuera</div><div class="cromos">${vu.map(billete).join('')}</div>` : ''}
@@ -648,21 +651,23 @@
     return G;
   }
   function vPretemporadaClub(tabs) {
-    const G = movimientosClub();
+    const G = movimientosClub(), vistos = new Set(), tab = tablero(vistos), cromos = seccionCromos(null, vistos);
+    const fuera = m => !quien(m.x).some(q => vistos.has(q)), una = new Set(), unaVez = m => !quien(m.x).some(q => una.has(q)) && (quien(m.x).forEach(q => una.add(q)), true);
+    const lista = k => G[k].filter(fuera).filter(unaVez);
     const jn = x => { const t = `${x.dorsal ? '<span style="color:#A6A6AD">#' + esc(x.dorsal) + '</span> ' : ''}${esc(corto(x))}`; return A.jugadores[x.k] ? `<a href="${hP(x.k)}">${t}</a>` : t; };
     const st = s2 => s2 && s2.pj ? ` · 25/26: ${s2.pj} PJ · ${s2.goles} G ${s2.asistencias} A` : '';
     const fila = (izq, dcha) => `<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid #26262A"><div style="min-width:0">${izq}</div><div style="text-align:right">${dcha}</div></div>`;
     const chip = (t, c) => `<span style="font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px;background:${c};color:#0D0D0E;white-space:nowrap">${t}</span>`;
     const bloque = (titulo, color, filas, nota) => filas.length ? `<div class="card" style="padding:16px 20px">
         <div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:${color}">${titulo} · ${filas.length}</div>${nota ? `<div style="font-size:13px;color:#A6A6AD;margin-top:2px">${nota}</div>` : ''}${filas.join('')}</div>` : '';
-    const interno = G.interno.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc(m.nota || '')}${st(m.x.stats)}</div>`,
+    const interno = lista('interno').map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc(m.nota || '')}${st(m.x.stats)}</div>`,
       `<span style="${BS}font-weight:800;font-size:18px;white-space:nowrap">${esc(m.de)} <span style="color:${m.t === 'sube' ? '#3DD27E' : '#FF8A3D'}">${m.t === 'sube' ? '↑' : '↓'}</span> ${esc(m.a)}</span>`));
-    const vuelven = G.vuelven.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc((m.x.nota || '').replace(/^Vuelve:\s*/, 'Su última temporada: '))}</div>`, chip(m.a, '#6FB7FF')));
-    const llegan = G.llegan.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">de ${esc(m.x.desde)}${m.x.desdeLiga ? ' · ' + esc(m.x.desdeLiga) : ''}${st(m.x.stats)}</div>`, chip(m.a, '#C9A7F5')));
-    const debutan = G.debutan.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc(m.x.nota || 'Primer año')}</div>`, chip(m.a, '#FF6B63')));
-    const seVan = G.seVan.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">→ ${esc(m.x.destino)}${m.x.destinoLiga ? ' · ' + esc(m.x.destinoLiga) : ''}</div>`, chip(m.de, '#3A3A40').replace('color:#0D0D0E', 'color:#F4F4F5')));
+    const vuelven = lista('vuelven').map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc((m.x.nota || '').replace(/^Vuelve:\s*/, 'Su última temporada: '))}</div>`, chip(m.a, '#6FB7FF')));
+    const llegan = lista('llegan').map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">de ${esc(m.x.desde)}${m.x.desdeLiga ? ' · ' + esc(m.x.desdeLiga) : ''}${st(m.x.stats)}</div>`, chip(m.a, '#C9A7F5')));
+    const debutan = lista('debutan').map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc(m.x.nota || 'Primer año')}</div>`, chip(m.a, '#FF6B63')));
+    const seVan = lista('seVan').map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">→ ${esc(m.x.destino)}${m.x.destinoLiga ? ' · ' + esc(m.x.destinoLiga) : ''}</div>`, chip(m.de, '#3A3A40').replace('color:#0D0D0E', 'color:#F4F4F5')));
     const rol = G.rol.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div><div style="font-size:12px;color:#A6A6AD">${esc(m.x.nota || '')}</div>`, chip(m.de, '#3A3A40').replace('color:#0D0D0E', 'color:#F4F4F5')));
-    const pend = G.pendientes.map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div>`, chip(m.de, '#3A3A40').replace('color:#0D0D0E', 'color:#F4F4F5')));
+    const pend = lista('pendientes').map(m => fila(`<div style="font-weight:700">${jn(m.x)}</div>`, chip(m.de, '#3A3A40').replace('color:#0D0D0E', 'color:#F4F4F5')));
     const kpis = [['Cambian de equipo', G.interno.length, '#3DD27E'], ['Vuelven', G.vuelven.length, '#6FB7FF'], ['Llegan de otros clubes', G.llegan.length, '#C9A7F5'],
       ['Debutan', G.debutan.length, '#FF6B63'], ['Se van a otros clubes', G.seVan.length, '#A6A6AD']]
       .map(([k, v, ink]) => `<div style="padding:14px 18px;background:#18181B;border-radius:10px;min-width:120px"><div style="font-size:14px;color:#A6A6AD;font-weight:600">${k}</div><div style="${BS}font-weight:800;font-size:48px;line-height:1;color:${ink}">${v}</div></div>`).join('');
@@ -670,16 +675,16 @@
       <div style="margin-top:24px"><div class="lab" style="color:#FF6B63">PRETEMPORADA ${esc(A.temporada)}</div><div style="${BS}font-weight:900;font-size:clamp(44px,6.5vw,80px);line-height:.9;margin-top:6px">Nuestro club</div></div>
       <div style="font-size:15px;line-height:1.5;color:#C9C9CE;margin-top:12px;max-width:860px">Quién sube o baja entre nuestros equipos, quién vuelve, quién llega de otro club y quién debuta, en todas las ligas en las que jugamos.</div>
       <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">${kpis}</div>
-      ${tablero()}
-      ${seccionCromos(null)}
+      ${tab}
+      ${cromos}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:24px;align-items:start">
-        ${bloque('CAMBIAN DE EQUIPO DENTRO DEL CLUB', '#3DD27E', interno, '↑ sube a un equipo de más nivel · ↓ baja')}
+        ${bloque('CAMBIAN DE EQUIPO DENTRO DEL CLUB', '#3DD27E', interno, (tab ? 'Los de senior, en el tablero de arriba · ' : '') + '↑ sube a un equipo de más nivel · ↓ baja')}
         ${bloque('VUELVEN', '#6FB7FF', vuelven, 'No jugaron la temporada pasada y vuelven este año')}
         ${bloque('LLEGAN DE OTROS CLUBES', '#C9A7F5', llegan)}
         ${bloque('DEBUTAN', '#FF6B63', debutan, 'Su primer año en la competición')}
         ${bloque('SE VAN A OTROS CLUBES', '#A6A6AD', seVan)}
         ${bloque('CAMBIAN DE PAPEL', '#A6A6AD', rol)}
-        ${bloque('AÚN NO HAN JUGADO ESTA TEMPORADA', '#55555B', pend, 'Estaban la temporada pasada; pueden volver en cualquier jornada')}
+        ${bloque('AÚN NO HAN JUGADO ESTA TEMPORADA', '#55555B', pend, 'Estaban la temporada pasada; pueden volver en cualquier jornada' + (cromos.includes('SE BUSCA') ? ' (además de los de «Se busca»)' : ''))}
       </div>`;
   }
 
@@ -700,8 +705,9 @@
     const tag = e => { const t = T[e.tipo] || T.sigue; return e.tipo === 'sigue' ? '' : ` <span style="font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:3px;background:${t[1]};color:#fff;vertical-align:2px">${t[2]}</span>`; };
     const eqs = P.equipos.slice().sort((a, b) => (a.fuerza ? a.fuerza.puesto : 99) - (b.fuerza ? b.fuerza.puesto : 99));
     const nA = P.equipos.reduce((n, e) => n + (e.altas || []).length, 0), nB = P.equipos.reduce((n, e) => n + (e.bajas || []).length, 0);
-    const kpis = [['Equipos', P.equipos.length, '#F4F4F5'], ['Llegan de otra liga o son nuevos', P.equipos.filter(e => e.tipo !== 'sigue').length, '#3DD27E'],
-      ['Altas', nA, '#F4F4F5'], ['Bajas', nB, '#A6A6AD']].concat(L.rookies.length ? [['Rookies', L.rookies.length, '#FF6B63']] : [])
+    const nLlegan = P.equipos.filter(e => e.tipo !== 'sigue').length;
+    const kpis = [['Equipos', P.equipos.length, '#F4F4F5']].concat(nLlegan < P.equipos.length ? [['Llegan de otra liga o son nuevos', nLlegan, '#3DD27E']] : []).concat([
+      ['Altas', nA, '#F4F4F5'], ['Bajas', nB, '#A6A6AD']]).concat(L.rookies.length ? [['Rookies', L.rookies.length, '#FF6B63']] : [])
       .map(([k, v, ink]) => `<div style="padding:14px 18px;background:#18181B;border-radius:10px;min-width:120px"><div style="font-size:14px;color:#A6A6AD;font-weight:600">${k}</div><div style="${BS}font-weight:800;font-size:48px;line-height:1;color:${ink}">${v}</div></div>`).join('');
     // 1) Fuerza de plantilla
     const maxF = Math.max(1, ...eqs.map(e => e.fuerza ? e.fuerza.total : 0));
@@ -720,34 +726,21 @@
         <div style="text-align:right"><div style="${BS}font-weight:900;font-size:26px;line-height:1;color:${x.nuestro ? '#FF6B63' : '#F4F4F5'}">${v}</div><div style="font-size:11px;color:#A6A6AD">${u}</div></div></div>`;
     const pel = (P.peligrosos || []).map((x, i) => fila(i, x, esc(x.equipo) + (x.stats ? ' · 25/26: ' + st(x.stats) : ''), dec(x.ritmo), 'pts/partido')).join('');
     const gks = (P.porteros || []).map((g, i) => fila(i, g, esc(g.equipo) + ` · ${g.tiros} tiros` + (g.t2526 && g.t2526.pj ? ` · 25/26: ${g.t2526.pj} PJ` : ''), dec(g.pct) + '%', 'paradas')).join('');
-    // 3) Cómo llegan los equipos
-    const item = e => box(hT(e.equipo), 'display:flex;flex-direction:column;align-items:center;gap:4px;width:64px', `
-        <div style="position:relative">${disc(crest(e.equipo), 52, e.nuestro ? RED : '#FFFFFF')}${T[e.tipo] && e.tipo !== 'sigue' ? `<span style="position:absolute;right:-6px;top:-6px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:900;background:${T[e.tipo][1]};color:#fff">${T[e.tipo][0]}</span>` : ''}</div>
-        <span style="${BS}font-weight:800;font-size:15px;white-space:nowrap">${esc(abr(e.equipo))}</span>
-        <span style="font-size:11px;color:#A6A6AD;white-space:nowrap">${esc(((e.detalle || '').match(/(\d+)º/) || [])[1] ? (e.detalle.match(/(\d+)º/)[1] + 'º en 25/26') : (e.tipo === 'nuevo' ? 'nuevo' : ''))}</span>`, 'div');
-    const grupos = [['sube', 'SUBEN'], ['baja', 'BAJAN'], ['nuevo', 'NUEVOS'], ['viene', 'VIENEN DE OTRA LIGA O CATEGORÍA'], ['sigue', 'SIGUEN']]
-      .map(([t, k]) => [k, P.equipos.filter(e => e.tipo === t)]).filter(([, l]) => l.length);
+    // 3) Cómo llegan los equipos: la escalera de ascensos y descensos, y los que ya no están
     const fuera = (P.fuera || []).map(f => `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:84px;opacity:.5;text-align:center">${disc(f.escudo || crest(f.equipo), 52, '#55555B')}<span style="${BS}font-weight:800;font-size:15px;white-space:nowrap">${esc(abr(f.equipo))}</span><span style="font-size:11px;line-height:1.25;color:#A6A6AD">${esc(f.que_paso || '')}</span></div>`).join('');
-    const mov = grupos.map(([k, l]) => `<div style="display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid #26262A">
-        <div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#A6A6AD">${k} · ${l.length}</div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap">${l.map(item).join('')}</div></div>`).join('')
-      + (fuera ? `<div style="display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:14px;align-items:center;padding:10px 0"><div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#55555B">YA NO ESTÁN</div><div style="display:flex;gap:14px;flex-wrap:wrap">${fuera}</div></div>` : '');
+    const mov = (fuera ? `<div style="display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:14px;align-items:center;padding:10px 0"><div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#55555B">YA NO ESTÁN</div><div style="display:flex;gap:14px;flex-wrap:wrap">${fuera}</div></div>` : '');
     // 4) Altas y bajas, equipo por equipo (los nuestros primero)
     const orden = P.equipos.slice().sort((a, b) => (b.nuestro - a.nuestro) || ((a.fuerza || {}).puesto - (b.fuerza || {}).puesto));
     const lin = (x, sub, dir, i) => { const al = dir === 'alta';
       return `<div data-anim="${al ? 'mpInL' : 'mpInR'} .45s cubic-bezier(.2,.8,.2,1) ${(al ? 150 : 250) + i * 110}ms" style="padding:${al ? '7px 0 7px 10px' : '7px 10px 7px 0'};border-bottom:1px solid #26262A;box-shadow:inset ${al ? '3px' : '-3px'} 0 0 ${al ? '#3DD27E' : '#FF5A52'}"><div style="font-weight:600">${jn(x)}${x.portero ? ' <span style="font-size:12px;color:#A6A6AD">· portero</span>' : ''}${x.tag ? ` <span style="font-size:11px;font-weight:700;padding:1px 6px;border-radius:3px;background:${x.tag[2]};color:#0D0D0E;white-space:nowrap">${esc(x.tag[1])}</span>` : ''}</div><div style="font-size:12px;color:#A6A6AD">${sub}</div></div>`; };
     const ab = orden.map(e => {
-      const altas = (e.altas || []).map((x, i) => { const t = tipoAlta(x, e.equipo, L.nombre); return lin(Object.assign({}, x, { tag: t }), (x.desde ? 'de ' + esc(x.desde) + (x.desdeLiga ? ' · ' + esc(x.desdeLiga) : '') : esc(x.nota || 'Nuevo')) + (x.stats ? ' · 25/26: ' + st(x.stats) : ''), 'alta', i); }).join('') || '<div style="padding:7px 0;color:#A6A6AD;font-size:14px">Ninguna</div>';
+      const altas = (e.altas || []).map((x, i) => { const t = tipoAlta(x, e.equipo, L.nombre), interno = t[0] === 'sube' || t[0] === 'baja';
+        const de = interno ? esc(x.desdeLiga || '') : x.desde ? 'de ' + esc(x.desde) + (x.desdeLiga ? ' · ' + esc(x.desdeLiga) : '') : esc(x.nota || 'Nuevo');
+        return lin(Object.assign({}, x, { tag: t }), [de, x.stats && x.stats.pj ? '25/26: ' + st(x.stats) : ''].filter(Boolean).join(' · '), 'alta', i); }).join('') || '<div style="padding:7px 0;color:#A6A6AD;font-size:14px">Ninguna</div>';
       const bajas = (e.bajas || []).map((x, i) => lin(x, x.destino ? '→ ' + esc(x.destino) + (x.destinoLiga ? ' · ' + esc(x.destinoLiga) : '') : esc(x.nota || 'Sin partidos esta temporada'), 'baja', i)).join('') || '<div style="padding:7px 0;color:#A6A6AD;font-size:14px">Ninguna</div>';
-      const gk = (e.porteros || []).map(g => `${jn(g)} <span style="color:#A6A6AD">${g.pct != null ? dec(g.pct) + '%' : 'sin historial'}</span>`).join(' · ');
-      const clave = (e.clave || []).slice(0, 3).map(x => `${jn(x)} <span style="color:#A6A6AD">${dec(x.ritmo)}</span>`).join(' · ');
       return `<div class="card" style="padding:16px 18px;border:1px solid ${e.nuestro ? RED : '#18181B'}">
         <div style="display:flex;align-items:center;gap:12px">${disc(crest(e.equipo), 36)}<div style="min-width:0;flex:1">
-          <div style="font-weight:800;font-size:17px;color:${e.nuestro ? '#FF6B63' : '#F4F4F5'}">${esc(e.equipo)}${tag(e)}</div>
-          <div style="font-size:12px;color:#A6A6AD">${esc(e.sinp ? 'Aún no ha jugado esta temporada' : (e.detalle || ''))}</div></div>
-          <div style="text-align:right"><div style="${BS}font-weight:900;font-size:28px;line-height:1">${e.fuerza ? e.fuerza.puesto + 'º' : ''}</div><div style="font-size:11px;color:#A6A6AD">en fuerza</div></div></div>
-        ${clave ? `<div style="font-size:13px;margin-top:10px"><span style="color:#A6A6AD;font-weight:700">Peligro:</span> ${clave}</div>` : ''}
-        ${gk ? `<div style="font-size:13px;margin-top:4px"><span style="color:#A6A6AD;font-weight:700">Portería:</span> ${gk}</div>` : ''}
+          <div style="font-weight:800;font-size:17px;color:${e.nuestro ? '#FF6B63' : '#F4F4F5'}">${esc(e.equipo)}${tag(e)}</div></div></div>
         <details${e.nuestro ? ' open' : ''} style="margin-top:10px"><summary style="cursor:pointer;font-weight:700;font-size:14px;color:#C9C9CE;padding:6px 0">Altas ${(e.altas || []).length} · Bajas ${(e.bajas || []).length}</summary>
           <div data-grupo style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:4px 18px">
             <div><div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#3DD27E;margin-top:6px">ALTAS</div>${altas}</div>
@@ -783,8 +776,7 @@
         <div>${titulo2('JUGADORES MÁS PELIGROSOS', 'Puntos por partido en 2025/26 y 2024/25')}<div class="card" style="padding:6px 14px">${pel || '<div style="padding:12px 0;color:#A6A6AD">Sin datos todavía.</div>'}</div></div>
         <div>${titulo2('PORTEROS MÁS FIABLES', '% de paradas en 2025/26 y 2024/25')}<div class="card" style="padding:6px 14px">${gks || '<div style="padding:12px 0;color:#A6A6AD">Sin datos todavía.</div>'}</div></div>
       </div>
-      ${titulo2('CÓMO LLEGAN LOS EQUIPOS', 'Debajo, su puesto en 2025/26')}
-      <div class="card" style="padding:6px 20px">${escalera(L)}${mov}</div>
+      ${(() => { const esc_ = escalera(L); return esc_ || mov ? `${titulo2('CÓMO LLEGAN LOS EQUIPOS', esc_ ? 'Quién sube y quién baja' : '')}<div class="card" style="padding:6px 20px">${esc_}${mov}</div>` : ''; })()}
       ${titulo2('ALTAS Y BAJAS · EQUIPO POR EQUIPO', 'Primero los nuestros')}
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:12px;align-items:start">${ab}</div>
       ${renov ? `${titulo2('RENOVACIÓN DE PLANTILLAS', 'Puntos de 2025/26 que siguen en el equipo · caras nuevas')}<div class="card" style="padding:8px 18px">${renov}</div>` : ''}
@@ -1510,14 +1502,88 @@
     return ((dorsal ? '#' + dorsal + ' ' : '') + (p ? iniApe(p) : corto || largo || '')).trim();
   }
   // gol en superioridad (el rival con una exclusión en curso) o a portería vacía (el que encaja había sacado al portero)
+  // Superioridad o inferioridad al marcar, contando jugadores en pista: dejan al equipo con uno menos las exclusiones de
+  // 1'30'', 2' y 5' (las de 10' no: entra otro), que se suman si coinciden; la de 2' o menos se acaba si el otro equipo
+  // marca mientras dura; pasan de una parte a la otra. En el mismo segundo manda el orden del acta.
+  const exclusion = f => f.tipo === 'FALTA' && (f.min_sancion || 2) < 10;
   function situacionGol(g, evs, dur) {
     if (!dur || g.t == null) return '';
-    const tg = segs(g.t), antes = c => c.periodo < g.periodo || (c.periodo === g.periodo && segs(c.t) <= tg);
+    const abs = e => (e.periodo - 1) * dur + segs(e.t), tg = abs(g), antes = c => c.periodo < g.periodo || (c.periodo === g.periodo && segs(c.t) <= segs(g.t));
     const cambios = evs.filter(c => c.tipo === 'CAMBIO DE PORTERO' && c.lado !== g.lado && c.t != null && antes(c));
     if (cambios.length && cambios[cambios.length - 1].nota === 'Portero fuera') return 'Portería vacía';
-    const pp = evs.some(f => f.tipo === 'FALTA' && f.lado !== g.lado && f.periodo === g.periodo && f.t != null && tg >= segs(f.t) && tg < segs(f.t) + (f.min_sancion || 2) * 60);
-    return pp ? 'En superioridad' : '';
+    const fuera = { L: [], V: [] }, otro = l => (l === 'L' ? 'V' : 'L');
+    if (!fuera[g.lado]) return '';
+    const orden = evs.map((e, i) => [e, i]).filter(([e]) => e.periodo && segs(e.t) != null).sort((a, b) => abs(a[0]) - abs(b[0]) || a[1] - b[1]);
+    for (const [e] of orden) {
+      const t = abs(e);
+      if (e === g || (g.id && e.id === g.id) || t > tg) break;
+      ['L', 'V'].forEach(l => { fuera[l] = fuera[l].filter(x => x.fin > t); });
+      if (exclusion(e) && fuera[e.lado]) fuera[e.lado].push({ fin: t + (e.min_sancion || 2) * 60, menor: (e.min_sancion || 2) <= 2 });
+      else if (e.tipo === 'GOL' && fuera[e.lado] && fuera[otro(e.lado)].length > fuera[e.lado].length) {
+        const m = fuera[otro(e.lado)].filter(x => x.menor).sort((a, b) => a.fin - b.fin)[0];
+        if (m) fuera[otro(e.lado)].splice(fuera[otro(e.lado)].indexOf(m), 1);
+      }
+    }
+    const n = l => fuera[l].filter(x => x.fin > tg).length, d = n(otro(g.lado)) - n(g.lado);
+    return d > 0 ? 'En superioridad' : d < 0 ? 'En inferioridad' : '';
   }
+  /* ── Hitos de cada gol ──────────────────────────────────────────────────────────────────────────────────────────
+     «SU PRIMER GOL» (ninguno en la FMP desde 2016/17) o «1.er GOL DE LA TEMPORADA»; hat trick, póker, manita; «SUPERA SU
+     MEDIA» al llegar a 2 o más y al menos el doble de su media por partido (temporada pasada y esta antes del partido,
+     con 5 partidos o más), y lo mismo con las asistencias. Lo que llevaba cada uno sale de data/hitos.json, que se
+     rehace cada semana: si es de hace más de una jornada, o el jugador no está (la FMP a veces le cambia el id), no se
+     dice nada de su historial. */
+  let HIT = null, hitP = null;
+  const cargarHitos = () => hitP || (hitP = fetch('data/hitos.json?v=' + encodeURIComponent(A.actualizado || ''))
+    .then(r => r.json()).then(d => { HIT = d; HIT.antes = new Set(d.goleadores || []); return d; }).catch(() => { hitP = null; return null; }));
+  const HITOS = { 3: 'HAT TRICK', 4: 'PÓKER', 5: 'MANITA' };
+  const isoDe = sn => { const m = /^(\d{2})\/(\d{2})$/.exec(sn.fecha || ''), y0 = parseInt(A.temporada, 10); return m && y0 ? (+m[2] >= 8 ? y0 : y0 + 1) + '-' + m[2] + '-' + m[1] : null; };
+  function previo(id, sn) {
+    const f = isoDe(sn);
+    if (!HIT || !id || !f || (new Date(f) - new Date(HIT.actualizado)) / 864e5 > 8) return null;
+    const x = HIT.j[id];
+    if (!x) return HIT.antes.has(+id) ? { g: 1, tg: 0, pj: 0, mg: 0, ma: 0 } : null;   // marcó hace años y no ha jugado desde
+    const est = x.t.filter(p => p[0] < f), tg = est.reduce((a, p) => a + p[1], 0), ta = est.reduce((a, p) => a + p[2], 0);
+    const u = Object.values(x.u).reduce((a, v) => [a[0] + v[0], a[1] + v[1], a[2] + v[2]], [0, 0, 0]);   // todas sus categorías
+    return { g: x.c[1] + tg, tg, pj: u[0] + est.length, mg: u[1] + tg, ma: u[2] + ta };
+  }
+  const catDe = liga => { const n = (liga || '').toLowerCase(); return /senior|femenin/.test(n) ? 's' : /juvenil/.test(n) ? 'j' : /junior/.test(n) ? 'n' : /infantil/.test(n) ? 'i' : /alev/.test(n) ? 'a' : /benjam/.test(n) ? 'b' : ''; };
+  // Rivales peligrosos (presentación): puntos por partido en la categoría del partido, esta temporada antes del partido y
+  // la pasada juntas (4 partidos o más, o 2 de esta temporada); los 3 mejores del rival que pasen de 0,4. El motivo, de esta temporada si ya llevan 2 partidos.
+  function peligrosos(sn, l) {
+    const f = isoDe(sn), k = catDe(sn.liga), out = new Map(), cand = [];
+    if (!HIT || !f || !k || (new Date(f) - new Date(HIT.actualizado)) / 864e5 > 8) return out;
+    ((sn.plantillas || {})[l] || []).forEach(j => {
+      const x = j.id_player && j.rol !== 'P' && HIT.j[j.id_player];
+      if (!x) return;
+      const t = x.t.filter(p => p[0] < f && p[3] === k), u = x.u[k] || [0, 0, 0];
+      const tg = t.reduce((a, p) => a + p[1], 0), ta = t.reduce((a, p) => a + p[2], 0), pj = t.length + u[0];
+      if (pj < 4 && t.length < 2) return;
+      cand.push({ id: j.id_player, ppg: (tg + ta + u[1] + u[2]) / pj,
+        motivo: t.length >= 2 ? `${tg} G ${ta} A en ${t.length} PJ esta temporada` : `${num2((u[1] + u[2]) / u[0])} puntos por partido en ${HIT.pasada}` });
+    });
+    cand.filter(x => x.ppg >= 0.4).sort((a, b) => b.ppg - a.ppg).slice(0, 3).forEach(x => out.set(x.id, x));
+    return out;
+  }
+  // la n-ésima vez cruza el umbral (y la anterior no): se anuncia una sola vez por partido
+  const cruza = (n, media) => n >= 2 && n >= 2 * media && !(n - 1 >= 2 && n - 1 >= 2 * media);
+  function hitosGol(g, evs, sn) {
+    const out = { tags: [], asist: '', media: '' };
+    if (g.tipo !== 'GOL' || !(g.id_player || g.dorsal)) return out;
+    const i = evs.findIndex(x => x.id === g.id), hasta = i < 0 ? evs : evs.slice(0, i + 1);
+    const n = hasta.filter(x => x.tipo === 'GOL' && x.lado === g.lado && (g.id_player ? x.id_player === g.id_player : x.dorsal === g.dorsal)).length;
+    const p = previo(g.id_player, sn);
+    if (p && n === 1 && p.tg === 0) out.tags.push(p.g === 0 ? 'SU PRIMER GOL' : '1.er GOL DE LA TEMPORADA');
+    if (n >= 3) out.tags.push(HITOS[n] || n + ' GOLES');
+    else if (p && p.pj >= 5 && cruza(n, p.mg / p.pj)) { out.tags.push('SUPERA SU MEDIA'); out.media = 'su media: ' + num2(p.mg / p.pj) + ' goles por partido'; }
+    if (g.asist_dorsal || g.assist_id_player) {
+      const na = hasta.filter(x => x.tipo === 'GOL' && x.lado === g.lado && (g.assist_id_player ? x.assist_id_player === g.assist_id_player : x.asist_dorsal === g.asist_dorsal)).length;
+      const q = previo(g.assist_id_player, sn);
+      if (q && q.pj >= 5 && cruza(na, q.ma / q.pj)) out.asist = na + ' asistencias hoy, supera su media (' + num2(q.ma / q.pj) + ')';
+    }
+    return out;
+  }
+  const num2 = x => (Math.round(x * 100) / 100).toLocaleString('es-ES', { maximumFractionDigits: 2 });
   function chipDirecto(sn) {
     const r = relojDe(sn);
     if (sn.estado === 'directo' && sn.fase === 'penaltis') return { vivo: !sn._resumen, txt: 'PENALTIS' + (sn.penaltis ? ' · ' + sn.penaltis.gl + '–' + sn.penaltis.gv : '') };
@@ -1560,10 +1626,11 @@
   const TAGD = { GOL: ['GOL', RED, '#FFFFFF'], FALTA: ["2'", '#FF8A3D', '#0D0D0E'], 'TIEMPO MUERTO': ['TM', '#26262A', '#F4F4F5'], 'CAMBIO DE PORTERO': ['POR', '#26262A', '#F4F4F5'], 'LANZAMIENTO PENALTI': ['PEN', '#F4F4F5', '#0D0D0E'] };
   function filaDirecto(ctx, e) {
     const t = (TAGD[e.tipo] || [e.tipo.slice(0, 3), '#26262A', '#F4F4F5']).slice(), l = e.lado, nom = ctx.nombre[l] || '';
-    let tit, sub;
+    let tit, sub, hitos = [];
     if (e.tipo === 'GOL') {
       tit = quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador);
-      sub = [e.asist_dorsal || e.asist_jugador ? 'Asist. ' + quienD(ctx, l, e.asist_dorsal, e.asist_corto, e.asist_jugador) : 'Sin asistencia', situacionGol(e, ctx.sn.eventos, ctx.dur)].filter(Boolean).join(' · ');
+      const h = hitosGol(e, ctx.sn.eventos, ctx.sn); hitos = h.tags;
+      sub = [e.asist_dorsal || e.asist_jugador ? 'Asist. ' + quienD(ctx, l, e.asist_dorsal, e.asist_corto, e.asist_jugador) + (h.asist ? ' (' + h.asist + ')' : '') : 'Sin asistencia', situacionGol(e, ctx.sn.eventos, ctx.dur), h.media].filter(Boolean).join(' · ');
     } else if (e.tipo === 'FALTA') {
       tit = quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador); t[0] = fmin(e.min_sancion || 2);
       sub = motivoFalta(e) + ' · ' + minFuera(e.min_sancion || 2) + ' fuera';
@@ -1577,7 +1644,7 @@
     const c = crest(nom), bg = (A.crests[nom] && A.crests[nom].bg) || 'transparent';
     return `<div class="dv-fila${e.tipo === 'GOL' && ctx.mp[l] ? ' mp' : ''}" style="${animDe(e.id, 'mpUp .45s cubic-bezier(.2,.8,.2,1) both')}">
       <span class="t">${esc(ordinal(e.periodo) + (e.t ? ' ' + e.t : ''))}</span><span class="tag" style="background:${t[1]};color:${t[2]}">${esc(t[0])}</span>
-      <div style="min-width:0"><div class="tit">${esc(tit)}</div><div class="sub">${esc(sub)}</div></div>
+      <div style="min-width:0"><div class="tit">${esc(tit)}${hitos.map(x => `<span class="dv-hito">${esc(x)}</span>`).join('')}</div><div class="sub">${esc(sub)}</div></div>
       <div class="der"><div style="box-shadow:0 0 0 1.5px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div><span>${e.tipo === 'GOL' && e.marcador ? esc(e.marcador.replace('-', '–')) : ''}</span></div></div>`;
   }
   // filas en orden cronológico (la lista las muestra al revés) con separadores deducidos del estado: el portal no da inicio/fin
@@ -1736,7 +1803,7 @@
     filas.push(['MIN. EXCLUSIÓN', fmin(ex('L')), fmin(ex('V')), ex('L'), ex('V')]);
     if (ctx.dur) {
       const ppG = l => sn.eventos.filter(e => e.tipo === 'GOL' && e.lado === l && situacionGol(e, sn.eventos, ctx.dur) === 'En superioridad').length;
-      const ppO = l => sn.eventos.filter(e => e.tipo === 'FALTA' && e.lado !== l).length;
+      const ppO = l => sn.eventos.filter(e => exclusion(e) && e.lado !== l).length;
       filas.push(['GOLES EN SUPERIORIDAD', ppG('L') + '/' + ppO('L'), ppG('V') + '/' + ppO('V'), ppG('L'), ppG('V')]);
     }
     return filas;
@@ -1837,7 +1904,9 @@
     const derbi = ctx.mp.L && ctx.mp.V, nos = ctx.mp.L ? 'L' : ctx.mp.V ? 'V' : null, riv = nos === 'L' ? 'V' : 'L';
     const lados = (derbi ? ['L', 'V'] : [nos]).filter(l => l && P[l] && P[l].length);
     if (!lados.length) return false;
-    const plantillaDe = l => ordenPl(P[l]).map(j => { const p = jugadorDe(ctx, l, j.id_player, j.dorsal); return { j, foto: (p && p.foto) || '', ini: p ? ini(p.nombre, p.apellidos) : iniDe(j.jugador_corto || j.jugador) }; });
+    const plantillaDe = l => ordenPl(P[l]).map(j => { const p = jugadorDe(ctx, l, j.id_player, j.dorsal); return { j, foto: (p && p.foto) || '', ini: p ? ini(p.nombre, p.apellidos) : iniDe(j.jugador_corto || j.jugador),
+      // el nombre como lo tenemos nosotros (el acta trae alguno mal: «Müller Magg» es «Müller-Magg»)
+      nm: (p && p.nombre) || j.nombre || '', ap: (p && p.apellidos) || j.apellido || j.jugador_corto || '' }; });
     const rivs = !derbi && P[riv] ? ordenPl(P[riv]) : [];
     const estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8;
     const liga = ((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase();
@@ -1866,12 +1935,12 @@
         const r = ROL_TXT[x.j.rol] || ['JUGADOR', '#26262A', '#F4F4F5'];
         hero.innerHTML = `<div class="pr-big"><span>${esc(x.j.dorsal)}</span></div>
           <div class="pr-foto">${x.foto ? `<div class="f" style="background-image:url('${esc(x.foto)}')"></div>` : `<div class="i">${esc(x.ini)}</div>`}<div class="d">${esc(x.j.dorsal)}</div></div>
-          <div class="pr-nom"><div class="rol" style="background:${r[1]};color:${r[2]}">${r[0]}</div><div class="nm">${esc(x.j.nombre || '')}</div><div class="ap">${esc((x.j.apellido || x.j.jugador_corto || '').toUpperCase())}</div>
+          <div class="pr-nom"><div class="rol" style="background:${r[1]};color:${r[2]}">${r[0]}</div><div class="nm">${esc(x.nm)}</div><div class="ap">${x.ap.toUpperCase().split(/\s+/).filter(Boolean).map(w => `<span style="white-space:nowrap">${esc(w)}</span>`).join(' ')}</div>
             <div class="cnt">${p2(k + 1)} / ${p2(mps.length)}</div></div>`;
         // el apellido, siempre con sus palabras enteras: si alguna no cabe, se reduce la letra (y como último recurso, se parte)
         const ap = hero.querySelector('.ap'); let fs = parseFloat(getComputedStyle(ap).fontSize);
         while (ap.scrollWidth > ap.clientWidth + 1 && fs > 30) { fs -= 3; ap.style.fontSize = fs + 'px'; }
-        if (ap.scrollWidth > ap.clientWidth + 1) ap.style.overflowWrap = 'anywhere';
+        if (ap.scrollWidth > ap.clientWidth + 1) { ap.style.overflowWrap = 'anywhere'; ap.querySelectorAll('span').forEach(w => { w.style.whiteSpace = 'normal'; }); }
         celdas.forEach((cl, q) => { cl.classList.toggle('on', q <= k); cl.classList.toggle('cur', q === k); });
       }));
       t += mps.length * 1250;
@@ -1880,8 +1949,10 @@
     if (rivs.length) {
       luego(t, () => {
         const pos = j => (j.rol === 'P' ? 'POR' : j.rol === 'C' ? 'CAP' : j.rol === 'A' ? 'ASIS' : '');
-        stage.innerHTML = `<div class="pr-riv"><div class="cab">${escB(riv, 'e1')}<div class="k">RIVAL</div><div class="n">${esc(ctx.nombre[riv])}</div></div>
-          <div class="lista">${rivs.map((j, q) => `<div class="j" style="animation-delay:${(0.35 + q * 0.09).toFixed(2)}s"><b>${esc(j.dorsal)}</b><span>${esc(quienD(ctx, riv, j.dorsal, j.jugador_corto, j.jugador).replace(/^#\d+\s+/, ''))}</span><em>${pos(j)}</em></div>`).join('')}</div></div>`;
+        const pel = peligrosos(sn, riv);
+        stage.innerHTML = `<div class="pr-riv"><div class="cab">${escB(riv, 'e1')}<div class="k">RIVAL</div><div class="n">${esc(ctx.nombre[riv])}</div>${pel.size ? '<div class="pel-k">⚠ ojo con los marcados en rojo</div>' : ''}</div>
+          <div class="lista">${rivs.map((j, q) => { const p = pel.get(j.id_player);
+            return `<div class="j${p ? ' pel' : ''}" style="animation-delay:${(0.35 + q * 0.09).toFixed(2)}s"><b>${esc(j.dorsal)}</b><span>${esc(quienD(ctx, riv, j.dorsal, j.jugador_corto, j.jugador).replace(/^#\d+\s+/, ''))}${p ? `<small>PELIGRO · ${esc(p.motivo)}</small>` : ''}</span><em>${pos(j)}</em></div>`; }).join('')}</div></div>`;
       });
       t += 3200;
     }
@@ -2114,6 +2185,7 @@
   const esperaTxt = () => (LIVE.ok === false && !LIVE.cargado ? 'Sin conexión con el directo · reintentando…' : LIVE.cargado ? 'Este partido no está ahora en el directo.' : 'Conectando con el directo…');
   function vDirecto(idp, modo) {
     if (ESC.abierta && ESC.abierta.tipo === 'resumen') ESC.abierta.cerrar();
+    cargarHitos();
     DV.idp = idp; DV.gen++;
     if (modo === 'resumen') { const espera = prepararResumen(idp); if (espera) { DV.vacio = true; return espera; } } else { pararResumen(); RSM.saltado = false; }
     const sn = snapDV();
@@ -2181,20 +2253,20 @@
     const asWho = hayA ? quienD(ctx, l, e.asist_dorsal, e.asist_corto, e.asist_jugador) : '';
     if (!ctx.mp[l]) {
       const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
-      const sub = [hayA ? 'Asist. ' + asWho : 'Sin asistencia', parte, marc].filter(Boolean).join(' · ');
+      const sub = [...hitosGol(e, ctx.sn.eventos, ctx.sn).tags, hayA ? 'Asist. ' + asWho : 'Sin asistencia', parte, marc].filter(Boolean).join(' · ');
       return `<div class="esc-gol riv${estr}" role="status" aria-label="Gol de ${esc(ctx.abr[l])}"><div class="eg-cortina"><div class="eg-esc" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>
         <div class="eg-tx"><div class="eg-gol">GOL</div><div class="eg-quien">${esc(quien)}</div><div class="eg-sub">${esc(sub)}</div></div></div></div>`;
     }
     const foto = (p, nombre) => (p && p.foto ? `<div class="f" style="background-image:url('${esc(p.foto)}')"></div>` : `<div class="i">${esc(p ? ini(p.nombre, p.apellidos) : iniDe(nombre))}</div>`);
     const s1 = jugadorDe(ctx, l, e.id_player, e.dorsal), a1 = hayA ? jugadorDe(ctx, l, e.assist_id_player, e.asist_dorsal) : null;
-    const nota = situacionGol(e, ctx.sn.eventos, ctx.dur);
+    const nota = situacionGol(e, ctx.sn.eventos, ctx.dur), h = hitosGol(e, ctx.sn.eventos, ctx.sn);
     return `<div class="esc-gol${estr}" role="status" aria-label="Gol de ${esc(ctx.abr[l])}"><div class="eg-cortina">
       <div class="eg-fotos${hayA ? ' con-a' : ''}">
         ${hayA ? `<div class="eg-as">${foto(a1, e.asist_corto || e.asist_jugador)}<div class="tag">ASIST.</div><div class="d">${esc(e.asist_dorsal || '')}</div></div>` : ''}
         <div class="eg-sc">${foto(s1, e.jugador_corto || e.jugador)}<div class="d">${esc(e.dorsal || '')}</div></div>
       </div>
-      <div class="eg-tx"><div class="eg-gol">GOL</div><div class="eg-quien">${esc(quien)}</div>${hayA ? `<div class="eg-asis">Asistencia de <b>${esc(asWho)}</b></div>` : ''}
-        <div class="eg-chips">${[parte, marc, nota.toUpperCase()].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}</div></div>
+      <div class="eg-tx"><div class="eg-gol">GOL</div><div class="eg-quien">${esc(quien)}</div>${hayA ? `<div class="eg-asis">Asistencia de <b>${esc(asWho)}</b>${h.asist ? ' · ' + esc(h.asist) : ''}</div>` : ''}
+        <div class="eg-chips">${h.tags.map(x => `<span class="hito">${esc(x)}</span>`).join('')}${[parte, marc, nota.toUpperCase()].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}</div></div>
     </div></div>`;
   }
 
