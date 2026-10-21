@@ -433,7 +433,8 @@
             ${actaMini(A.partidos[c.mid], e.nombre)}</div>`; }).join('')}</div>` : ''; })()}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;margin-top:28px">
         <div>${lab('JUGADORES CLAVE · ' + tClave, 'margin-bottom:10px')}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">${clave}</div>
-          <a href="${hLg(e.ligaId, 'mapa')}" style="display:inline-block;margin-top:12px;font-size:14px;font-weight:700">Ver a nuestros jugadores en el mapa de la liga →</a></div>
+          <a href="${hLg(e.ligaId, 'mapa')}" style="display:inline-block;margin-top:12px;font-size:14px;font-weight:700">Ver a nuestros jugadores en el mapa de la liga →</a>
+          <div data-perfiles data-liga="${esc(e.ligaId)}" data-equipo="${esc(e.nombre)}"></div></div>
         <div style="display:flex;flex-direction:column;gap:12px">
           <div class="card" data-grupo style="padding:18px 20px"><div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:#3DD27E">${e.cantera ? 'ALTAS EN LA CANTERA' : 'ALTAS'} · ${lAltas.length}</div>${e.cantera ? '<div style="font-size:13px;color:#A6A6AD;margin-top:4px">Alevín e Infantil juntos, porque muchos juegan en los dos. Solo los que llegan nuevos al club.</div>' : ''}${altas}</div>
           <div class="card" data-grupo style="padding:18px 20px"><div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:#FF5A52">${e.cantera ? 'BAJAS DE LA CANTERA' : 'BAJAS'} · ${lBajas.length}</div>${e.cantera ? '<div style="font-size:13px;color:#A6A6AD;margin-top:4px">Los que jugaron en la cantera la temporada pasada y ya no están en ningún equipo del club.</div>' : ''}${bajas}</div>
@@ -965,6 +966,56 @@
   }
 
 
+
+  /* ── Arquetipos (los del Wrapped; scripts/reporte/mapa.py decide cuál toca, comparando con la liga) ───────────────── */
+  const ARQ = {
+    sniper: ['Sniper', 'el francotirador', 'la francotiradora', '#a8281f', 'El gol es lo suyo. Cuando aparece, hay peligro en la portería rival. No persigue el puck: el puck le llega al stick.'],
+    playmaker: ['Playmaker', 'el cerebro', 'el cerebro', '#2f6db3', 'No firma los goles, los inventa. Ve líneas que el resto no ve y descose defensas con un pase.'],
+    momentum: ['Momentum', 'el motor', 'el motor', '#c2520a', 'Cuando entra, el partido cambia. Goles, asistencias, intensidad: empuja al equipo cuando hace falta.'],
+    wildcard: ['Wildcard', 'el espectáculo', 'el espectáculo', '#d4a73b', 'Goles, faltas, intensidad pura. Donde está, pasa algo. El equipo lo agradece; el árbitro lo nota.'],
+    steady: ['Steady', 'el consistente', 'la consistente', '#8a4fb5', 'Sale, marca, asiste. Sin estridencias, con presencia. Lo que se espera, lo cumple.'],
+    ghost: ['Ghost', 'el fugaz', 'la fugaz', '#b8324a', 'Apariciones breves por ahora. Cada partido cuenta, aunque la cuenta sea corta.'],
+    wall: ['Wall', 'el ancla', 'el ancla', '#4a6a9e', 'No sale en los highlights. Sale en los partidos ganados. Sostiene desde donde nadie mira.'],
+    workhorse: ['Workhorse', 'el currante', 'la currante', '#6B6B70', 'Cada partido, cada turno. Sin números espectaculares, pero el equipo no rueda sin su trabajo.'],
+    game_changer: ['Game Changer', 'el decisivo', 'la decisiva', '#e89a2b', 'Sus goles no son uno más: ponen por delante y deciden partidos.'],
+    comeback_king: ['Comeback King', 'el remontador', 'la remontadora', '#7b4ff2', 'Cuando el equipo va perdiendo, aparece. Sus goles empiezan remontadas.'],
+    hot_streak: ['Hot Streak', 'en racha', 'en racha', '#f57f3b', 'Cuando enciende el modo gol, no para: partidos seguidos marcando.'],
+    one_man_show: ['One Man Show', 'el solista', 'la solista', '#1f8fd8', 'Buena parte de los goles del equipo pasan por su stick.'],
+    mixed_player: ['Polivalente', 'campo y portería', 'campo y portería', '#4caaaa', 'Ha jugado de campo y bajo palos. No todos hacen las dos cosas.'],
+    rookie_phenom: ['Rookie Phenom', 'la promesa', 'la promesa', '#9d6cc0', 'Acaba de llegar a senior y ya pesa en el equipo.'],
+    veteran_loyal: ['Veterano', 'el de toda la vida', 'la de toda la vida', '#4a6a9e', 'Temporadas y temporadas en el club. Parte del esqueleto del equipo.'],
+    legend_alltime: ['Leyenda', 'del club histórico', 'del club histórico', '#d4a73b', 'Su nombre está entre los 3 primeros de la historia del club.'],
+    iron_curtain: ['Iron Curtain', 'la cortina de hierro', 'la cortina de hierro', '#2f6db3', 'De los mejores porcentajes de paradas de su liga. Quien intenta marcarle se lo piensa dos veces.'],
+    reactive_wall: ['Reactive Wall', 'el reflejo', 'el reflejo', '#4a6a9e', 'Recibe tiros sin parar y los resuelve. El equipo aguanta porque aguanta antes.'],
+    embattled: ['Embattled', 'el bombardeado', 'la bombardeada', '#c2520a', 'El rival no para de probarle. Bajo presión constante, cada parada cuenta el doble.'],
+    undershot: ['Undershot', 'el bien defendido', 'la bien defendida', '#8a4fb5', 'Su equipo trabaja delante: le llegan pocos tiros, y los importantes los para.'],
+    workhorse_g: ['Workhorse', 'el titular indiscutible', 'la titular indiscutible', '#a8281f', 'Partido tras partido en la portería. Esta temporada, la portería lleva su nombre.'],
+    shadow: ['Shadow', 'el suplente puntual', 'la suplente puntual', '#6B6B70', 'Cuando hubo que entrar, entró. Apariciones breves pero firmadas con su nombre.'],
+  };
+  const arqNom = (k, fem) => ARQ[k] ? ARQ[k][0] + ' · ' + (fem ? ARQ[k][2] : ARQ[k][1]) : '';
+  const chipArq = (k, fem, grande) => ARQ[k] ? `<span style="display:inline-flex;align-items:center;gap:6px;font-size:${grande ? 14 : 12}px;font-weight:700;letter-spacing:.04em;padding:${grande ? '5px 10px' : '2px 8px'};border-radius:4px;background:#1E1E22;box-shadow:inset 3px 0 0 ${ARQ[k][3]};color:#F4F4F5;white-space:nowrap"><span>${esc(ARQ[k][0].toUpperCase())}</span><span style="font-weight:500;color:#A6A6AD;letter-spacing:0">${esc(fem ? ARQ[k][2] : ARQ[k][1])}</span></span>` : '';
+  const LEY = { goles: 'goles', asistencias: 'asistencias', partidos: 'partidos' };
+  function porQue(k, r) {   // el dato que lo explica, con los números del jugador
+    const x = v => dec(+(+v).toFixed(2));
+    return ({
+      sniper: `${x(r.gl)} goles por partido: de los que más marcan en su liga`, playmaker: `${x(r.al)} asistencias por partido: de los que más asisten en su liga, y más asistencias que goles`,
+      momentum: `${x(r.x)} puntos por partido: entre el 15 % de su liga que más produce`, wildcard: `Marca más que la mitad de su liga y suma ${x(r.sp)} minutos de sanción por partido, de los más altos`,
+      steady: `${x(r.x)} puntos por partido: por encima de la mitad de su liga`, ghost: `${r.pj} partidos por ahora`,
+      wall: `${r.pj} partidos, pocos puntos y casi sin sanciones`, workhorse: `${r.pj} partidos`,
+      game_changer: `${r.gwg} goles que dieron la victoria`, comeback_king: `${r.detras} goles con el equipo por detrás`, hot_streak: `Marcó en ${r.racha} partidos seguidos`,
+      one_man_show: `Participa en el ${r.pp} % de los goles de su equipo`, mixed_player: 'Ha jugado en portería y en campo',
+      rookie_phenom: 'Primera temporada en senior y por encima de la mitad de su liga', veteran_loyal: `${r.temps} temporadas en el club`,
+      legend_alltime: `Entre los 3 primeros de la historia del club en ${(r.ley || []).map(m => LEY[m] || m).join(', ').replace(/, ([^,]*)$/, ' y $1')}`,
+      iron_curtain: `${x(r.pct)} % de paradas: del 25 % mejor de su liga`, reactive_wall: `${x(r.tpj)} tiros por partido, y para más que la mitad de su liga`,
+      embattled: `${x(r.tpj)} tiros por partido: de los que más reciben`, undershot: `${x(r.tpj)} tiros por partido: de los que menos reciben`,
+      shadow: `${r.pj} partidos en portería`, workhorse_g: `${r.pj} partidos en portería`,
+    })[k] || '';
+  }
+  // la entrada de un jugador en el mapa: la de la liga de su equipo o, si juega en dos, la de más partidos
+  const entradaMapa = (k, liga) => { if (!MAPA) return null; const xs = [];
+    Object.entries(MAPA.ligas).forEach(([id, L]) => L.jug.concat(L.por.map(r => Object.assign({ gk: true }, r))).forEach(r => { if (r.k === k) xs.push(Object.assign({ liga: id }, r)); }));
+    return xs.sort((a, b) => (b.liga === liga) - (a.liga === liga) || b.pj - a.pj)[0] || null; };
+
   /* ── Mapa de jugadores (data/mapa.json, de scripts/reporte/mapa.py) ─────────────────────────────────────────────────
      Cada jugador de campo de la liga por su producción (puntos por partido; en la escala de la liga, o en la de Senior 1
      con el FMPe al juntar las ligas senior) y su perfil (qué parte de sus puntos son goles). Las zonas y los «se parece a»
@@ -1020,7 +1071,7 @@
     const conPts = lista.filter(r => r.y != null), sinPts = lista.length - conPts.length;
     const val = r => (todas ? r.xf : r.x);
     const pts = conPts.map(r => ({ x: val(r), y: r.y, nuestro: r.nuestro, hueco: todas && r.liga !== L.id,
-      info: `<b style="color:#F4F4F5">${enlace(r)}</b> · ${esc(r.eq)}${todas ? ' · ' + esc(r.ligaN) : ''} ${todas ? '' : chipZona(r.zona)}<br>${dec(val(r).toFixed(2))} puntos por partido${todas ? ' en escala de Senior 1' : ''} · ${r.y}% de sus puntos son goles · ${base(r)}` }));
+      info: `<b style="color:#F4F4F5">${enlace(r)}</b> · ${esc(r.eq)}${todas ? ' · ' + esc(r.ligaN) : ''} ${todas ? '' : chipZona(r.zona)}<br>${dec(val(r).toFixed(2))} puntos por partido${todas ? ' en escala de Senior 1' : ''} · ${r.y}% de sus puntos son goles · ${base(r)}${r.arq ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${[r.arq].concat(r.ras || []).map(q => chipArq(q, (A.jugadores[r.k] || {}).fem)).join('')}</div>` : ''}` }));
     // el eje llega hasta donde está casi todo el mundo (percentil 97); quien se sale queda pegado al borde derecho
     const xs = pts.map(q => q.x).sort((a, b) => a - b), p97 = xs.length ? xs[Math.min(xs.length - 1, Math.floor(xs.length * 0.97))] : 1;
     const xmax = Math.max(0.5, p97 * 1.12, ...pts.filter(q => q.nuestro).map(q => q.x * 1.08));
@@ -1031,13 +1082,13 @@
       aria: `Mapa de ${pts.length} jugadores de ${todas ? 'las ligas senior' : L.nombre}: puntos por partido y parte de goles. Los nuestros, en rojo; la lista de los nuestros va debajo.` });
     const gks = (todas ? otras.flatMap(([id, x]) => x.por.map(r => Object.assign({}, r, { liga: id, ligaN: x.nombre.replace('Liga ', '') }))) : M.por);
     const pg = gks.map(r => ({ x: r.tpj, y: r.pct, nuestro: r.nuestro, hueco: todas && r.liga !== L.id,
-      info: `<b style="color:#F4F4F5">${enlace(r)}</b> · ${esc(r.eq)}${todas ? ' · ' + esc(r.ligaN) : ''}<br>${dec(r.pct)}% de paradas · ${dec(r.tpj)} tiros por partido · ${base(r)}` }));
+      info: `<b style="color:#F4F4F5">${enlace(r)}</b> · ${esc(r.eq)}${todas ? ' · ' + esc(r.ligaN) : ''}<br>${dec(r.pct)}% de paradas · ${dec(r.tpj)} tiros por partido · ${base(r)}${r.arq ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${[r.arq].concat(r.ras || []).map(q => chipArq(q, (A.jugadores[r.k] || {}).fem)).join('')}</div>` : ''}` }));
     const ys = pg.map(q => q.y);
     const mapaGk = pg.length > 2 ? svgMapa('porteros', pg, { xmin: 0, xmax: Math.max(10, ...pg.map(q => q.x)) * 1.08, ymin: Math.floor(Math.min(...ys) - 2), ymax: Math.min(100, Math.ceil(Math.max(...ys) + 2)), ysuf: '%',
       xlab: 'Tiros recibidos por partido', ylab: '% de paradas', aria: `Mapa de ${pg.length} porteros: tiros por partido y % de paradas. Los nuestros, en rojo.` }) : '';
     const nuestros = (todas ? lista : M.jug).filter(r => r.nuestro);
     const filas = nuestros.map(r => `<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #26262A">
-        <div style="min-width:0"><div style="font-weight:700">${enlace(r)}</div><div style="font-size:13px;color:#A6A6AD">${esc(r.eq.replace('MADRIDPATINA', 'MP'))}${todas ? ' · ' + esc(r.ligaN) : ''} · ${r.y != null ? dec(val(r).toFixed(2)) + ' pts/PJ · ' + r.y + '% goles' : 'sin puntos'} · ${base(r)}</div></div>${todas ? '' : chipZona(r.zona)}</div>`).join('');
+        <div style="min-width:0"><div style="font-weight:700">${enlace(r)}</div><div style="font-size:13px;color:#A6A6AD">${esc(r.eq.replace('MADRIDPATINA', 'MP'))}${todas ? ' · ' + esc(r.ligaN) : ''} · ${r.y != null ? dec(val(r).toFixed(2)) + ' pts/PJ · ' + r.y + '% goles' : 'sin puntos'} · ${base(r)}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${todas ? '' : chipZona(r.zona)}${chipArq(r.arq, (A.jugadores[r.k] || {}).fem)}</div></div>`).join('');
     const tog = senior ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px">${[['', 'Esta liga'], ['todas', 'Todas las ligas senior']].map(([k, t]) => `<a class="blk" href="${hLg(L.id, 'mapa' + (k ? '/' + k : ''))}"${(k === 'todas') === !!todas ? ' aria-current="page"' : ''} style="padding:7px 14px;border-radius:999px;background:${(k === 'todas') === !!todas ? RED : '#18181B'};color:${(k === 'todas') === !!todas ? '#FFFFFF' : '#C9C9CE'};font-weight:700;font-size:14px">${t}</a>`).join('')}</div>` : '';
     const leyenda = `<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:#A6A6AD;margin-top:6px"><span><span style="color:${RED}">●</span> MADRIDPATINA</span>${todas ? `<span><span style="color:#A6A6AD">●</span> ${esc(L.nombre.replace('Liga ', ''))}</span><span><span style="color:#A6A6AD">○</span> la otra liga senior</span>` : '<span><span style="color:#A6A6AD">●</span> resto de la liga</span>'}</div>`;
     return `${tog}
@@ -1049,6 +1100,29 @@
       </div>`;
   }
   // «Se parece a» en la ficha: llega con mapa.json (se pide al abrir la ficha)
+  function rellenarArquetipo() {
+    const el = view.querySelector('[data-arquetipo]'); if (!el) return;
+    const pon = () => { const r = entradaMapa(el.dataset.arquetipo, el.dataset.liga), fem = el.dataset.fem === '1'; if (!r || !r.arq) { el.remove(); return; }
+      const fila = (k, grande) => `<div style="display:flex;flex-direction:column;gap:4px;padding:${grande ? '0 0 10px' : '8px 0'};${grande ? '' : 'border-top:1px solid #26262A'}">
+          <div>${chipArq(k, fem, grande)}</div>${grande ? `<div style="font-size:14px;line-height:1.45;color:#C9C9CE;font-style:italic">${esc(ARQ[k][4])}</div>` : ''}<div style="font-size:13px;color:#A6A6AD">${esc(porQue(k, r))}</div></div>`;
+      el.innerHTML = `${lab('ARQUETIPO', 'margin-bottom:8px')}${fila(r.arq, true)}${(r.ras || []).map(k => fila(k)).join('')}
+        <div style="font-size:12px;color:#6B6B70;margin-top:4px">Comparado con los jugadores de su liga${r.antes ? ', con la temporada pasada' : ''}${COMO('mapa')}</div>`; };
+    if (MAPA) pon(); else cargarMapa().then(pon);
+  }
+  function rellenarPerfiles() {
+    const el = view.querySelector('[data-perfiles]'); if (!el) return;
+    const pon = () => { const L = MAPA && MAPA.ligas[el.dataset.liga]; if (!L) { el.remove(); return; }
+      const nuestros = L.jug.concat(L.por).filter(r => r.nuestro && r.eq === el.dataset.equipo && r.arq);
+      if (!nuestros.length) { el.remove(); return; }
+      const grupos = {}; nuestros.forEach(r => { (grupos[r.arq] = grupos[r.arq] || []).push(r); });
+      const rasgos = {}; nuestros.forEach(r => (r.ras || []).forEach(k => { (rasgos[k] = rasgos[k] || []).push(r); }));
+      const quien = rs => rs.map(r => { const t = esc(corto({ nombre: r.n, apellidos: r.a })); return A.jugadores[r.k] ? `<a href="${hP(r.k)}">${t}</a>` : t; }).join(', ');
+      const bloque = (k, rs) => `<div style="padding:9px 0;border-bottom:1px solid #26262A"><div>${chipArq(k, rs.every(r => (A.jugadores[r.k] || {}).fem))}</div><div style="font-size:14px;margin-top:4px">${quien(rs)}</div></div>`;
+      el.innerHTML = `<div class="card" style="padding:16px 20px;margin-top:12px">${lab('PERFILES DE LA PLANTILLA', 'margin-bottom:2px')}<div style="font-size:13px;color:#A6A6AD;margin-bottom:4px">El arquetipo de cada jugador, comparado con los de su liga${COMO('mapa')}</div>
+        ${Object.keys(ARQ).filter(k => grupos[k]).map(k => bloque(k, grupos[k])).join('')}
+        ${Object.keys(rasgos).length ? `<div style="font-size:13px;font-weight:700;letter-spacing:.1em;color:#A6A6AD;margin:14px 0 2px">RASGOS</div>${Object.keys(ARQ).filter(k => rasgos[k]).map(k => bloque(k, rasgos[k])).join('')}` : ''}</div>`; };
+    if (MAPA) pon(); else cargarMapa().then(pon);
+  }
   function rellenarParecidos() {
     const el = view.querySelector('[data-parecidos]'); if (!el) return;
     const pon = () => { const xs = MAPA && MAPA.parecidos[el.dataset.parecidos]; if (!xs || !xs.length) { el.remove(); return; }
@@ -1133,6 +1207,7 @@
             <span style="display:block;${BS}font-weight:700;font-size:clamp(24px,3vw,36px);line-height:1;color:#A6A6AD">${esc(p.apellidos.toUpperCase())}</span></h1>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${tags.map(tg => `<span style="font-size:13px;font-weight:700;letter-spacing:.06em;padding:4px 10px;border-radius:4px;background:#26262A">${tg}</span>`).join('')}</div>
           </div>
+          <div data-arquetipo="${esc(p.k)}" data-liga="${t ? esc(t.ligaId) : ''}" data-fem="${p.fem ? 1 : ''}"></div>
           ${car ? `<div class="kpis" data-anim="mpUp .4s cubic-bezier(.2,.8,.2,1) .6s" style="display:flex;gap:10px;flex-wrap:wrap">${esPortero && tirosT
             ? tile('% de paradas', dec(Math.round((tirosT - gcT) / tirosT * 1000) / 10) + '<span style="font-size:24px">%</span>', 'color:#FF6B63') + tile('Paradas en el club', tirosT - gcT)
             : tile('Goles en el club', car.g, 'color:#FF6B63') + tile('Asistencias', car.a)}${tile('Partidos', car.pj)}${tile('Temporadas', car.temporadas)}${tile('Sanción', fmin(car.pim || 0))}</div>` : ''}
@@ -1231,17 +1306,23 @@
       </div>`);
 
     // 6 · mapa de jugadores y «se parece a»
-    const mapaM = sec('mapa', '06', 'MAPA DE JUGADORES', 'Dónde está cada jugador de la liga', 'En cada liga, un mapa con todos los jugadores de campo: hacia la derecha, más puntos por partido; hacia arriba, más parte de sus puntos son goles. Los nuestros, en rojo.', `
+    const mapaM = sec('mapa', '06', 'MAPA Y ARQUETIPOS', 'Dónde está cada jugador de la liga', 'En cada liga, un mapa con todos los jugadores de campo: hacia la derecha, más puntos por partido; hacia arriba, más parte de sus puntos son goles. Los nuestros, en rojo.', `
       ${lista(['<b>Puntos por partido</b>: goles más asistencias, entre partidos jugados. En senior se pasan a la escala de Senior 1 con el FMPe, para poder juntar temporadas y ligas. En el mapa de una liga se enseñan en la escala de esa liga; en «Todas las ligas senior», en la de Senior 1.', '<b>Parte de goles</b>: de sus puntos, cuántos son goles. El resto son asistencias.', '<b>Qué partidos cuentan</b>: los de esta temporada y, hasta que el jugador lleva 6, también los de la temporada pasada. Hacen falta 3 partidos en total para salir.', '<b>Porteros</b>, en su propio mapa: % de paradas y tiros recibidos por partido.'])}
       ${H('Zonas')}
       ${lista(['<b>Referentes</b>: el 15 % de la liga con más puntos por partido.', '<b>Goleadores</b> y <b>Pasadores</b>: del resto, los que están por encima de la mitad de la liga en puntos por partido. Goleadores si su parte de goles es mayor que la de la mitad de la liga; pasadores si es menor.', '<b>Apoyo</b>: los que están por debajo de la mitad de la liga en puntos por partido.'])}
+      ${H('Arquetipos')}
+      ${P('Los mismos datos dan a cada jugador un arquetipo, comparándolo con los jugadores de su liga. Se mira en este orden y se queda con el primero que cumple:')}
+      ${lista(['<b>Sniper</b>: está en el 15 % de su liga con más goles por partido y marca más que asiste.', '<b>Playmaker</b>: está en el 15 % con más asistencias por partido y asiste al menos tanto como marca.', '<b>Momentum</b>: está en el 15 % con más puntos por partido.', '<b>Wildcard</b>: marca más que la mitad de su liga y está en el 15 % con más minutos de sanción por partido.', '<b>Ghost</b>: 7 partidos o menos.', '<b>Steady</b>: por encima de la mitad de su liga en puntos por partido.', '<b>Wall</b>: 12 partidos o más, en la cuarta parte de su liga con menos puntos y casi sin sanción.', '<b>Workhorse</b>: el resto.'])}
+      ${P('Rasgos, que se suman al arquetipo:')}
+      ${lista(['<b>Game Changer</b>: 3 goles o más que dieron la victoria (el gol que deja al ganador con uno más de los que acabó marcando el rival).', '<b>Comeback King</b>: 5 goles o más con su equipo por detrás en el marcador.', '<b>Hot Streak</b>: marcó en 5 partidos seguidos o más.', '<b>One Man Show</b>: participa en el 35 % o más de los goles de su equipo (desde 6 partidos).', '<b>Polivalente</b>: ha jugado en portería y en campo.', '<b>Rookie Phenom</b>: primera temporada en senior y por encima de la mitad de su liga.', '<b>Veterano</b>: 5 temporadas o más en el club.', '<b>Leyenda</b>: entre los 3 primeros de la historia del club en goles, asistencias o partidos.'])}
+      ${P('Porteros, comparados con los porteros de su liga: <b>Shadow</b> (4 partidos o menos), <b>Iron Curtain</b> (el 25 % con mejor % de paradas), <b>Reactive Wall</b> (el 25 % que más tiros recibe y para más que la mitad), <b>Embattled</b> (el 25 % que más tiros recibe), <b>Undershot</b> (el 25 % que menos tiros recibe) y <b>Workhorse</b> (10 partidos o más).')}
       ${H('Se parece a')}
       ${P('En la ficha de cada jugador nuestro salen los 3 jugadores de otros clubes con los números más parecidos: goles y asistencias por partido (en la escala de Senior 1), parte de los goles de su equipo en los que participa y minutos de sanción por partido. Cada número pesa lo mismo. Senior se compara con senior, la cantera con la cantera y los porteros con porteros, por % de paradas y tiros por partido.')}
       <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['No mide la defensa ni nada que no esté en el acta', 'Con pocos partidos, el punto de cada jugador se mueve mucho', 'En la cantera no hay factor entre ligas: los números van tal cual'], '!')}</div>`);
 
     const indice = [['datos', '01', 'Los datos', 'De dónde sale cada número'], ['fmpe', '02', 'FMPe', 'Los puntos de cada liga, en la misma escala'],
       ['pretemporada', '03', 'Pretemporada', 'Fuerza, peligrosos y porteros de cada liga'], ['directo', '04', 'En directo', 'Hitos, superioridades y rivales peligrosos'],
-      ['ficha', '05', 'Ficha del jugador', 'Con quién combina cada uno'], ['mapa', '06', 'Mapa de jugadores', 'Dónde está cada uno y a quién se parece']]
+      ['ficha', '05', 'Ficha del jugador', 'Con quién combina cada uno'], ['mapa', '06', 'Mapa y arquetipos', 'Dónde está cada uno, su arquetipo y a quién se parece']]
       .map(([id, n, t, x]) => `<a class="blk" href="#/metodo/${id}"><span class="n">${n}</span><b>${t}</b><span class="x">${x}</span></a>`).join('');
     return `<div class="mt-hero"><div class="lab" style="color:#FF6B63">MADRIDPATINA · MÉTODO</div><h1>Cómo lo calculamos</h1>
         <p>Qué mide cada número de la web, de dónde sale y cómo se calcula. Todo son cuentas con los datos de las actas de la federación.</p></div>
@@ -1490,6 +1571,8 @@
     ola(view);
     rodillos(view);
     rellenarParecidos();
+    rellenarArquetipo();
+    rellenarPerfiles();
     billetes(view);
     // con la intro delante, la web se anima al cerrarla
     if (introEl) animarAlCerrar = true; else animar(view);
