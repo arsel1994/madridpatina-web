@@ -8,7 +8,7 @@
 <meta name="color-scheme" content="dark">
 <!-- Web para jugadores y familias: se comparte por enlace, no en buscadores (hay nombres de menores) -->
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" type="image/png" href="escudos/badge/madridpatina.png">
+<link rel="icon" type="image/png" href="assets/favicon-64.png">
 <!-- Instalable en el móvil («Añadir a pantalla de inicio») -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icono-180.png">
@@ -16,11 +16,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MADRIDPATINA">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- los datos se piden ya, sin esperar a que llegue app.js -->
+<link rel="preload" href="data/app.json" as="fetch" crossorigin>
+<link rel="preload" href="data/historico.json" as="fetch" crossorigin>
 <link rel="preload" href="assets/fonts/big-shoulders-display-900-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/ibm-plex-sans-condensed-400-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/fuentes.css?v=2026-10-22s">
-<link rel="stylesheet" href="assets/estilos.css?v=2026-10-22s">
-<link rel="stylesheet" href="assets/animaciones.css?v=2026-10-22s">
+<link rel="stylesheet" href="assets/fuentes.css?v=2026-10-22u">
+<link rel="stylesheet" href="assets/estilos.css?v=2026-10-22u">
+<link rel="stylesheet" href="assets/animaciones.css?v=2026-10-22u">
 </head>
 <body>
 <header class="top">
@@ -28,7 +31,7 @@
   <div class="barra-directo" id="barra-directo" hidden><div class="bd-scroll" id="bd-scroll"></div></div>
   <div class="in">
     <a class="blk brand" href="#/jornada" data-nav>
-      <img src="escudos/badge/madridpatina.png" alt="">
+      <img src="escudos/badge/madridpatina.webp" alt="" width="40" height="40">
       <div><div class="t">MADRIDPATINA</div><div class="s" id="sub">Hockey línea</div></div>
     </a>
     <nav class="nav" id="nav" aria-label="Secciones"></nav>
@@ -42,7 +45,7 @@
   </div>
 </main>
 <nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
-<script src="assets/directo.js?v=2026-10-22s"></script>
-<script src="assets/app.js?v=2026-10-22s"></script>
+<script src="assets/directo.js?v=2026-10-22u"></script>
+<script src="assets/app.js?v=2026-10-22u"></script>
 </body>
 </html>

@@ -41,6 +41,14 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 
 /* Piezas comunes */
 .lab { font-size: 14px; font-weight: 700; letter-spacing: .12em; color: #A6A6AD; }
+/* los títulos de página (h1) y de sección (h2, de lab()) sin los márgenes ni el tamaño del navegador */
+h1.pt, h2.lab { margin: 0; }
+h1.pt { font-size: inherit; font-weight: inherit; }
+/* solo para lectores de pantalla */
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* foco con teclado bien visible; dentro de tarjetas y del menú, hacia dentro para que no se corte */
+a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 2px solid #FF6B63; outline-offset: 2px; }
+.card a:focus-visible, .card button:focus-visible, .nav a:focus-visible { outline-offset: -3px; }
 .card { background: #18181B; border-radius: 12px; }
 .disc { border-radius: 50%; flex: none; display: block; background-size: contain; background-position: center; background-repeat: no-repeat; }
 .ph { position: absolute; inset: 0; width: 100%; height: 100%; background-size: cover; background-repeat: no-repeat; }
@@ -132,7 +140,7 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 /* ── 7l · Mientras carga: escudo que late y esqueleto con la forma de la página ── */
 .carga { display: flex; flex-direction: column; gap: 10px; padding-top: 28px; }
 .carga-cab { display: flex; align-items: center; gap: 12px; }
-.carga-esc { width: 40px; height: 40px; flex: none; border-radius: 50%; box-shadow: 0 0 0 2px #FFFFFF; background: url('../escudos/badge/madridpatina.png') center / contain no-repeat;
+.carga-esc { width: 40px; height: 40px; flex: none; border-radius: 50%; box-shadow: 0 0 0 2px #FFFFFF; background: url('../escudos/badge/madridpatina.webp') center / contain no-repeat;
   animation: mpBreath 1.4s ease-in-out infinite; }
 /* brillo continuo en bloques anchos: la franja de 400 px se repite y avanza 400 px por vuelta */
 .sk { border-radius: 8px; background: #18181B linear-gradient(90deg, #18181B 0, #18181B 25%, #26262A 50%, #18181B 75%, #18181B 100%) 0 0 / 400px 100% repeat-x;
@@ -262,7 +270,7 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .dv-fila .t { font-size: 12px; font-weight: 700; color: #8A8A8F; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dv-fila .tag { height: 26px; border-radius: 5px; display: grid; place-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: .03em; white-space: nowrap; }
 .dv-fila .tit { font-weight: 700; font-size: 15px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dv-fila .sub { font-size: 12px; font-weight: 500; color: #A6A6AD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-fila .sub { font-size: 12px; font-weight: 400; color: #A6A6AD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dv-fila .der { display: flex; align-items: center; gap: 8px; }
 .dv-fila .der > div { width: 20px; height: 20px; border-radius: 50%; background: center / contain no-repeat; }
 .dv-fila .der > span { min-width: 34px; text-align: right; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 19px; font-variant-numeric: tabular-nums; }
@@ -695,7 +703,7 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .er-gol .erf .e { position: absolute; right: 10px; top: 7px; width: 32px; height: 32px; border-radius: 50%; box-shadow: 0 0 0 1.5px #FFFFFF; background: center / contain no-repeat; }
 .er-gol .q { min-width: 0; }
 .er-gol .q b { display: block; font-weight: 700; font-size: 15px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.er-gol .q span { display: block; font-size: 12px; font-weight: 500; color: #A6A6AD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.er-gol .q span { display: block; font-size: 12px; font-weight: 400; color: #A6A6AD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .er-gol .m { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 19px; font-variant-numeric: tabular-nums; }
 .er-der { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .er-por { background: #18181B; border-radius: 12px; padding: 14px; display: flex; gap: 12px; animation: mpUp .4s both; }
@@ -1225,3 +1233,15 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .escena.en-video { position: absolute; inset: 0; z-index: 40; }
 .tv-cortina .tc-otra { margin-top: max(4px, calc(10px * var(--k, .5))); padding: max(7px, calc(14px * var(--k, .5))) max(14px, calc(28px * var(--k, .5))); border-radius: max(5px, calc(9px * var(--k, .5))); background: #D3202A; color: #FFFFFF; font-family: 'Figtree', sans-serif; font-size: max(11px, calc(22px * var(--k, .5))); font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .tv-cortina .tc-otra:hover { background: #E8343E; }
+/* móvil: los recuadros de cifras llenan cada fila; la clasificación de la liga se queda con PJ, DG y PTS; la franja del
+   equipo ocupa todo el ancho */
+@media (max-width: 600px) {
+  .kpis > * { flex: 1 1 auto; }
+  .eq-kit { flex: 1 1 100%; flex-direction: row !important; align-items: flex-end; padding: 18px 22px !important; }
+  .eq-kit > div { font-size: 96px !important; }
+}
+@media (max-width: 560px) {
+  .cl-in { min-width: 0 !important; }
+  .cl-fila { grid-template-columns: 20px 24px minmax(0, 1fr) 26px 34px 34px !important; gap: 6px !important; padding-left: 4px !important; padding-right: 4px !important; }
+  .cl-fila .ved { display: none; }
+}
