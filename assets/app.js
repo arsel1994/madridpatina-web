@@ -1881,8 +1881,12 @@
     const x = TV.marcas[k], p = TV.player, t = p && p.getCurrentTime ? p.getCurrentTime() : 0;
     if (!x) {   // el resultado, y el vídeo sigue unos 20 s (la celebración) antes de pararse
       TV.finVisto = true; rotuloTV(rotTarjeta(true), -2);
-      const total = p && p.getDuration ? p.getDuration() : 0;
-      TV.finHasta = Math.min(total ? total - 1 : t + CELEBRA, t + CELEBRA);
+      const ult = TV.marcas[TV.marcas.length - 1], total = p && p.getDuration ? p.getDuration() : 0;
+      let desde = t;
+      if (ult && t < ult.s) {   // llegando con «Adelantar» antes de la última jugada: a la celebración, no a lo de antes
+        desde = ult.s + 1; clearTimeout(TV.tCortina); cortinaTV(true, 'RESUMEN', 'FINAL'); saltarTV(desde);
+      }
+      TV.finHasta = Math.min(total ? total - 1 : desde + CELEBRA, desde + CELEBRA);
       return;
     }
     const destino = Math.max(0, x.s - (x.ancla ? 2 : x.desc ? 1 : ANTES_JUGADA));
@@ -1973,7 +1977,7 @@
         clearTimeout(TV.tTapa); TV.tTapa = setTimeout(() => { const m = $('#tv-marco'); if (m) m.classList.remove('tapa'); }, 5600);
       }
     } else TV.avanza = 0;
-    if (natural) TV.marcas.forEach((x, i) => {   // el vídeo avanza solo (no un salto): lo que acaba de pasar
+    if (natural && TV.k < TV.marcas.length) TV.marcas.forEach((x, i) => {   // el vídeo avanza solo (no un salto): lo que acaba de pasar (tras el final, nada)
       if (x.pen) { if (x.s > prev && x.s <= t) tiroTV(x, i); return; }
       const e = x.s - ANTES_ROT;
       if (e > prev && e <= t && !(TV.rot && TV.rot.k === i)) rotuloTV(rotDe(x), i);
@@ -1984,6 +1988,12 @@
     }
     const st = estadoTV(t);
     pintarMarc(st, t, natural);
+    if (TV.modo === 'resumen' && TV.empezado && !TV.intro) {   // la música baja al empezar el partido y sube cuando ya hay ganador
+      const a1 = TV.marcas.find(x => x.ancla && x.p === 1), ultPen = TV.marcas.filter(x => x.pen).pop();
+      const decidido = TV.k >= TV.marcas.length || st.fase === 'final' || (ultPen && t >= ultPen.s);
+      const jugando = TV.k >= 0 && (!a1 || t >= a1.s - 1);
+      nivelM(jugando && !decidido ? MUS_BAJO : MUS_VOL);
+    }
     if (TV.presT0 != null) { const pr = $('.lz-pres'); if (pr && t >= TV.presT0 + 6.6) pr.classList.add('fuera'); if (t >= TV.presT0 + 7) quitarPres(); }
     if (TV.modo === 'entero' && natural && st.fase === 'final' && !TV.finVisto) { TV.finVisto = true; rotuloTV(rotTarjeta(true), -2); }
     if (TV.modo === 'resumen' && TV.k >= TV.marcas.length && TV.finHasta && t >= TV.finHasta) {   // vista la celebración, fin
@@ -2057,8 +2067,9 @@
   /* Música de fondo del resumen: «Energetic Sport» de MondaMusic (Pixabay, licencia de contenido de Pixabay: uso libre y
      sin citar), en assets/audio/musica-resumen.mp3 a 128 kbps y con el volumen nivelado. Suena baja y en bucle, y se para
      y sigue con el vídeo. El volumen va por Web Audio (en el iPhone el del <audio> no se puede cambiar). */
-  const MUS = { ctx: null, gain: null, el: null, quiere: false };
-  const MUS_VOL = 0.14, MUS_SRC = 'assets/audio/musica-resumen.mp3';
+  const MUS = { ctx: null, gain: null, el: null, quiere: false, nivel: 0.14 };
+  // más alta en el mapa y la presentación y otra vez al decidirse el ganador; durante el partido, bajita
+  const MUS_VOL = 0.14, MUS_BAJO = 0.045, MUS_SRC = 'assets/audio/musica-resumen.mp3';
   function rampaM(v, seg) {
     if (MUS.gain) { const g = MUS.gain.gain, t = MUS.ctx.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(0.0001, g.value), t); g.exponentialRampToValueAtTime(Math.max(0.0001, v), t + seg); }
     else if (MUS.el) MUS.el.volume = v;
@@ -2077,13 +2088,18 @@
     }
     const el = MUS.el;
     if (!el) return;
-    if (on) { if (MUS.ctx && MUS.ctx.state !== 'running') MUS.ctx.resume(); el.play().catch(() => {}); rampaM(MUS_VOL, 1.2); }
+    if (on) { if (MUS.ctx && MUS.ctx.state !== 'running') MUS.ctx.resume(); el.play().catch(() => {}); rampaM(MUS.nivel, 1.2); }
     else { rampaM(0, 0.4); setTimeout(() => { if (!MUS.quiere && MUS.el === el) el.pause(); }, 450); }
+  }
+  function nivelM(v) {   // cambio de nivel, suave (3 s)
+    if (MUS.nivel === v) return;
+    MUS.nivel = v;
+    if (MUS.quiere && MUS.el) rampaM(v, 3);
   }
   function pararMusica() {
     if (MUS.el) { MUS.el.pause(); MUS.el.removeAttribute('src'); MUS.el.load(); }
     if (MUS.ctx) try { MUS.ctx.close(); } catch (e) { /* ya cerrado */ }
-    Object.assign(MUS, { ctx: null, gain: null, el: null, quiere: false });
+    Object.assign(MUS, { ctx: null, gain: null, el: null, quiere: false, nivel: MUS_VOL });
   }
   // pantalla completa de la caja del vídeo (la capa va dentro); en el iPhone, que no la deja, ocupa la ventana
   function pantallaTV(entrar) {
