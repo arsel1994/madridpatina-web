@@ -2201,7 +2201,7 @@
   });
 
   /* ── Sincronizar el vídeo de un partido (#/sincronizar/{idp}) ──────────────────────────────────────────────────────
-     Se pega el enlace de YouTube; la página va jugada por jugada (inicio de cada parte, goles, expulsiones, tiempos muertos,
+     Se pega el enlace de YouTube; la página va jugada por jugada (inicio de cada parte, goles, expulsiones,
      cambios de portero), lleva el vídeo a unos segundos antes del momento estimado y basta con pulsar «¡Ahora!». Cada marca
      afina la estimación de la siguiente. Al final da un código que se añade a data/videos.json (scripts/reporte/videos.json). */
   const SY = { idp: null, S: null, items: [], i: 0, yt: '', canal: '', player: null };
@@ -2213,7 +2213,7 @@
   function itemsSync(S) {
     const ctx = ctxDirecto(S), out = [];
     const quien = e => (e.tipo === 'TIEMPO MUERTO' ? ctx.abr[e.lado] : (e.tipo === 'CAMBIO DE PORTERO' ? 'Entra ' : '') + quienD(ctx, e.lado, e.dorsal, e.jugador_corto, e.jugador) + ' (' + ctx.abr[e.lado] + ')');
-    const evs = (S.eventos || []).filter(e => e.periodo && e.t && !/^pc-/.test(e.id || '') && TIPO_VID[e.tipo]);
+    const evs = (S.eventos || []).filter(e => e.periodo && e.t && !/^pc-/.test(e.id || '') && TIPO_VID[e.tipo] && e.tipo !== 'TIEMPO MUERTO');   // los tiempos muertos ya no se marcan: el resumen no los usa
     [1, 2].forEach(p => {
       out.push({ id: 'inicio-' + p, ancla: true, p, g: 0, tipo: 'INICIO', txt: 'Empieza la ' + ordinal(p) + ' parte' });
       evs.filter(e => e.periodo === p).sort((a, b) => segs(a.t) - segs(b.t)).forEach(e => out.push({ id: e.id, p, g: segs(e.t), tipo: e.tipo, e, q: quien(e),
