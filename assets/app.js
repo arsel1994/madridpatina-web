@@ -432,7 +432,8 @@
               <div style="text-align:right"><div style="${BS}font-weight:800;font-size:32px;line-height:1">${esc((c.resultado || '').replace('-', '–'))}</div><div style="font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:3px;background:${r[1]};color:#fff;margin-top:4px;display:inline-block">${r[0]}</div></div>`)}
             ${actaMini(A.partidos[c.mid], e.nombre)}</div>`; }).join('')}</div>` : ''; })()}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;margin-top:28px">
-        <div>${lab('JUGADORES CLAVE · ' + tClave, 'margin-bottom:10px')}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">${clave}</div></div>
+        <div>${lab('JUGADORES CLAVE · ' + tClave, 'margin-bottom:10px')}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">${clave}</div>
+          <a href="${hLg(e.ligaId, 'mapa')}" style="display:inline-block;margin-top:12px;font-size:14px;font-weight:700">Ver a nuestros jugadores en el mapa de la liga →</a></div>
         <div style="display:flex;flex-direction:column;gap:12px">
           <div class="card" data-grupo style="padding:18px 20px"><div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:#3DD27E">${e.cantera ? 'ALTAS EN LA CANTERA' : 'ALTAS'} · ${lAltas.length}</div>${e.cantera ? '<div style="font-size:13px;color:#A6A6AD;margin-top:4px">Alevín e Infantil juntos, porque muchos juegan en los dos. Solo los que llegan nuevos al club.</div>' : ''}${altas}</div>
           <div class="card" data-grupo style="padding:18px 20px"><div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:#FF5A52">${e.cantera ? 'BAJAS DE LA CANTERA' : 'BAJAS'} · ${lBajas.length}</div>${e.cantera ? '<div style="font-size:13px;color:#A6A6AD;margin-top:4px">Los que jugaron en la cantera la temporada pasada y ya no están en ningún equipo del club.</div>' : ''}${bajas}</div>
@@ -449,12 +450,13 @@
     S.lg = L.id;
     const jsel = jn && jn >= 1 && jn <= L.total ? jn : L.ultima;
     const J0 = L.jornadas.find(j => j.n === jsel) || { partidos: [] };
-    const hasPre = !!L.pre, lt = 'tabla';
+    const hasPre = !!L.pre, lt = sub === 'mapa' || sub === 'todas' ? 'mapa' : 'tabla';
     const tabs = A.ligas.map(l => `<a class="blk" href="${hLg(l.id)}"${l.id === L.id ? ' aria-current="page"' : ''} style="padding:10px 18px;border-radius:8px;background:${l.id === L.id ? RED : '#18181B'};color:${l.id === L.id ? '#FFFFFF' : '#C9C9CE'};font-weight:700;font-size:15px;white-space:nowrap">${esc(l.nombre)}</a>`).join('');
-    const subs = [['tabla', 'Clasificación y jornadas', hLg(L.id)]].concat(hasPre ? [['llega', 'Pretemporada', hPre(L.id)]] : [])
+    const subs = [['tabla', 'Clasificación y jornadas', hLg(L.id)], ['mapa', 'Mapa de jugadores', hLg(L.id, 'mapa')]].concat(hasPre ? [['llega', 'Pretemporada', hPre(L.id)]] : [])
       .map(([k, l, h]) => `<a class="blk" href="${h}" style="padding:12px 16px;font-weight:700;font-size:15px;white-space:nowrap;color:${lt === k ? '#F4F4F5' : '#A6A6AD'};border-bottom:3px solid ${lt === k ? RED : 'transparent'};margin-bottom:-1px">${l}</a>`).join('');
     let body;
-    if (lt === 'tabla') {
+    if (lt === 'mapa') body = vMapa(L, sub === 'todas');
+    else if (lt === 'tabla') {
       const antes = antesDe(L.id, 0);
       const rows = tableRows(L.clasif).map(r => { const d = antes[r.equipo] ? antes[r.equipo] - r.puesto : 0; return `<div class="cl-fila"${swapA(d)} style="${swapS(d, r, 0)}display:grid;grid-template-columns:26px 26px minmax(0,1fr) 30px 30px 30px 30px 44px 44px;gap:8px;align-items:center;padding:8px;border-radius:6px;background:${r.bg};font-size:15px">
           <span style="font-weight:700;color:#A6A6AD;text-align:right">${r.puesto}</span>${disc(r.crest, 24)}
@@ -962,6 +964,101 @@
       </div>`;
   }
 
+
+  /* ── Mapa de jugadores (data/mapa.json, de scripts/reporte/mapa.py) ─────────────────────────────────────────────────
+     Cada jugador de campo de la liga por su producción (puntos por partido; en la escala de la liga, o en la de Senior 1
+     con el FMPe al juntar las ligas senior) y su perfil (qué parte de sus puntos son goles). Las zonas y los «se parece a»
+     vienen calculados. El SVG se dibuja a 1 unidad = 1 px para que los textos tengan siempre el mismo tamaño. */
+  let MAPA = null, mapaP = null;
+  const cargarMapa = () => mapaP || (mapaP = fetch('data/mapa.json?v=' + encodeURIComponent(A.actualizado || ''))
+    .then(r => r.json()).then(d => (MAPA = d)).catch(() => { mapaP = null; return null; }));
+  const ZONA = { Referentes: ['#2A1416', '#FF6B63'], Goleadores: ['#26262A', '#F4F4F5'], Pasadores: ['#16222E', '#6FB7FF'], Apoyo: ['#1E1E22', '#A6A6AD'] };
+  const chipZona = z => z ? `<span style="font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:3px;background:${ZONA[z][0]};color:${ZONA[z][1]};white-space:nowrap">${esc(z.toUpperCase())}</span>` : '';
+  const VISTA = {};   // lo que hay dibujado en cada mapa, para el recuadro de abajo
+  const paso = m => [0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 20].find(st => m / st <= 6) || 50;
+  function svgMapa(id, pts, o) {
+    const W = Math.round(Math.min(1100, Math.max(300, (innerWidth || 1000) - (innerWidth < 720 ? 64 : 120)))), H = Math.round(W < 600 ? W * 1.05 : W * 0.48);
+    const L = 62, R = 12, T = 14, B = 44, w = W - L - R, h = H - T - B;
+    const sx = v => L + Math.max(0, Math.min(1, (v - o.xmin) / (o.xmax - o.xmin))) * w, sy = v => T + h - (v - o.ymin) / (o.ymax - o.ymin) * h;
+    const tx = paso(o.xmax - o.xmin), ty = paso(o.ymax - o.ymin), g = [];
+    for (let v = Math.ceil(o.xmin / tx) * tx; v <= o.xmax + 1e-9; v += tx) g.push(`<line x1="${sx(v)}" x2="${sx(v)}" y1="${T}" y2="${T + h}" stroke="#26262A"/><text x="${sx(v)}" y="${T + h + 16}" text-anchor="middle">${dec(+v.toFixed(2))}</text>`);
+    for (let v = Math.ceil(o.ymin / ty) * ty; v <= o.ymax + 1e-9; v += ty) g.push(`<line x1="${L}" x2="${L + w}" y1="${sy(v)}" y2="${sy(v)}" stroke="#26262A"/><text x="${L - 6}" y="${sy(v) + 4}" text-anchor="end">${dec(+v.toFixed(1))}${o.ysuf || ''}</text>`);
+    let zon = '';
+    if (o.zonas) {
+      const z = o.zonas, xm = sx(z.mediana), xp = sx(z.p85), yg = sy(z.medianaGoles), et = (x, y, t, anc = 'middle') => `<text x="${x}" y="${y}" text-anchor="${anc}" fill="#6B6B70" font-weight="700" letter-spacing=".08em">${t}</text>`;
+      zon = `<rect x="${xp}" y="${T}" width="${Math.max(0, L + w - xp)}" height="${h}" fill="rgba(211,32,42,.10)"/>
+        <line x1="${xm}" x2="${xm}" y1="${T}" y2="${T + h}" stroke="#55555B" stroke-dasharray="4 4"/><line x1="${xm}" x2="${xp}" y1="${yg}" y2="${yg}" stroke="#55555B" stroke-dasharray="4 4"/>
+        ${L + w - xp > 70 ? et((xp + L + w) / 2, T + 16, 'REFERENTES') : et(L + w - 4, T + 16, 'REFERENTES', 'end')}
+        ${xp - xm > 80 ? et((xm + xp) / 2, T + 16, 'GOLEADORES') + et((xm + xp) / 2, T + h - 8, 'PASADORES') : ''}${xm - L > 60 ? et(L + 8, T + 16, 'APOYO', 'start') : ''}`;
+    }
+    VISTA[id] = pts;
+    const punto = (q, i) => q.nuestro
+      ? `<circle class="mp-p" data-m="${id}" data-i="${i}" cx="${sx(q.x)}" cy="${sy(q.y)}" r="7" fill="${RED}" stroke="#FFFFFF" stroke-width="1.5"/>`
+      : `<circle class="mp-p" data-m="${id}" data-i="${i}" cx="${sx(q.x)}" cy="${sy(q.y)}" r="5" fill="${q.hueco ? 'none' : 'rgba(166,166,173,.55)'}" stroke="${q.hueco ? '#A6A6AD' : 'none'}" stroke-width="1.5"/>`;
+    const orden = pts.map((q, i) => [q, i]).sort((a, b) => a[0].nuestro - b[0].nuestro);
+    return `<svg class="mapa-svg" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(o.aria)}" style="display:block;max-width:${W}px;font-size:12px;fill:#8A8A8F;font-family:'IBM Plex Sans Condensed',sans-serif">
+      ${g.join('')}${zon}<line x1="${L}" x2="${L + w}" y1="${T + h}" y2="${T + h}" stroke="#55555B"/>
+      ${orden.map(([q, i]) => punto(q, i)).join('')}
+      <text x="${L + w / 2}" y="${H - 6}" text-anchor="middle" fill="#A6A6AD">${esc(o.xlab)}</text>
+      <text transform="translate(14 ${T + h / 2}) rotate(-90)" text-anchor="middle" fill="#A6A6AD">${esc(o.ylab)}</text></svg>
+      <div class="mapa-info" data-info="${id}" aria-live="polite" style="min-height:40px;margin-top:8px;font-size:14px;color:#A6A6AD">Toca un punto para ver quién es.</div>`;
+  }
+  const infoMapa = (c) => { const q = (VISTA[c.dataset.m] || [])[+c.dataset.i], box = view.querySelector(`[data-info="${c.dataset.m}"]`); if (!q || !box) return;
+    view.querySelectorAll('.mp-p.sel').forEach(x => x.classList.remove('sel')); c.classList.add('sel');
+    box.innerHTML = q.info; };
+  document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('.mp-p'); if (c) infoMapa(c); });
+  document.addEventListener('pointerover', e => { const c = e.target.closest && e.target.closest('.mp-p'); if (c && e.pointerType === 'mouse') infoMapa(c); });
+  function vMapa(L, todas) {
+    if (!MAPA) { cargarMapa().then(d => { if (d && /\/mapa/.test(location.hash)) render(); }); return '<div class="loading" style="padding:40px 0;color:#A6A6AD">Cargando el mapa…</div>'; }
+    const M = MAPA.ligas[L.id];
+    if (!M) return '<div style="padding:24px 0;color:#A6A6AD">Esta liga aún no tiene mapa.</div>';
+    const nm = r => esc(corto({ nombre: r.n, apellidos: r.a }));
+    const enlace = r => A.jugadores[r.k] ? `<a href="${hP(r.k)}">${nm(r)}</a>` : nm(r);
+    const senior = !M.cantera, otras = senior ? Object.entries(MAPA.ligas).filter(([, x]) => !x.cantera) : [];
+    const base = r => r.antes ? `${r.pj} PJ, con la temporada pasada` : `${r.pj} PJ esta temporada`;
+    const lista = todas ? otras.flatMap(([id, x]) => x.jug.map(r => Object.assign({}, r, { liga: id, ligaN: x.nombre.replace('Liga ', '') }))) : M.jug;
+    const conPts = lista.filter(r => r.y != null), sinPts = lista.length - conPts.length;
+    const val = r => (todas ? r.xf : r.x);
+    const pts = conPts.map(r => ({ x: val(r), y: r.y, nuestro: r.nuestro, hueco: todas && r.liga !== L.id,
+      info: `<b style="color:#F4F4F5">${enlace(r)}</b> · ${esc(r.eq)}${todas ? ' · ' + esc(r.ligaN) : ''} ${todas ? '' : chipZona(r.zona)}<br>${dec(val(r).toFixed(2))} puntos por partido${todas ? ' en escala de Senior 1' : ''} · ${r.y}% de sus puntos son goles · ${base(r)}` }));
+    // el eje llega hasta donde está casi todo el mundo (percentil 97); quien se sale queda pegado al borde derecho
+    const xs = pts.map(q => q.x).sort((a, b) => a - b), p97 = xs.length ? xs[Math.min(xs.length - 1, Math.floor(xs.length * 0.97))] : 1;
+    const xmax = Math.max(0.5, p97 * 1.12, ...pts.filter(q => q.nuestro).map(q => q.x * 1.08));
+    const fesc = M.escala || 1, um = M.umbral || {};
+    const zonas = !todas && um.mediana != null ? { mediana: um.mediana / fesc, p85: um.p85 / fesc, medianaGoles: um.medianaGoles } : null;
+    const mapa = svgMapa('campo', pts, { xmin: 0, xmax, ymin: -4, ymax: 104, ysuf: '%', zonas,
+      xlab: todas ? 'Puntos por partido, en escala de Senior 1 (FMPe)' : 'Puntos (goles + asistencias) por partido', ylab: '% de sus puntos que son goles',
+      aria: `Mapa de ${pts.length} jugadores de ${todas ? 'las ligas senior' : L.nombre}: puntos por partido y parte de goles. Los nuestros, en rojo; la lista de los nuestros va debajo.` });
+    const gks = (todas ? otras.flatMap(([id, x]) => x.por.map(r => Object.assign({}, r, { liga: id, ligaN: x.nombre.replace('Liga ', '') }))) : M.por);
+    const pg = gks.map(r => ({ x: r.tpj, y: r.pct, nuestro: r.nuestro, hueco: todas && r.liga !== L.id,
+      info: `<b style="color:#F4F4F5">${enlace(r)}</b> · ${esc(r.eq)}${todas ? ' · ' + esc(r.ligaN) : ''}<br>${dec(r.pct)}% de paradas · ${dec(r.tpj)} tiros por partido · ${base(r)}` }));
+    const ys = pg.map(q => q.y);
+    const mapaGk = pg.length > 2 ? svgMapa('porteros', pg, { xmin: 0, xmax: Math.max(10, ...pg.map(q => q.x)) * 1.08, ymin: Math.floor(Math.min(...ys) - 2), ymax: Math.min(100, Math.ceil(Math.max(...ys) + 2)), ysuf: '%',
+      xlab: 'Tiros recibidos por partido', ylab: '% de paradas', aria: `Mapa de ${pg.length} porteros: tiros por partido y % de paradas. Los nuestros, en rojo.` }) : '';
+    const nuestros = (todas ? lista : M.jug).filter(r => r.nuestro);
+    const filas = nuestros.map(r => `<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #26262A">
+        <div style="min-width:0"><div style="font-weight:700">${enlace(r)}</div><div style="font-size:13px;color:#A6A6AD">${esc(r.eq.replace('MADRIDPATINA', 'MP'))}${todas ? ' · ' + esc(r.ligaN) : ''} · ${r.y != null ? dec(val(r).toFixed(2)) + ' pts/PJ · ' + r.y + '% goles' : 'sin puntos'} · ${base(r)}</div></div>${todas ? '' : chipZona(r.zona)}</div>`).join('');
+    const tog = senior ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px">${[['', 'Esta liga'], ['todas', 'Todas las ligas senior']].map(([k, t]) => `<a class="blk" href="${hLg(L.id, 'mapa' + (k ? '/' + k : ''))}"${(k === 'todas') === !!todas ? ' aria-current="page"' : ''} style="padding:7px 14px;border-radius:999px;background:${(k === 'todas') === !!todas ? RED : '#18181B'};color:${(k === 'todas') === !!todas ? '#FFFFFF' : '#C9C9CE'};font-weight:700;font-size:14px">${t}</a>`).join('')}</div>` : '';
+    const leyenda = `<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:#A6A6AD;margin-top:6px"><span><span style="color:${RED}">●</span> MADRIDPATINA</span>${todas ? `<span><span style="color:#A6A6AD">●</span> ${esc(L.nombre.replace('Liga ', ''))}</span><span><span style="color:#A6A6AD">○</span> la otra liga senior</span>` : '<span><span style="color:#A6A6AD">●</span> resto de la liga</span>'}</div>`;
+    return `${tog}
+      <div style="font-size:15px;line-height:1.5;color:#C9C9CE;margin:10px 0 4px;max-width:860px">Cada punto es un jugador de campo. Hacia la derecha, más puntos (goles + asistencias) por partido; hacia arriba, más parte de esos puntos son goles. Quien lleva menos de ${MAPA.soloEsta} partidos esta temporada cuenta también la temporada pasada${senior ? ', en la misma escala gracias al FMPe' : ''}${COMO('mapa')}.</div>
+      <div class="card" style="padding:16px 18px;margin-top:12px">${leyenda}${mapa}${sinPts ? `<div style="font-size:13px;color:#6B6B70">${sinPts} ${sinPts === 1 ? 'jugador aún sin puntos no sale' : 'jugadores aún sin puntos no salen'} en el mapa.</div>` : ''}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:12px;align-items:start">
+        <div class="card" style="padding:16px 20px">${lab('NUESTROS JUGADORES · ' + nuestros.length, 'margin-bottom:4px')}${filas || '<div style="padding:8px 0;color:#A6A6AD">Ninguno con partidos suficientes todavía.</div>'}</div>
+        ${mapaGk ? `<div class="card" style="padding:16px 18px">${lab('PORTEROS', 'margin-bottom:4px')}${mapaGk}</div>` : ''}
+      </div>`;
+  }
+  // «Se parece a» en la ficha: llega con mapa.json (se pide al abrir la ficha)
+  function rellenarParecidos() {
+    const el = view.querySelector('[data-parecidos]'); if (!el) return;
+    const pon = () => { const xs = MAPA && MAPA.parecidos[el.dataset.parecidos]; if (!xs || !xs.length) { el.remove(); return; }
+      const gk = el.dataset.portero === '1';
+      el.innerHTML = `${lab('SE PARECE A', 'margin-bottom:2px')}<div style="font-size:13px;color:#A6A6AD;margin-bottom:4px">${gk ? 'Porteros de otros clubes con un % de paradas y unos tiros por partido parecidos' : 'Jugadores de otros clubes con números parecidos: goles, asistencias, parte de los goles de su equipo y sanción por partido, en la misma escala para todas las ligas'}${COMO('mapa')}</div>
+        ${xs.map(x => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #26262A">${disc(crest(x.eq), 28)}<div style="min-width:0;flex:1"><div style="font-weight:700">${esc(corto({ nombre: x.n, apellidos: x.a }))}</div><div style="font-size:13px;color:#A6A6AD">${esc(x.eq)} · ${esc(x.liga)}</div></div>${chipZona(x.zona)}</div>`).join('')}
+        ${el.dataset.liga ? `<a href="${hLg(el.dataset.liga, 'mapa')}" style="display:inline-block;margin-top:10px;font-size:14px;font-weight:700">Ver el mapa de la liga →</a>` : ''}`; };
+    if (MAPA) pon(); else cargarMapa().then(pon);
+  }
+
   /* ── 6. Ficha de jugador ────────────────────────────────── */
   // FMPe (scripts/reporte/fmpe.py): puntos por partido × factor de su liga × 18, o sea, puntos en una temporada de Senior 1
   const FMPE_PJ = 18;
@@ -1041,6 +1138,7 @@
             : tile('Goles en el club', car.g, 'color:#FF6B63') + tile('Asistencias', car.a)}${tile('Partidos', car.pj)}${tile('Temporadas', car.temporadas)}${tile('Sanción', fmin(car.pim || 0))}</div>` : ''}
           <div data-grupo data-espera="900">${lab('POR TEMPORADA', 'margin-bottom:' + (order.some(kk => TS[kk].fmpe != null) ? '2px' : '12px'))}${order.some(kk => TS[kk].fmpe != null) ? '<div style="font-size:13px;color:#A6A6AD;margin-bottom:10px">FMPe: los puntos que habría hecho en una temporada de Liga Senior 1, para comparar ligas distintas' + COMO('fmpe') + '</div>' : ''}${temps}</div>
           ${conEquipo ? `<div data-grupo data-espera="900">${lab('CON EL EQUIPO', 'margin-bottom:2px')}<div style="font-size:13px;color:#A6A6AD;margin-bottom:4px">Lo que dice el acta: en cuántos goles del equipo participa, en qué situación marca y con quién combina${COMO('ficha')}</div>${conEquipo}</div>` : ''}
+          <div data-parecidos="${esc(p.k)}" data-liga="${t ? esc(t.ligaId) : ''}" data-portero="${esPortero ? 1 : ''}"></div>
         </div>
       </div>
       ${p.partidos.length ? `${lab('PARTIDOS ' + A.temporada, 'margin:28px 0 10px')}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">${partidos}</div>` : ''}`;
@@ -1132,14 +1230,23 @@
         <div>${lista(['<b>Participación</b>: de los goles que marcó su equipo en los partidos que jugó, en cuántos marcó o asistió.', '<b>Sus goles</b>: cuántos fueron en igualdad, en superioridad y en inferioridad, contados como en el directo.', '<b>Le asisten más / asiste más a</b>: con quién combina en los goles (dos veces o más) y con cuántos compañeros distintos ha combinado alguna vez.'])}</div>
       </div>`);
 
+    // 6 · mapa de jugadores y «se parece a»
+    const mapaM = sec('mapa', '06', 'MAPA DE JUGADORES', 'Dónde está cada jugador de la liga', 'En cada liga, un mapa con todos los jugadores de campo: hacia la derecha, más puntos por partido; hacia arriba, más parte de sus puntos son goles. Los nuestros, en rojo.', `
+      ${lista(['<b>Puntos por partido</b>: goles más asistencias, entre partidos jugados. En senior se pasan a la escala de Senior 1 con el FMPe, para poder juntar temporadas y ligas. En el mapa de una liga se enseñan en la escala de esa liga; en «Todas las ligas senior», en la de Senior 1.', '<b>Parte de goles</b>: de sus puntos, cuántos son goles. El resto son asistencias.', '<b>Qué partidos cuentan</b>: los de esta temporada y, hasta que el jugador lleva 6, también los de la temporada pasada. Hacen falta 3 partidos en total para salir.', '<b>Porteros</b>, en su propio mapa: % de paradas y tiros recibidos por partido.'])}
+      ${H('Zonas')}
+      ${lista(['<b>Referentes</b>: el 15 % de la liga con más puntos por partido.', '<b>Goleadores</b> y <b>Pasadores</b>: del resto, los que están por encima de la mitad de la liga en puntos por partido. Goleadores si su parte de goles es mayor que la de la mitad de la liga; pasadores si es menor.', '<b>Apoyo</b>: los que están por debajo de la mitad de la liga en puntos por partido.'])}
+      ${H('Se parece a')}
+      ${P('En la ficha de cada jugador nuestro salen los 3 jugadores de otros clubes con los números más parecidos: goles y asistencias por partido (en la escala de Senior 1), parte de los goles de su equipo en los que participa y minutos de sanción por partido. Cada número pesa lo mismo. Senior se compara con senior, la cantera con la cantera y los porteros con porteros, por % de paradas y tiros por partido.')}
+      <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['No mide la defensa ni nada que no esté en el acta', 'Con pocos partidos, el punto de cada jugador se mueve mucho', 'En la cantera no hay factor entre ligas: los números van tal cual'], '!')}</div>`);
+
     const indice = [['datos', '01', 'Los datos', 'De dónde sale cada número'], ['fmpe', '02', 'FMPe', 'Los puntos de cada liga, en la misma escala'],
       ['pretemporada', '03', 'Pretemporada', 'Fuerza, peligrosos y porteros de cada liga'], ['directo', '04', 'En directo', 'Hitos, superioridades y rivales peligrosos'],
-      ['ficha', '05', 'Ficha del jugador', 'Con quién combina cada uno']]
+      ['ficha', '05', 'Ficha del jugador', 'Con quién combina cada uno'], ['mapa', '06', 'Mapa de jugadores', 'Dónde está cada uno y a quién se parece']]
       .map(([id, n, t, x]) => `<a class="blk" href="#/metodo/${id}"><span class="n">${n}</span><b>${t}</b><span class="x">${x}</span></a>`).join('');
     return `<div class="mt-hero"><div class="lab" style="color:#FF6B63">MADRIDPATINA · MÉTODO</div><h1>Cómo lo calculamos</h1>
         <p>Qué mide cada número de la web, de dónde sale y cómo se calcula. Todo son cuentas con los datos de las actas de la federación.</p></div>
       <nav class="mt-indice" aria-label="Apartados">${indice}</nav>
-      ${datos}${fmpe}${pre}${directo}${ficha}`;
+      ${datos}${fmpe}${pre}${directo}${ficha}${mapaM}`;
   }
 
   /* ── 7. Histórico ───────────────────────────────────────── */
@@ -1358,7 +1465,7 @@
     secAntes = TOP[v];
     let html;
     if (v === 'equipo') html = vEquipo(parts[1]);
-    else if (v === 'liga') html = vLiga(parts[1], parts[2] === 'llega' ? 'llega' : null, parts[2] === 'j' ? parseInt(parts[3], 10) : null);
+    else if (v === 'liga') html = vLiga(parts[1], parts[2] === 'llega' ? 'llega' : parts[2] === 'mapa' ? (parts[3] === 'todas' ? 'todas' : 'mapa') : null, parts[2] === 'j' ? parseInt(parts[3], 10) : null);
     else if (v === 'partido') html = vPartido(parts[1]);
     else if (v === 'jugadores') html = vJugadores(parts[1]);
     else if (v === 'jugador') html = vJugador(parts[1]);
@@ -1382,6 +1489,7 @@
     });
     ola(view);
     rodillos(view);
+    rellenarParecidos();
     billetes(view);
     // con la intro delante, la web se anima al cerrarla
     if (introEl) animarAlCerrar = true; else animar(view);
@@ -1613,6 +1721,9 @@
     if (!n) return;
     const fin = +n.dataset.cuenta, t = n.dataset.fmt;
     const fmt = t === 'pct' ? v => (v === fin ? dec(fin) : dec(v.toFixed(1))) : t === 'min' ? v => fmin(v === fin ? fin : Math.round(v * 2) / 2) : v => String(Math.round(v));
+    // la cifra ocupa desde el principio lo que ocupará al final: mientras cuenta, ni el texto de al lado ni la tarjeta se mueven
+    const w = n.getBoundingClientRect().width;
+    Object.assign(n.style, { display: 'inline-block', minWidth: w + 'px', fontVariantNumeric: 'tabular-nums' });
     n.textContent = fmt(0);
     setTimeout(() => contar(n, fin, 800, fmt), MOV ? 250 : 0);
   });
