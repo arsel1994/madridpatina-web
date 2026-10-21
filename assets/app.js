@@ -1929,7 +1929,7 @@
   }
   // estado del marcador en el segundo t del vídeo: goles (cada uno cuenta al irse su rótulo), reloj y expulsiones vigentes
   function estadoTV(t) {
-    const M = TV.marcas.filter(x => !x.desc), dur = TV.dur, a2 = M.find(x => x.ancla && x.p === 2), goles = { L: 0, V: 0 };
+    const M = TV.relojM || TV.marcas.filter(x => !x.desc), dur = TV.dur, a2 = M.find(x => x.ancla && x.p === 2), goles = { L: 0, V: 0 };
     M.forEach(x => { if (x.e && x.e.tipo === 'GOL' && t >= x.s - ANTES_ROT + durRot(x)) goles[x.e.lado]++; });
     const antes = M.filter(x => x.s <= t), u = antes[antes.length - 1];
     if (!u) return { goles, fase: 'previa', reloj: { tx: '' }, pildora: '' };
@@ -2029,13 +2029,15 @@
     pararTV();
     const ctx = ctxDirecto(S), dur = S.duracion_periodo || 1500, partes = v.partes || {};
     const tanda = (S.penaltis && S.penaltis.tanda) || [];
-    const marcas = [1, 2, 3].filter(p => partes[p] != null).map(p => ({ s: partes[p], G: (p - 1) * dur, p, ancla: true }))
+    const todas = [1, 2, 3].filter(p => partes[p] != null).map(p => ({ s: partes[p], G: (p - 1) * dur, p, ancla: true }))
       .concat(Object.entries(v.ev || {}).map(([id, x]) => {
         const m = /^pen-(\d+)-([LV])$/.exec(id);
         if (m) return { s: x.s, G: 2 * dur, p: 3, pen: tanda.find(y => y.ronda === +m[1] && y.lado === m[2]) };
         return { s: x.s, G: (x.p - 1) * dur + (segs(x.t) || 0), p: x.p, e: (S.eventos || []).find(e => e.id === id) };
       }).filter(x => x.e || x.pen))
       .sort((a, b) => a.s - b.s);
+    // los tiempos muertos no salen en el resumen (no aportan, lo pidió el usuario); sus marcas solo afinan el reloj
+    const marcas = todas.filter(x => !(x.e && x.e.tipo === 'TIEMPO MUERTO'));
     // el descanso: la tarjeta con los goleadores, unos segundos antes de la 2.ª parte (si hay hueco tras la 1.ª)
     const ult1 = Math.max(partes[1] || 0, ...marcas.filter(x => x.p === 1).map(x => x.s));
     if (partes[2] != null && partes[2] - 6 > ult1 + 10) { marcas.push({ s: partes[2] - 6, p: 1, desc: true }); marcas.sort((a, b) => a.s - b.s); }
@@ -2044,7 +2046,7 @@
     const saque = partes[1];   // presentación solo si se empieza por el principio y el vídeo trae calentamiento
     const pres = modo === 'resumen' && desde === 0 && saque >= PRES_MIN && (S.plantillas || {}).L ? { desde: Math.max(0, saque - 7.6), hasta: saque - 1.5 } : null;
     const gen = TV.gen = (TV.gen || 0) + 1;   // si se repinta mientras carga YouTube, solo vale el último
-    Object.assign(TV, { intro: false, idp, S, ctx, dur, marcas, modo, k: desde, t: 0, start: 0, finVisto: false, listo: false, pres, bloqueado: false, rot: null, pend: null, presT0: null, rlHtml: '', saltando: false, salto: 0, avanza: 0 });
+    Object.assign(TV, { intro: false, idp, S, ctx, dur, marcas, relojM: todas, modo, k: desde, t: 0, start: 0, finVisto: false, listo: false, pres, bloqueado: false, rot: null, pend: null, presT0: null, rlHtml: '', saltando: false, salto: 0, avanza: 0 });
     setTimeout(() => {
       if (TV.gen !== gen) return;
       const g = $('#tv-marco .tv-giro');
