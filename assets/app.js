@@ -111,7 +111,8 @@
   const fmin = m => { m = +m || 0; const e = Math.floor(m), sg = Math.round((m - e) * 60); return e + "'" + (sg ? String(sg).padStart(2, '0') + "''" : ''); };
   const titulo = s => (s || '').toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase());
   // Jugador del acta: enlace a su ficha si es de los nuestros
-  const rolDe = p => p.portero ? 'Portero' : p.capitan ? 'Capitán' : p.asistente ? 'Asistente' : 'Jugador';
+  // jugadoras: app.json las marca con «fem» (por el nombre de pila; la FMP no da el sexo)
+  const rolDe = p => p.portero ? (p.fem ? 'Portera' : 'Portero') : p.capitan ? (p.fem ? 'Capitana' : 'Capitán') : p.asistente ? 'Asistente' : (p.fem ? 'Jugadora' : 'Jugador');
   const quienTxt = x => !x ? '' : !x.nombre ? (x.dorsal ? '#' + esc(x.dorsal) : '')
     : (A.jugadores[x.k] ? `<a href="${hP(x.k)}">#${esc(x.dorsal || '')} ${esc(corto(x))}</a>` : `#${esc(x.dorsal || '')} ${esc(corto(x))}`);
   const letraOf = e => e.cantera ? (e.id === 'AL' ? 'AL' : 'IN') : e.id;
@@ -291,7 +292,7 @@
       : `<span style="width:32px;height:32px;display:grid;place-items:center;border:1px solid #3A3A40;border-radius:6px;color:#3A3A40">${ch}</span>`;
     const kpi = (k, v, ink = '') => `<div><div style="font-size:14px;color:#A6A6AD;font-weight:600">${k}</div><div style="${BS}font-weight:800;font-size:56px;line-height:1;${ink}">${v}</div></div>`;
     const gfPct = bal.gf + bal.gc ? (bal.gf / (bal.gf + bal.gc) * 100) + '%' : '0%';
-    const porCard = por ? mejor({ x: por, porteros: true, titulo: 'PORTERO DE LA SEMANA', valor: por.pct, fmt: 'pct', texto: dec(por.pct), suf: '%',
+    const porCard = por ? mejor({ x: por, porteros: true, titulo: (A.jugadores[por.k] || por).fem ? 'PORTERA DE LA SEMANA' : 'PORTERO DE LA SEMANA', valor: por.pct, fmt: 'pct', texto: dec(por.pct), suf: '%',
       detalle: `${por.par} paradas<br>de ${por.tiros} tiros`, valInk: '#FFFFFF', bg: RED, photoBg: '#A9161E', iniInk: '#FFFFFF', titInk: '#FFFFFF', subInk: '#FFFFFF',
       sub: `#${esc(por.dorsal)} · ${esc(por.equipo)} vs ${esc(por.rival)}`, colW: 140, nameFs: 28, valFs: 76, gap: 16 }) : '';
     const figCard = fig ? mejor({ x: fig, titulo: 'GOLEADOR DEL CLUB', valor: fig.g, fmt: 'int', texto: fig.g, detalle: `${fig.g === 1 ? 'gol' : 'goles'} · ${fig.a} asist.<br>vs ${esc(fig.rival)}`,
@@ -423,7 +424,8 @@
       <div class="cal-grid" data-grupo style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px">${e.cal.map((c, i) => calTile(c, e.cal, i)).join('')}</div>
       ${(() => { const jug = e.cal.filter(c => c.mid && A.partidos[c.mid]).reverse();
         return jug.length ? `${lab('PARTIDOS JUGADOS · ' + A.temporada + ' · ' + jug.length, 'margin:28px 0 10px')}
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:12px;align-items:start">${jug.map(c => { const r = RES[c.r] || ['', '#2E2E33'];
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:12px;align-items:start">${jug.map(c => { const pen = A.partidos[c.mid].pen;   // empate decidido en los penaltis
+          const r = c.r === 'E' && pen ? (pen === e.nombre ? ['GANA EN PENALTIS', '#1A7A43'] : ['PIERDE EN PENALTIS', '#55555B']) : RES[c.r] || ['', '#2E2E33'];
           return `<div class="card" style="overflow:hidden">
             ${box(hM(c.mid), 'display:flex;align-items:center;gap:12px;padding:14px 18px', `${disc(crest(c.rival), 36)}
               <div style="flex:1;min-width:0"><div style="font-size:13px;color:#A6A6AD;font-weight:600">J${c.j} · ${c.casa ? 'En casa' : 'Fuera'} · ${fd(c.fecha)}</div><div style="font-weight:700;font-size:15px">${esc(c.rival)}</div></div>
@@ -781,7 +783,7 @@
     // 4) Altas y bajas, equipo por equipo (los nuestros primero)
     const orden = P.equipos.slice().sort((a, b) => (b.nuestro - a.nuestro) || ((a.fuerza || {}).puesto - (b.fuerza || {}).puesto));
     const lin = (x, sub, dir, i) => { const al = dir === 'alta';
-      return `<div data-anim="${al ? 'mpInL' : 'mpInR'} .45s cubic-bezier(.2,.8,.2,1) ${(al ? 150 : 250) + i * 110}ms" style="padding:${al ? '7px 0 7px 10px' : '7px 10px 7px 0'};border-bottom:1px solid #26262A;box-shadow:inset ${al ? '3px' : '-3px'} 0 0 ${al ? '#3DD27E' : '#FF5A52'}"><div style="font-weight:600">${jn(x)}${x.portero ? ' <span style="font-size:12px;color:#A6A6AD">· portero</span>' : ''}${x.tag ? ` <span style="font-size:11px;font-weight:700;padding:1px 6px;border-radius:3px;background:${x.tag[2]};color:#0D0D0E;white-space:nowrap">${esc(x.tag[1])}</span>` : ''}</div><div style="font-size:12px;color:#A6A6AD">${sub}</div></div>`; };
+      return `<div data-anim="${al ? 'mpInL' : 'mpInR'} .45s cubic-bezier(.2,.8,.2,1) ${(al ? 150 : 250) + i * 110}ms" style="padding:${al ? '7px 0 7px 10px' : '7px 10px 7px 0'};border-bottom:1px solid #26262A;box-shadow:inset ${al ? '3px' : '-3px'} 0 0 ${al ? '#3DD27E' : '#FF5A52'}"><div style="font-weight:600">${jn(x)}${x.portero ? ` <span style="font-size:12px;color:#A6A6AD">· ${x.fem ? 'portera' : 'portero'}</span>` : ''}${x.tag ? ` <span style="font-size:11px;font-weight:700;padding:1px 6px;border-radius:3px;background:${x.tag[2]};color:#0D0D0E;white-space:nowrap">${esc(x.tag[1])}</span>` : ''}</div><div style="font-size:12px;color:#A6A6AD">${sub}</div></div>`; };
     const ab = orden.map(e => {
       const altas = (e.altas || []).map((x, i) => { const t = tipoAlta(x, e.equipo, L.nombre), interno = t[0] === 'sube' || t[0] === 'baja';
         const de = interno ? esc(x.desdeLiga || '') : x.desde ? 'de ' + esc(x.desde) + (x.desdeLiga ? ' · ' + esc(x.desdeLiga) : '') : esc(x.nota || 'Nuevo');
@@ -2788,7 +2790,7 @@
     if (!lados.length) return false;
     const plantillaDe = l => ordenPl(P[l]).map(j => { const p = jugadorDe(ctx, l, j.id_player, j.dorsal); return { j, foto: (p && p.foto) || '', ini: p ? ini(p.nombre, p.apellidos) : iniDe(j.jugador_corto || j.jugador),
       // el nombre como lo tenemos nosotros (el acta trae alguno mal: «Müller Magg» es «Müller-Magg»)
-      nm: (p && p.nombre) || j.nombre || '', ap: (p && p.apellidos) || j.apellido || j.jugador_corto || '' }; });
+      nm: (p && p.nombre) || j.nombre || '', ap: (p && p.apellidos) || j.apellido || j.jugador_corto || '', fem: !!(p && p.fem) }; });
     const rivs = !derbi && P[riv] ? ordenPl(P[riv]) : [];
     const estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8;
     const liga = ((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase();
@@ -2814,7 +2816,8 @@
       mps.forEach((x, k) => luego(t + k * 1250, () => {
         const hero = stage.querySelector('.pr-hero'), celdas = [...stage.querySelectorAll('.pr-rej > div')];
         if (!hero) return;
-        const r = ROL_TXT[x.j.rol] || ['JUGADOR', '#26262A', '#F4F4F5'];
+        const r0 = ROL_TXT[x.j.rol] || ['JUGADOR', '#26262A', '#F4F4F5'];
+        const r = x.fem ? [{ PORTERO: 'PORTERA', 'CAPITÁN': 'CAPITANA', JUGADOR: 'JUGADORA' }[r0[0]] || r0[0], r0[1], r0[2]] : r0;
         hero.innerHTML = `<div class="pr-big"><span>${esc(x.j.dorsal)}</span></div>
           <div class="pr-foto">${x.foto ? `<div class="f" style="background-image:url('${esc(x.foto)}')"></div>` : `<div class="i">${esc(x.ini)}</div>`}<div class="d">${esc(x.j.dorsal)}</div></div>
           <div class="pr-nom"><div class="rol" style="background:${r[1]};color:${r[2]}">${r[0]}</div><div class="nm">${esc(x.nm)}</div><div class="ap">${x.ap.toUpperCase().split(/\s+/).filter(Boolean).map(w => `<span style="white-space:nowrap">${esc(w)}</span>`).join(' ')}</div>
