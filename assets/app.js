@@ -334,9 +334,9 @@
       <div style="position:relative;margin-top:${aplazado ? 4 : 10}px;width:100%;padding:6px 0;text-align:center;background:#26262A;color:#FFFFFF;${BS}font-weight:800;font-size:20px;line-height:1">
         <div data-anim="mpWipe .4s ${350 + i * 70}ms" style="position:absolute;inset:0;background:${col};transform-origin:left"></div><span style="position:relative">${played ? c.resultado.replace('-', '–') : fd(c.fecha).replace(/^\S+ /, '')}</span></div>`, 'div', ' ' + FLIP(i));
   }
-  function playerCard(k) {
-    const p = A.jugadores[k]; const t = p.temporadas['2025/26'], t7 = p.temporadas['2026/27'];
-    const stat = t ? t.goles + ' G · ' + t.asistencias + ' A en ' + t.pj + ' PJ' : (t7 && t7.pj ? t7.goles + ' G · ' + t7.asistencias + ' A este año' : 'Sin datos previos');
+  function playerCard(k, temp) {   // con los números de esa temporada
+    const p = A.jugadores[k], t = (p.temporadas || {})[temp] || {};
+    const stat = t.pj ? (t.goles || 0) + ' G · ' + (t.asistencias || 0) + ' A en ' + t.pj + ' PJ' : 'Aún sin jugar';
     return box(hP(k), 'background:#18181B;border-radius:10px;overflow:hidden;display:flex;flex-direction:column', `
       <div class="ini" style="aspect-ratio:4/5;background:#26262A;font-size:48px;color:#55555B">${esc(ini(p.nombre, p.apellidos))}${photo(p.foto)}<span style="position:absolute;left:8px;bottom:6px;${BS}font-weight:900;font-size:40px;line-height:1;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)">${esc(p.dorsal || '')}</span></div>
       <div style="padding:10px 12px"><div style="font-weight:700;font-size:15px;line-height:1.15">${esc(corto(p))}</div><div style="font-size:13px;color:#A6A6AD;margin-top:2px">${stat}</div></div>`);
@@ -349,7 +349,14 @@
     const sub = [e.proc, e.edad ? 'Edad media ' + dec(e.edad) : null].filter(Boolean).join(' · ') || L.nombre;
     const tiles = [['Puesto', c.puesto + 'º/' + L.clasif.length, RED], ['Puntos', c.pts], ['PJ', c.pj], ['V-E-D', c.v + '-' + c.e + '-' + c.d], ['Goles', c.gf + ':' + c.gc]]
       .map(([k, v, ink]) => `<div style="padding:12px 16px;background:#121214;border-radius:8px;min-width:96px"><div style="font-size:13px;color:#A6A6AD;font-weight:600">${k}</div><div style="${BS}font-weight:800;font-size:36px;line-height:1;color:${ink || '#F4F4F5'}">${v}</div></div>`).join('');
-    const clave = e.clave.filter(k => J[k]).map(playerCard).join('');
+    // jugadores clave: los 5 de la plantilla con más puntos (goles + asistencias) esta temporada, sin porteros; cambia con
+    // cada jornada (empate: más goles, menos partidos). Antes de que nadie juegue, los de la temporada pasada
+    const est = (p, t) => (p.temporadas || {})[t] || {}, pts = (p, t) => (est(p, t).goles || 0) + (est(p, t).asistencias || 0);
+    const topDe = t => Object.values(J).filter(p => enEquipo(p, e) && !p.portero && pts(p, t) > 0)
+      .sort((a, b) => pts(b, t) - pts(a, t) || (est(b, t).goles || 0) - (est(a, t).goles || 0) || est(a, t).pj - est(b, t).pj || corto(a).localeCompare(corto(b), 'es')).slice(0, 5);
+    let tClave = A.temporada, top5 = topDe(tClave);
+    if (!top5.length) { tClave = '2025/26'; top5 = topDe(tClave); }
+    const clave = top5.map(p => playerCard(p.k, tClave)).join('');
     // 7j · altas desde la izquierda (borde verde) y bajas hacia la derecha (borde rojo), en cascada
     const altas = e.altas.filter(a => J[a.k]).map((a, i) => box(hP(a.k), 'display:flex;justify-content:space-between;gap:10px;width:100%;padding:9px 0 9px 10px;border-bottom:1px solid #26262A;box-shadow:inset 3px 0 0 #3DD27E',
       `<span style="font-weight:700">#${esc(J[a.k].dorsal)} ${esc(corto(J[a.k]))}</span><span style="color:#A6A6AD;font-size:14px;text-align:right">${esc(a.desde ? 'de ' + a.desde : 'Nuevo')}</span>`, 'div', ` data-anim="mpInL .45s cubic-bezier(.2,.8,.2,1) ${150 + i * 110}ms"`)).join('');
@@ -389,7 +396,7 @@
               <div style="text-align:right"><div style="${BS}font-weight:800;font-size:32px;line-height:1">${esc((c.resultado || '').replace('-', '–'))}</div><div style="font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:3px;background:${r[1]};color:#fff;margin-top:4px;display:inline-block">${r[0]}</div></div>`)}
             ${actaMini(A.partidos[c.mid], e.nombre)}</div>`; }).join('')}</div>` : ''; })()}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;margin-top:28px">
-        <div>${lab('JUGADORES CLAVE · 2025/26', 'margin-bottom:10px')}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">${clave}</div></div>
+        <div>${lab('JUGADORES CLAVE · ' + tClave, 'margin-bottom:10px')}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">${clave}</div></div>
         <div style="display:flex;flex-direction:column;gap:12px">
           <div class="card" data-grupo style="padding:18px 20px"><div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:#3DD27E">ALTAS · ${e.altas.length}</div>${altas}</div>
           <div class="card" data-grupo style="padding:18px 20px"><div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:#FF5A52">BAJAS · ${e.bajas.length}</div>${bajas}</div>
@@ -1953,10 +1960,19 @@
     const p = TV.player;
     if (!p || !p.getCurrentTime) return;
     if (TV.saltando) return;   // fundido antes de un salto: el vídeo viejo ya no cuenta
-    const t = p.getCurrentTime(), prev = TV.t, juega = p.getPlayerState && p.getPlayerState() === 1, natural = t > prev && t - prev < 2;
+    const t = p.getCurrentTime(), prev = TV.t, natural = t > prev && t - prev < 2;
+    const juega = (p.getPlayerState && p.getPlayerState() === 1) || natural;   // si el vídeo avanza, corre (aunque YouTube diga otra cosa)
     TV.t = t;
     const lz = $('#tv-lienzo');
     if (lz) lz.classList.toggle('pausado', !juega);   // en pausa (o cargando) las animaciones se congelan
+    // en algunos móviles YouTube no avisa de que el vídeo sigue: si la cortina está puesta y el vídeo avanza, se quita
+    const cort = $('#tv-cortina');
+    if (TV.modo === 'resumen' && TV.empezado && !TV.intro && !TV.acabado && cort && cort.classList.contains('on') && natural) {
+      if (++TV.avanza >= 6) {
+        TV.avanza = 0; clearTimeout(TV.tCortina); cortinaTV(false); arrancaTV(); musica(true);
+        clearTimeout(TV.tTapa); TV.tTapa = setTimeout(() => { const m = $('#tv-marco'); if (m) m.classList.remove('tapa'); }, 5600);
+      }
+    } else TV.avanza = 0;
     if (natural) TV.marcas.forEach((x, i) => {   // el vídeo avanza solo (no un salto): lo que acaba de pasar
       if (x.pen) { if (x.s > prev && x.s <= t) tiroTV(x, i); return; }
       const e = x.s - ANTES_ROT;
@@ -2009,7 +2025,7 @@
     const saque = partes[1];   // presentación solo si se empieza por el principio y el vídeo trae calentamiento
     const pres = modo === 'resumen' && desde === 0 && saque >= PRES_MIN && (S.plantillas || {}).L ? { desde: Math.max(0, saque - 7.6), hasta: saque - 1.5 } : null;
     const gen = TV.gen = (TV.gen || 0) + 1;   // si se repinta mientras carga YouTube, solo vale el último
-    Object.assign(TV, { intro: false, idp, S, ctx, dur, marcas, modo, k: desde, t: 0, start: 0, finVisto: false, listo: false, pres, bloqueado: false, rot: null, pend: null, presT0: null, rlHtml: '', saltando: false, salto: 0 });
+    Object.assign(TV, { intro: false, idp, S, ctx, dur, marcas, modo, k: desde, t: 0, start: 0, finVisto: false, listo: false, pres, bloqueado: false, rot: null, pend: null, presT0: null, rlHtml: '', saltando: false, salto: 0, avanza: 0 });
     setTimeout(() => {
       if (TV.gen !== gen) return;
       const g = $('#tv-marco .tv-giro');
