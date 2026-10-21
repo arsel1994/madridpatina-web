@@ -977,7 +977,11 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .tv-ctrl button svg { width: 42%; height: 42%; fill: currentColor; }
 
 /* ── El lienzo: 1920×1080 px del diseño, escalado y centrado sobre la imagen del vídeo (--k, --ox, --oy desde lienzoTV) ── */
-.tv-lienzo { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; transform: translate(var(--ox, 0px), var(--oy, 0px)) scale(var(--k, .5)); pointer-events: none; overflow: hidden; color: #F4F4F5; font-family: 'Figtree', sans-serif; font-weight: 600; line-height: 1.2; }
+/* el lienzo se dibuja a su tamaño real con zoom (no con transform: scale): en el iPhone, escalar una capa de 1920×1080 con
+   animaciones dentro gastaba tanta memoria que Safari cerraba la página («se ha producido un problema repetidamente») */
+.tv-lienzo { position: absolute; left: var(--ox, 0px); top: var(--oy, 0px); width: calc(1920px * var(--k, .5)); height: calc(1080px * var(--k, .5)); pointer-events: none; overflow: hidden; color: #F4F4F5; font-family: 'Figtree', sans-serif; font-weight: 600; line-height: 1.2; }
+.lz-in { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; zoom: var(--k, .5); }
+@supports not (zoom: 1) { .lz-in { zoom: normal; transform: scale(var(--k, .5)); transform-origin: 0 0; } }
 .tv-lienzo.pausado *, .tv-lienzo.pausado *::before, .tv-lienzo.pausado *::after, .lz-pres.espera, .lz-pres.espera *, .lz-pres.espera *::before, .lz-pres.espera *::after { animation-play-state: paused !important; }
 .lz-velo { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.38) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 70%, rgba(0,0,0,.32) 100%), radial-gradient(ellipse 80% 70% at 50% 50%, rgba(0,0,0,0) 60%, rgba(0,0,0,.28) 100%); }
 .lz-grad { position: absolute; left: 0; right: 0; bottom: 0; height: 42%; background: linear-gradient(0deg, rgba(13,13,14,.62), rgba(13,13,14,0)); opacity: 0; transition: opacity .35s cubic-bezier(.65,0,.35,1); }

@@ -2055,7 +2055,7 @@
       <div class="tv-marco${modo === 'resumen' ? ' bloq' : ''}" id="tv-marco"><div class="tv-giro"><div id="tv-player"></div>
         <div class="tv-capa">
           ${modo === 'resumen' ? '<div class="tv-tapa" aria-hidden="true"></div>' : ''}
-          <div class="tv-lienzo pausado" id="tv-lienzo"><div class="lz-velo"></div><div class="lz-grad" id="lz-grad"></div>${marcadorHtml(ctx)}<div id="lz-rots" role="status" aria-live="polite"></div><div id="lz-presc"></div></div>
+          <div class="tv-lienzo pausado" id="tv-lienzo"><div class="lz-in"><div class="lz-velo"></div><div class="lz-grad" id="lz-grad"></div>${marcadorHtml(ctx)}<div id="lz-rots" role="status" aria-live="polite"></div><div id="lz-presc"></div></div></div>
           ${modo === 'resumen' ? `<div class="tv-cortina on" id="tv-cortina"><div class="tc"><img class="tc-esc" src="escudos/badge/madridpatina-alpha.svg" alt=""><b class="tc-nom">MADRIDPATINA</b><i class="tc-raya"></i><div class="tc-pill"><span class="d" id="tv-cortina-t">RESUMEN EN VÍDEO</span><span class="t" id="tv-cortina-i">${esc(ctx.abr.L)} vs ${esc(ctx.abr.V)}</span></div><button type="button" class="tc-otra" id="tv-otra" data-tv="otra" hidden>↺ Ver otra vez</button></div></div>` : ''}
           <button type="button" class="tv-full" data-tv="full" title="Pantalla completa" aria-label="Pantalla completa">${ICO_FULL}${ICO_SALIR}</button>
           ${modo === 'resumen' ? `<div class="tv-ctrl"><button type="button" data-tv="prev" aria-label="Atrasar evento" title="Atrasar evento">${ICO_ANT}</button><button type="button" data-tv="next" aria-label="Adelantar evento" title="Adelantar evento">${ICO_SIG}</button></div>
