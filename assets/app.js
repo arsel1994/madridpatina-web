@@ -334,8 +334,8 @@
       <div style="display:flex;justify-content:space-between;width:100%;padding:8px 10px 0;font-size:12px;font-weight:700;color:#A6A6AD"><span>J${c.j}</span><span>${c.casa ? 'CASA' : 'FUERA'}</span></div>
       <div style="width:64px;height:64px;border-radius:50%;margin:8px 0 6px;box-shadow:0 0 0 2px #FFFFFF">${disc(crest(c.rival), 64, 'transparent')}</div>
       <span style="${BS}font-weight:800;font-size:20px;letter-spacing:.04em;line-height:1;white-space:nowrap">${esc(abr(c.rival))}</span>
-      ${aplazado ? '<span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:#FF8A3D;margin-top:3px">APLAZADO</span>' : ''}
-      <div style="position:relative;margin-top:${aplazado ? 4 : 10}px;width:100%;padding:6px 0;text-align:center;background:#26262A;color:#FFFFFF;${BS}font-weight:800;font-size:20px;line-height:1">
+      ${aplazado ? '<span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:#FF8A3D;margin-top:3px">APLAZADO</span>' : c.sinActa && played ? '<span style="font-size:11px;font-weight:700;letter-spacing:.04em;color:#FF8A3D;margin-top:3px">ACTA PENDIENTE</span>' : ''}
+      <div style="position:relative;margin-top:${aplazado || (c.sinActa && played) ? 4 : 10}px;width:100%;padding:6px 0;text-align:center;background:#26262A;color:#FFFFFF;${BS}font-weight:800;font-size:20px;line-height:1">
         <div data-anim="mpWipe .4s ${350 + i * 70}ms" style="position:absolute;inset:0;background:${col};transform-origin:left"></div><span style="position:relative">${played ? c.resultado.replace('-', '–') : fd(c.fecha).replace(/^\S+ /, '')}</span></div>`, 'div', ' ' + FLIP(i));
   }
   function playerCard(k, temp) {   // con los números de esa temporada
@@ -442,11 +442,12 @@
           <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px"><span style="${BS}font-weight:800;font-size:19px;letter-spacing:.04em;line-height:1;white-space:nowrap">${esc(abr(m.local))}</span>${disc(crest(m.local), 44)}</div>
           <span style="text-align:center;${BS}font-weight:800;font-size:28px;line-height:1;min-width:70px;white-space:nowrap">${m.gl != null ? (m.pen && m.pen === m.local ? bPen() : '') + m.gl + '–' + m.gv + (m.pen && m.pen === m.visitante ? bPen() : '') : fd(m.fecha)}</span>
           <div style="display:flex;align-items:center;gap:10px">${disc(crest(m.visitante), 44)}<span style="${BS}font-weight:800;font-size:19px;letter-spacing:.04em;line-height:1;white-space:nowrap">${esc(abr(m.visitante))}</span></div>`)).join('')
-        + (L.cal || []).filter(c => c.j === jsel && c.gl == null && !J0.partidos.some(m => m.local === c.local && m.visitante === c.visitante))
+        + (L.cal || []).filter(c => c.j === jsel && (c.gl == null || c.sinActa) && !J0.partidos.some(m => m.local === c.local && m.visitante === c.visitante))
           .sort((a, b) => ((a.fecha || '9') + (a.hora || '')) < ((b.fecha || '9') + (b.hora || '')) ? -1 : 1)
           .map(c => `<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;width:100%;padding:12px 8px;border-radius:8px;background:${ours(c.local) || ours(c.visitante) ? '#2A1416' : 'transparent'};border-bottom:1px solid #26262A">
           <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px"><span style="${BS}font-weight:800;font-size:19px;letter-spacing:.04em;line-height:1;white-space:nowrap">${esc(abr(c.local))}</span>${disc(crest(c.local), 44)}</div>
-          <span style="text-align:center;min-width:70px;line-height:1.15"><span style="display:block;${BS}font-weight:800;font-size:17px;white-space:nowrap">${c.fecha ? esc(fd(c.fecha)) : 'Fecha por fijar'}</span><span style="font-size:13px;color:#A6A6AD;white-space:nowrap">${esc(c.hora || 'hora por fijar')}</span></span>
+          ${c.sinActa && c.gl != null ? `<span style="text-align:center;min-width:70px;line-height:1.1"><span style="display:block;${BS}font-weight:800;font-size:28px;white-space:nowrap">${c.gl}–${c.gv}</span><span style="font-size:11px;font-weight:700;letter-spacing:.04em;color:#FF8A3D;white-space:nowrap">Acta pendiente de la FMP</span></span>`
+            : `<span style="text-align:center;min-width:70px;line-height:1.15"><span style="display:block;${BS}font-weight:800;font-size:17px;white-space:nowrap">${c.fecha ? esc(fd(c.fecha)) : 'Fecha por fijar'}</span><span style="font-size:13px;color:#A6A6AD;white-space:nowrap">${esc(c.hora || 'hora por fijar')}</span></span>`}
           <div style="display:flex;align-items:center;gap:10px">${disc(crest(c.visitante), 44)}<span style="${BS}font-weight:800;font-size:19px;letter-spacing:.04em;line-height:1;white-space:nowrap">${esc(abr(c.visitante))}</span></div></div>`).join('');
       const enJor = new Set((L.cal || []).filter(c => c.j === jsel).flatMap(c => [c.local, c.visitante]));
       const descansa = L.clasif.map(r => r.equipo).filter(n => enJor.size && !enJor.has(n));
