@@ -1358,3 +1358,9 @@ a.an-par.blk, .an-par { display: grid; grid-template-columns: minmax(58px, auto)
 .bq-gol .an-tog[aria-pressed="true"] { background: #D3202A; }
 .bq-gol .bq-l { background: #3A3A40; color: #FFFFFF; }
 .bq-gol .dv-alin { margin-top: 8px; font-size: 13px; padding: 8px 12px; }
+
+.an-tg { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #16222E; color: #F4F4F5; box-shadow: inset 3px 0 0 #2AABEE; }
+.an-tg b { font-size: 15px; color: #6FB7FF; }
+.an-tg span { font-size: 13px; color: #C9C9CE; }
+a.an-tg:hover { background: #1B2A38; color: #FFFFFF; }
+.sy-gol .an-tog[aria-pressed="true"] { background: #D3202A; color: #FFFFFF; }

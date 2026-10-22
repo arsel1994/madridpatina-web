@@ -8,6 +8,7 @@
   const $ = s => document.querySelector(s);
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const RED = '#D3202A';
+  const TELEGRAM = 'https://t.me/madridpatina_directo';   // canal con los avisos automáticos de nuestros partidos (los manda el vigía)
   const RES = { V: ['VICTORIA', '#1A7A43'], E: ['EMPATE', '#6B6B70'], D: ['DERROTA', '#55555B'] };
   const MES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
@@ -334,7 +335,8 @@
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px">${cards}</div>
       <div class="semana-dest${[porCard, figCard, asisCard, sancCard].some(Boolean) ? '' : ' solo'}">
         ${[porCard, figCard, asisCard, sancCard].some(Boolean) ? `<div class="cuatro">${porCard}${figCard}${asisCard}${sancCard}</div>` : ''}
-        <div class="card" style="padding:20px 22px">${lab('PRÓXIMOS PARTIDOS')}<div data-grupo style="display:flex;flex-direction:column;margin-top:8px">${proxHtml}</div></div>
+        <div class="card" style="padding:20px 22px">${lab('PRÓXIMOS PARTIDOS')}<div data-grupo style="display:flex;flex-direction:column;margin-top:8px">${proxHtml}</div>
+          <a class="an-tg" href="${TELEGRAM}" target="_blank" rel="noopener"><b>Avisos en Telegram</b><span>Cada gol, el descanso y el final de nuestros partidos, en el móvil</span></a></div>
       </div>
       ${wi === 0 ? '<div data-agenda></div>' : ''}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:12px">${tablas}</div>`;
@@ -933,7 +935,17 @@
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:12px" data-grupo data-espera="1700">${side(p.local, p.gol_l, p.por_l, p.alin_l, p.staff_l, 0)}${side(p.visitante, p.gol_v, p.por_v, p.alin_v, p.staff_v, 100)}</div>
       ${info.length || eventos ? `<div class="card" style="margin-top:12px;padding:18px 20px">
         ${info.length ? `<div style="display:flex;gap:12px 32px;flex-wrap:wrap">${info.map(([k, v]) => `<div><div style="font-size:13px;font-weight:700;color:#A6A6AD">${k}</div><div style="font-weight:600;font-size:16px">${esc(v)}</div></div>`).join('')}</div>` : ''}
-        ${(() => { const gs = (p.ev || []).filter(e => golVid(e) && golVid(e).xy); if (!gs.length) return '';
+        ${vd && vd.tiros && vd.tiros.length ? (() => {
+          const [cL, cV] = coloresLados(p.local, p.visitante);
+          const goles = Object.values(vd.ev || {}).filter(e => e.tipo === 'GOL');
+          const bloque = l => { const nom = l === 'L' ? p.local : p.visitante, col = l === 'L' ? cL : cV, ts = vd.tiros.filter(t => t.lado === l), gs = goles.filter(e => e.lado === l);
+            const par = ts.filter(t => t.r === 'parada').length, tot = ts.length + gs.length, puerta = par + gs.length;
+            const pts = ts.filter(t => t.xy).map(t => t.r === 'parada' ? `<circle cx="${t.xy[0] * PISTA_W}" cy="${t.xy[1] * PISTA_H}" r="7" fill="none" stroke="${col}" stroke-width="2.5"><title>Parada${t.dorsal ? ' · #' + esc(t.dorsal) : ''} · a unos ${distM(t.xy)} m</title></circle>`
+              : `<g stroke="#8A8A8F" stroke-width="2.5"><title>${t.r === 'fuera' ? 'Fuera' : 'Bloqueado'}${t.dorsal ? ' · #' + esc(t.dorsal) : ''}</title><line x1="${t.xy[0] * PISTA_W - 5}" y1="${t.xy[1] * PISTA_H - 5}" x2="${t.xy[0] * PISTA_W + 5}" y2="${t.xy[1] * PISTA_H + 5}"/><line x1="${t.xy[0] * PISTA_W + 5}" y1="${t.xy[1] * PISTA_H - 5}" x2="${t.xy[0] * PISTA_W - 5}" y2="${t.xy[1] * PISTA_H + 5}"/></g>`).join('')
+              + gs.filter(e => e.xy).map(e => `<circle cx="${e.xy[0] * PISTA_W}" cy="${e.xy[1] * PISTA_H}" r="9" fill="${col}" stroke="#0D0D0E" stroke-width="2"><title>Gol · ${esc(e.q || '')} · a unos ${distM(e.xy)} m</title></circle>`).join('');
+            return `<div><div class="an-sub" style="margin-top:0">${esc(mpAbr(nom))} · ${tot} tiros · ${puerta} a puerta · ${gs.length} ${gs.length === 1 ? 'gol' : 'goles'}${puerta ? ' · acierto ' + pct(gs.length / puerta) : ''}</div><div style="width:min(100%,300px)">${mediaPista(pts, `width="100%" role="img" aria-label="Tiros de ${esc(nom)} marcados en el vídeo"`)}</div></div>`; };
+          return `<div style="margin-top:${info.length ? 20 : 0}px">${lab('TIROS MARCADOS EN EL VÍDEO')}<div style="font-size:13px;color:#A6A6AD;margin-top:4px">Cada tiro, marcado en el vídeo: ● gol · ○ parada · ✕ fuera o bloqueado. Mirando a la portería a la que se tiró.</div>
+            <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px">${bloque('L')}${bloque('V')}</div></div>`; })() : (() => { const gs = (p.ev || []).filter(e => golVid(e) && golVid(e).xy); if (!gs.length) return '';
           const [cL, cV] = coloresLados(p.local, p.visitante);
           const pts = gs.map((e, i) => { const g = golVid(e); return `<g><title>${esc(e.marcador || '')} · ${quienTxt(e.jugador)} · a unos ${distM(g.xy)} m</title><circle cx="${g.xy[0] * PISTA_W}" cy="${g.xy[1] * PISTA_H}" r="11" fill="${e.lado === 'local' ? cL : cV}" stroke="#0D0D0E" stroke-width="2"/><text x="${g.xy[0] * PISTA_W}" y="${g.xy[1] * PISTA_H + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="${tinta(e.lado === 'local' ? cL : cV)}">${i + 1}</text></g>`; }).join('');
           return `<div style="margin-top:${info.length ? 20 : 0}px">${lab('DESDE DÓNDE FUERON LOS GOLES')}<div style="font-size:13px;color:#A6A6AD;margin-top:4px">Marcados en el vídeo, mirando a la portería en la que entró cada gol. El número es el orden del gol.</div>
@@ -1670,8 +1682,19 @@
     const pm = pjV ? `<div style="margin-top:12px">${lab('EN PISTA EN LOS GOLES', 'margin-bottom:2px')}<div class="an-nota" style="margin-top:0">En ${pjV === 1 ? 'el partido' : 'los ' + pjV + ' partidos'} en los que se apuntó quién estaba en pista (en el vídeo o desde el banquillo): goles de su equipo y en contra mientras jugaba.</div>
       <div class="an-ks" style="max-width:480px;grid-template-columns:repeat(3,minmax(0,1fr))">${anK('A favor', '+' + mas, '', '#3DD27E')}${anK('En contra', '−' + menos, '', menos ? '#FF6B63' : '')}${anK('Balance', (mas - menos > 0 ? '+' : '') + (mas - menos))}</div></div>` : '';
     const ds = mios.map(e => distM(e.xy)), mapa = mios.length ? `<div style="margin-top:12px">${lab('DESDE DÓNDE MARCA', 'margin-bottom:2px')}<div class="an-nota" style="margin:0 0 6px">${mios.length} ${mios.length === 1 ? 'gol marcado' : 'goles marcados'} en vídeo · a unos ${Math.round(ds.reduce((a, b) => a + b, 0) / ds.length)} m de media · el más lejano, a ${Math.max(...ds)} m</div><div style="width:min(100%,260px)">${mediaPista(mios.map(e => `<circle cx="${e.xy[0] * PISTA_W}" cy="${e.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>`).join(''), 'width="100%" role="img" aria-label="Media pista con el sitio de sus goles marcados en vídeo"')}</div></div>` : '';
-    if (!yo.length) return pm;
-    return `${lab('SUS GOLES EN VÍDEO', 'margin-bottom:6px')}<div style="display:flex;gap:8px;flex-wrap:wrap">${yo.map(g => `<a class="dv-alin" href="#/video/${encodeURIComponent(g.idp)}/${Math.max(0, Math.round(g.s - ANTES_JUGADA))}">▶ ${esc(g.m ? g.m.replace('-', '–') : 'Gol')} · ${g.p}ª parte ${esc(g.t)} · vs ${esc(abr(g.rival))}</a>`).join('')}</div>${mapa}${pm}`;
+    // sus tiros, en los partidos con todos los tiros marcados en el vídeo
+    let tir = 0, puerta = 0, gol = 0, pjT = 0; const misTiros = [];
+    (p.partidos || []).forEach(x => { const m = A.partidos[x.mid], v = m && m.idp && VID[m.idp]; if (!v || !v.tiros || !v.tiros.length) return;
+      const enL = [m.alin_l, m.por_l, m.gol_l].some(l => (l || []).some(y => y.k === p.k)), lado = enL ? 'L' : 'V';
+      const fila = ((enL ? m.alin_l : m.alin_v) || []).concat((enL ? m.gol_l : m.gol_v) || []).find(y => y.k === p.k), dors = String((fila && fila.dorsal) || p.dorsal || '');
+      pjT++;
+      v.tiros.filter(t => t.lado === lado && String(t.dorsal) === dors).forEach(t => { tir++; if (t.r === 'parada') puerta++; misTiros.push(t); });
+      Object.values(v.ev || {}).filter(e => e.tipo === 'GOL' && e.lado === lado && (e.q || '').startsWith('#' + dors + ' ')).forEach(e => { tir++; puerta++; gol++; if (e.xy) misTiros.push(Object.assign({ r: 'gol' }, e)); }); });
+    const tirosHtml = pjT ? `<div style="margin-top:12px">${lab('SUS TIROS', 'margin-bottom:2px')}<div class="an-nota" style="margin:0 0 6px">En ${pjT === 1 ? 'el partido' : 'los ' + pjT + ' partidos'} con todos los tiros marcados en el vídeo.</div>
+      <div class="an-ks" style="max-width:520px;grid-template-columns:repeat(4,minmax(0,1fr))">${anK('Tiros', tir)}${anK('A puerta', puerta)}${anK('Goles', gol, '', '#FF6B63')}${anK('Acierto', puerta ? pct(gol / puerta) : '—', 'goles entre tiros a puerta')}</div>
+      ${misTiros.some(t => t.xy) ? `<div style="width:min(100%,260px);margin-top:8px">${mediaPista(misTiros.filter(t => t.xy).map(t => t.r === 'gol' ? `<circle cx="${t.xy[0] * PISTA_W}" cy="${t.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>` : t.r === 'parada' ? `<circle cx="${t.xy[0] * PISTA_W}" cy="${t.xy[1] * PISTA_H}" r="7" fill="none" stroke="#D3202A" stroke-width="2.5"/>` : `<g stroke="#8A8A8F" stroke-width="2.5"><line x1="${t.xy[0] * PISTA_W - 5}" y1="${t.xy[1] * PISTA_H - 5}" x2="${t.xy[0] * PISTA_W + 5}" y2="${t.xy[1] * PISTA_H + 5}"/><line x1="${t.xy[0] * PISTA_W + 5}" y1="${t.xy[1] * PISTA_H - 5}" x2="${t.xy[0] * PISTA_W - 5}" y2="${t.xy[1] * PISTA_H + 5}"/></g>`).join(''), 'width="100%" role="img" aria-label="Sus tiros marcados en el vídeo"')}</div><div class="an-nota">● gol · ○ parada · ✕ fuera o bloqueado</div>` : ''}</div>` : '';
+    if (!yo.length) return pm + tirosHtml;
+    return `${lab('SUS GOLES EN VÍDEO', 'margin-bottom:6px')}<div style="display:flex;gap:8px;flex-wrap:wrap">${yo.map(g => `<a class="dv-alin" href="#/video/${encodeURIComponent(g.idp)}/${Math.max(0, Math.round(g.s - ANTES_JUGADA))}">▶ ${esc(g.m ? g.m.replace('-', '–') : 'Gol')} · ${g.p}ª parte ${esc(g.t)} · vs ${esc(abr(g.rival))}</a>`).join('')}</div>${mapa}${tirosHtml}${pm}`;
   }
   const CMP = {};
   function compararHtml(k, otro) {
@@ -1862,10 +1885,12 @@
     catch (e) { return 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); } })();
   // ¿tiene almacén el servicio? Lo comprueba cada noche el proceso semanal (data/servicio.json); si no, ni se le pregunta
   let srvP = null;
-  const servicioListo = () => srvP || (srvP = API.includes('localhost') ? Promise.resolve(true)
-    : fetch('data/servicio.json?v=' + verDatos()).then(r => (r.ok ? r.json() : {})).then(d => !!(d && d.almacen)).catch(() => false));
-  const apiGet = q => servicioListo().then(ok => (ok ? fetch(API + q, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).catch(() => null) : null));
-  const apiPost = (q, cuerpo) => servicioListo().then(ok => (ok ? fetch(API + q, { method: 'POST', body: JSON.stringify(cuerpo) }).then(r => r.json().then(j => Object.assign(j, { _st: r.status }))).catch(() => null) : null));
+  // y qué direcciones tiene ya publicadas (p. ej. «video» llega con una versión nueva del servicio)
+  const servicioListo = () => srvP || (srvP = API.includes('localhost') ? Promise.resolve({ almacen: true, video: true })
+    : fetch('data/servicio.json?v=' + verDatos()).then(r => (r.ok ? r.json() : {})).catch(() => ({})));
+  const puede = (s, q) => !!(s && s.almacen) && (!q.startsWith('video') || !!s.video);
+  const apiGet = q => servicioListo().then(s => (puede(s, q) ? fetch(API + q, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).catch(() => null) : null));
+  const apiPost = (q, cuerpo) => servicioListo().then(s => (puede(s, q) ? fetch(API + q, { method: 'POST', body: JSON.stringify(cuerpo) }).then(r => r.json().then(j => Object.assign(j, { _st: r.status }))).catch(() => null) : null));
   const leeLS = (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } };
   const ponLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } };
   const normId = id => String(id || '').replace(/-0+(\d+)$/, '-$1');   // «…-GOL-05» y «…-GOL-5» son el mismo gol
@@ -2467,7 +2492,7 @@
     else if (v === 'video') html = vVideo(parts[1], parts[2]);
     else html = vJornada(parts[1]);
     const back = S.hist.length && v !== 'jornada' ? '<a class="back" href="#" data-back>← Volver</a>' : '';
-    const pie = `<footer class="pie"><span>MADRIDPATINA · Temporada ${esc(A.temporada)}</span><span><a href="#/metodo">Cómo lo calculamos</a> · Datos: Federación Madrileña de Patinaje · actualizado ${fdc(A.actualizado).toLowerCase()}</span></footer>`;
+    const pie = `<footer class="pie"><span>MADRIDPATINA · Temporada ${esc(A.temporada)}</span><span><a href="${TELEGRAM}" target="_blank" rel="noopener">Avisos en Telegram</a> · <a href="#/metodo">Cómo lo calculamos</a> · Datos: Federación Madrileña de Patinaje · actualizado ${fdc(A.actualizado).toLowerCase()}</span></footer>`;
     view.innerHTML = back + html + pie;
     if (!VID) cargarVideos().then(() => { const m = /^#\/directo\/([^/]+)\/resumen/.exec(location.hash); if (/^#\/partido\//.test(location.hash) || (m && VID[decodeURIComponent(m[1])])) render(); });
     if (v === 'metodo' && parts[1]) setTimeout(() => { const el = document.getElementById('m-' + parts[1]); if (el) el.scrollIntoView({ block: 'start' }); }, 60);
@@ -2659,10 +2684,13 @@
       if (!IN.pend[sn.idp] && IN.mostrado[sn.idp] && (IN.mostrado[sn.idp].gl !== (sn.gl || 0) || IN.mostrado[sn.idp].gv !== (sn.gv || 0))) { IN.mostrado[sn.idp] = { gl: sn.gl || 0, gv: sn.gv || 0 }; pintarRodIntro(sn.idp); }
     });
   }
-  function abrirIntro() {
+  // sola (al entrar o al empezar un partido) solo los días en que juega un equipo nuestro; con el escudo, siempre
+  function abrirIntro(sola) {
     if (introEl || !A) return;
     const ps = partidosFinde();
     if (!ps.length) return;
+    const d = new Date(), hoy = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    if (sola && !ps.some(x => x.dia === hoy)) return;
     introAbierta = true;
     IN.ps = ps; IN.clave = ps.map(x => x.k + (x.fin ? '=' + x.gl + '-' + x.gv : vivoIntro(x.k) ? '*' : '')).join('|'); IN.visto = LIVE.nuevos.length;
     try { sessionStorage.setItem(INTRO, '1'); } catch (e) { /* sin almacenamiento: saldrá en cada visita */ }
@@ -2869,7 +2897,8 @@
      minuto de juego), así que no basta con saber dónde empieza cada parte: se marca cada jugada. */
   let VID = null, vidP = null;
   const cargarVideos = () => vidP || (vidP = fetch('data/videos.json?v=' + encodeURIComponent(A.actualizado || ''), { cache: 'no-store' })
-    .then(r => (r.ok ? r.json() : {})).catch(() => ({})).then(d => { VID = d || {}; return VID; }));
+    .then(r => (r.ok ? r.json() : {})).catch(() => ({})).then(d => apiGet('video?lista=1').then(sv => {
+      VID = d || {}; if (sv && sv.partidos) Object.entries(sv.partidos).forEach(([k, v]) => { VID[k] = v; }); return VID; })));
   const ANTES_JUGADA = 8;   // la jugada se empieza a ver unos segundos antes
   const segVideo = (idp, e) => { const v = VID && VID[idp], x = v && v.ev && e && v.ev[e.id]; return x ? x.s : null; };
   const botonVer = (idp, e, txt = '▶') => { const t = segVideo(idp, e);
@@ -3398,7 +3427,7 @@
      Se pega el enlace de YouTube; la página va jugada por jugada (inicio de cada parte, goles, expulsiones,
      cambios de portero), lleva el vídeo a unos segundos antes del momento estimado y basta con pulsar «¡Ahora!». Cada marca
      afina la estimación de la siguiente. Al final da un código que se añade a data/videos.json (scripts/reporte/videos.json). */
-  const SY = { idp: null, S: null, items: [], i: 0, yt: '', canal: '', player: null };
+  const SY = { idp: null, S: null, items: [], i: 0, yt: '', canal: '', player: null, modo: 'jugadas', tiros: [], t: -1, msg: '' };
   const RITMO_VIDEO = 1.45;   // minutos de vídeo por minuto de juego (senior, medido en octubre de 2026)
   const ytId = u => { const m = /(?:youtu\.be\/|[?&]v=|\/live\/|\/shorts\/|\/embed\/)([\w-]{11})/.exec(u || '') || /^\s*([\w-]{11})\s*$/.exec(u || ''); return m ? m[1] : null; };
   const mmssV = t => { t = Math.max(0, Math.round(t)); const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, x = t % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
@@ -3434,14 +3463,16 @@
     return ult.s + Math.max(0, dur - ult.g) * RITMO_VIDEO + 300 + it.g * RITMO_VIDEO;
   }
   const guardaSync = () => { try { localStorage.setItem('mp-sync-' + SY.idp, JSON.stringify({ yt: SY.yt, canal: SY.canal, m: Object.fromEntries(SY.items.filter(x => x.s != null).map(x => [x.id, x.s])),
-    d: Object.fromEntries(SY.items.filter(x => x.xy || x.pista).map(x => [x.id, { xy: x.xy || null, pista: x.pista || null }])) })); } catch (e) { /* sin almacenamiento: no pasa nada */ } };
+    d: Object.fromEntries(SY.items.filter(x => x.xy || x.pista).map(x => [x.id, { xy: x.xy || null, pista: x.pista || null }])), tiros: SY.tiros })); } catch (e) { /* sin almacenamiento: no pasa nada */ } };
+  const datosSync = (partes, ev) => Object.assign({ yt: SY.yt, canal: SY.canal || null, partes, ev },
+    SY.tiros.length ? { tiros: SY.tiros.filter(t => t.lado && t.r).map(t => ({ s: Math.round(t.s), lado: t.lado, dorsal: t.dorsal || null, xy: t.xy ? t.xy.map(v => Math.round(v * 1000) / 1000) : null, r: t.r })) } : {});
   function codigoSync() {
     const ev = {}, partes = {};
     SY.items.forEach(x => { if (x.s == null) return; if (x.ancla) partes[x.p] = Math.round(x.s);
       else if (x.pen) ev[x.id] = { s: Math.round(x.s), tipo: 'PENALTI', p: 3, t: null, lado: x.pen.lado, q: x.q, m: x.pen.gol ? 'gol' : 'fallo', ronda: x.pen.ronda };
       else ev[x.id] = Object.assign({ s: Math.round(x.s), tipo: x.tipo, p: x.p, t: x.e.t, lado: x.e.lado, q: x.q, m: x.e.marcador || null },
         x.xy ? { xy: x.xy.map(v => Math.round(v * 1000) / 1000) } : {}, x.pista && (x.pista.L.length || x.pista.V.length) ? { pista: x.pista } : {}); });
-    return JSON.stringify({ [SY.idp]: { yt: SY.yt, canal: SY.canal || null, partes, ev } });
+    return JSON.stringify({ [SY.idp]: datosSync(partes, ev) });
   }
   function pintarSync() {
     const lista = $('#sy-lista'), act = $('#sy-actual'), cod = $('#sy-codigo');
@@ -3452,8 +3483,10 @@
     lista.innerHTML = SY.items.map((x, k) => `<button type="button" class="sy-it${k === SY.i ? ' on' : ''}${x.s != null ? ' ok' : ''}${x.ancla ? ' ancla' : ''}" data-sy="ir" data-k="${k}"><span class="s">${x.s != null ? mmssV(x.s) : '—'}</span><span>${esc(x.txt)}</span></button>`).join('');
     const hechas = SY.items.filter(x => x.s != null && !x.ancla).length;
     pintarGolSync();
+    pintarTirosSync();
     cod.value = hechas ? codigoSync() : '';
-    $('#sy-n').textContent = hechas + ' de ' + SY.items.filter(x => !x.ancla).length + ' jugadas marcadas';
+    $('#sy-n').textContent = hechas + ' de ' + SY.items.filter(x => !x.ancla).length + ' jugadas marcadas' + (SY.tiros.length ? ' · ' + SY.tiros.length + ' tiros' : '');
+    const m = $('#sy-msg'); if (m) m.textContent = SY.msg;
   }
   // dibujo de media pista (la zona de ataque, con la portería arriba) y los jugadores de cada equipo nuestro
   const PISTA_W = 300, PISTA_H = 270;
@@ -3469,7 +3502,7 @@
   function pintarGolSync() {
     const box = $('#sy-gol'); if (!box) return;
     const it = SY.items[SY.i];
-    if (!it || it.tipo !== 'GOL') { box.innerHTML = ''; return; }
+    if (SY.modo === 'tiros' || !it || it.tipo !== 'GOL') { box.innerHTML = ''; return; }
     const ctx = ctxDirecto(SY.S), lados = ['L', 'V'].filter(l => ctx.mp[l]);
     const punto = it.xy ? `<circle cx="${it.xy[0] * PISTA_W}" cy="${it.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>` : '';
     const chips = l => ((SY.S.plantillas || {})[l] || []).slice().sort((a, b) => (+a.dorsal) - (+b.dorsal)).map(j => { const on = it.pista && it.pista[l].includes(String(j.dorsal));
@@ -3481,7 +3514,47 @@
         ${lados.map(l => `<div class="an-sub">${esc(ctx.abr[l])} · ${it.pista ? it.pista[l].length : 0} marcados</div><div class="an-togs">${chips(l)}</div>`).join('')}</div></div>
       <div class="an-nota">Cuando acabes con este gol, pulsa «Saltar ▶» para ir a la siguiente jugada.</div>`;
   }
-  document.addEventListener('click', e => { const sv = e.target.closest && e.target.closest('[data-sy-pista]'); if (!sv) return; const it = SY.items[SY.i]; if (!it || it.tipo !== 'GOL') return;
+  // modo tiros: cada tiro con quién tira, desde dónde y cómo acaba (los goles ya están en las jugadas del acta, con su sitio)
+  const RES_TIRO = [['parada', 'Parada'], ['fuera', 'Fuera'], ['bloqueado', 'Bloqueado']];
+  function cuentaTiros(l) {
+    const ts = SY.tiros.filter(t => t.lado === l && t.r), goles = SY.items.filter(x => x.tipo === 'GOL' && x.e && x.e.lado === l).length, par = ts.filter(t => t.r === 'parada').length;
+    return { tiros: ts.length + goles, puerta: par + goles, goles };
+  }
+  function pintarTirosSync() {
+    const box = $('#sy-tiros'); if (!box) return;
+    if (SY.modo !== 'tiros') { box.innerHTML = ''; return; }
+    const ctx = ctxDirecto(SY.S), t = SY.tiros[SY.t];
+    const jug = l => ((SY.S.plantillas || {})[l] || []).slice().sort((a, b) => (+a.dorsal) - (+b.dorsal));
+    const acta = l => { const ps = (SY.S.porteros || []).filter(x => x.lado !== l); return ps.length ? ps.reduce((n, x) => n + (x.tiros || 0), 0) : null; };
+    const resumen = ['L', 'V'].map(l => { const c = cuentaTiros(l), a = acta(l);
+      return `<div class="an-fila"><span><b style="font-size:16px">${esc(ctx.abr[l])}</b> · ${c.tiros} tiros · ${c.puerta} a puerta · ${c.goles} goles</span><span class="h" style="color:#A6A6AD">${a != null ? 'el acta da ' + a + ' a puerta' : ''}</span></div>`; }).join('');
+    const editor = t ? `<div class="sy-gol-cols" style="margin-top:10px"><div><div class="lab">DESDE DÓNDE</div>
+        ${mediaPista(t.xy ? `<circle cx="${t.xy[0] * PISTA_W}" cy="${t.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>` : '', 'class="sy-pista" data-sy-pista width="100%" role="img" aria-label="Media pista: toca desde dónde se tiró"')}
+        ${t.xy ? `<div class="an-frase" style="margin:6px 0">A unos ${distM(t.xy)} m de la portería</div>` : '<div class="an-nota">Toca en el dibujo, mirando a la portería a la que tiró.</div>'}</div>
+      <div><div class="lab">TIRO EN ${mmssV(t.s)} DEL VÍDEO</div>
+        <div class="an-sub">EQUIPO (tecla 1 o 2)</div><div class="an-togs">${['L', 'V'].map((l, i) => anTog(t.lado === l, `data-sy="t-lado" data-l="${l}"`, `${i + 1} · ${esc(ctx.abr[l])}`)).join('')}</div>
+        ${t.lado ? `<div class="an-sub">QUIÉN TIRA</div><div class="an-togs">${jug(t.lado).map(j => anTog(String(t.dorsal) === String(j.dorsal), `data-sy="t-dorsal" data-d="${esc(j.dorsal)}"`, `#${esc(j.dorsal)} ${esc(j.jugador_corto || '')}`)).join('')}${anTog(!t.dorsal, 'data-sy="t-dorsal" data-d=""', 'No se ve')}</div>` : ''}
+        <div class="an-sub">CÓMO ACABA (P, F o B)</div><div class="an-togs">${RES_TIRO.map(([k, x]) => anTog(t.r === k, `data-sy="t-r" data-r="${k}"`, x)).join('')}</div>
+        <div class="an-togs" style="margin-top:8px"><button type="button" class="an-tog" data-sy="t-borra">Borrar este tiro</button></div></div></div>` : '';
+    const lista = SY.tiros.map((x, i) => [x, i]).sort((a, b) => a[0].s - b[0].s).map(([x, i]) => `<button type="button" class="sy-it${i === SY.t ? ' on' : ''}${x.lado && x.r ? ' ok' : ''}" data-sy="t-ir" data-k="${i}"><span class="s">${mmssV(x.s)}</span><span>${esc(x.lado ? ctx.abr[x.lado] : '¿equipo?')}${x.dorsal ? ' · #' + esc(x.dorsal) : ''} · ${esc((RES_TIRO.find(r => r[0] === x.r) || [, '¿cómo acaba?'])[1])}${x.xy ? ' · ' + distM(x.xy) + ' m' : ''}</span></button>`).join('');
+    box.innerHTML = `<div class="lab">MODO TIROS</div><div class="an-nota" style="margin-top:2px">Pulsa «+ Tiro» (o la tecla T) en cada tiro, aunque vaya fuera. Luego elige el equipo, quién tira, desde dónde y cómo acaba. Los goles no se marcan aquí: ya están en las jugadas del acta.</div>
+      <div class="an-togs" style="margin-top:8px"><button type="button" class="dv-alin" data-sy="t-nuevo" style="font-size:15px;padding:10px 16px">+ Tiro</button></div>
+      ${resumen}${editor}${lista ? `<div class="an-sub" style="margin-top:12px">TIROS MARCADOS · ${SY.tiros.length}</div><div class="sy-lista" style="max-height:260px">${lista}</div>` : ''}`;
+  }
+  document.addEventListener('keydown', e => {
+    if (SY.modo !== 'tiros' || !location.hash.startsWith('#/sincronizar/') || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
+    const k = e.key.toLowerCase(), t = SY.tiros[SY.t];
+    const clic = sel => { const b = document.querySelector(sel); if (b) { e.preventDefault(); b.click(); } };
+    if (k === 't') clic('[data-sy="t-nuevo"]');
+    else if (t && (k === '1' || k === '2')) clic(`[data-sy="t-lado"][data-l="${k === '1' ? 'L' : 'V'}"]`);
+    else if (t && k === 'p') clic('[data-sy="t-r"][data-r="parada"]');
+    else if (t && k === 'f') clic('[data-sy="t-r"][data-r="fuera"]');
+    else if (t && k === 'b') clic('[data-sy="t-r"][data-r="bloqueado"]');
+  });
+  document.addEventListener('click', e => { const sv = e.target.closest && e.target.closest('[data-sy-pista]'); if (!sv) return;
+    if (SY.modo === 'tiros') { const t = SY.tiros[SY.t]; if (!t) return; const r = sv.getBoundingClientRect();
+      t.xy = [Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), Math.max(0, Math.min(1, (e.clientY - r.top) / r.height))]; guardaSync(); pintarSync(); return; }
+    const it = SY.items[SY.i]; if (!it || it.tipo !== 'GOL') return;
     const r = sv.getBoundingClientRect(); it.xy = [Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), Math.max(0, Math.min(1, (e.clientY - r.top) / r.height))]; guardaSync(); pintarSync(); });
   function irSync(k, buscar = true) {
     SY.i = Math.max(0, Math.min(SY.items.length, k));
@@ -3496,6 +3569,7 @@
     let previo = null;
     try { previo = JSON.parse(localStorage.getItem('mp-sync-' + idp) || 'null'); } catch (e) { previo = null; }
     const v = (VID && VID[idp]) || null;
+    SY.tiros = (previo && previo.tiros) || (v && v.tiros ? v.tiros.map(t => Object.assign({}, t)) : []); SY.t = -1;
     if (previo) { SY.yt = previo.yt; SY.canal = previo.canal || ''; SY.items.forEach(x => { if (previo.m[x.id] != null) x.s = previo.m[x.id]; const d = (previo.d || {})[x.id]; if (d) { x.xy = d.xy; x.pista = d.pista; } }); }
     else if (v) { SY.yt = v.yt; SY.canal = v.canal || ''; SY.items.forEach(x => { const y = x.ancla ? (v.partes || {})[x.p] : (v.ev[x.id] || {}).s; if (y != null) x.s = y; const e2 = v.ev[x.id]; if (e2) { if (e2.xy) x.xy = e2.xy; if (e2.pista) x.pista = e2.pista; } }); }
     SY.i = Math.max(0, SY.items.findIndex(x => x.s == null));
@@ -3527,12 +3601,16 @@
     return `<div class="sy"><div class="lab" style="color:#FF6B63">SINCRONIZAR VÍDEO</div><h1>${esc(S.local)} <span>${S.gl ?? ''}–${S.gv ?? ''}</span> ${esc(S.visitante)}</h1>
       <p class="sy-ayuda">1. Pega el enlace de YouTube y pulsa «Cargar». 2. Para cada jugada el vídeo salta a unos segundos antes de cuando debería ser: dale al play y pulsa <b>¡Ahora!</b> justo cuando pasa (el gol entra, el árbitro pita la expulsión…). Si no se ve, «Saltar». En los goles, si se ve bien, toca en el dibujo desde dónde se tiró y marca quién de los nuestros estaba en pista (es opcional). 3. Al final copia el código y pásamelo.</p>
       <div class="sy-form"><input id="sy-url" type="url" placeholder="Enlace de YouTube (https://youtu.be/…)" aria-label="Enlace de YouTube"><input id="sy-canal" type="text" placeholder="Canal (opcional)" aria-label="Canal de YouTube"><button type="button" class="dv-alin" data-sy="cargar">Cargar</button></div>
+      <div class="an-togs" style="margin-top:14px">${anTog(SY.modo === 'jugadas', 'data-sy="modo" data-m="jugadas"', 'Jugadas del acta')}${anTog(SY.modo === 'tiros', 'data-sy="modo" data-m="tiros"', 'Modo tiros')}</div>
       <div class="sy-cols"><div><div class="sy-marco"><div id="sy-player"></div></div>
         <div class="sy-actual" id="sy-actual"></div>
-        <div class="sy-gol" id="sy-gol"></div>
+        <div class="sy-gol" id="sy-gol"></div><div class="sy-gol" id="sy-tiros"></div>
         <div class="sy-botones"><button type="button" data-sy="atras">◀ Atrás</button><button type="button" data-sy="estima">Ir a la estimación</button><button type="button" class="ahora" data-sy="ahora">¡Ahora!</button><button type="button" data-sy="menos">−2 s</button><button type="button" data-sy="mas">+2 s</button><button type="button" data-sy="saltar">Saltar ▶</button></div></div>
         <div class="sy-lado"><div class="sy-n" id="sy-n"></div><div class="sy-lista" id="sy-lista"></div></div></div>
-      <div class="sy-cod"><div class="lab">CÓDIGO PARA LA WEB</div><textarea id="sy-codigo" readonly rows="4" aria-label="Código para la web"></textarea><button type="button" class="dv-alin" data-sy="copiar">Copiar el código</button></div></div>`;
+      <div class="sy-cod"><div class="lab">GUARDAR EN LA WEB</div>
+        <div class="bq-pin"><label for="sy-pin">PIN del club</label><input id="sy-pin" type="password" inputmode="numeric" autocomplete="off" value="${esc(leeLS('mp-pin', ''))}"><button type="button" class="dv-alin" data-sy="guardar-web">Guardar en la web</button><span class="an-nota" id="sy-msg" style="margin:0">${esc(SY.msg)}</span></div>
+        <div class="an-nota">Se publica solo: al guardar, el partido ya sale con su vídeo, sus goles y sus tiros. Si no hay conexión, copia el código y pásalo.</div>
+        <textarea id="sy-codigo" readonly rows="3" aria-label="Código para la web" style="margin-top:8px"></textarea><button type="button" class="an-tog" data-sy="copiar">Copiar el código</button></div></div>`;
   }
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-sy]');
@@ -3543,6 +3621,19 @@
     else if (a === 'pj' && it) { const l = b.dataset.l, d = b.dataset.d; it.pista = it.pista || { L: [], V: [] }; const xs = it.pista[l]; const i2 = xs.indexOf(d); if (i2 >= 0) xs.splice(i2, 1); else xs.push(d); guardaSync(); pintarSync(); }
     else if (a === 'pj-igual' && it) { const ant = SY.items.slice(0, SY.i).reverse().find(x => x.pista); if (ant) { it.pista = { L: ant.pista.L.slice(), V: ant.pista.V.slice() }; guardaSync(); pintarSync(); } }
     else if (a === 'xy-borra' && it) { it.xy = null; guardaSync(); pintarSync(); }
+    else if (a === 'modo') { SY.modo = b.dataset.m; document.querySelectorAll('[data-sy="modo"]').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); pintarSync(); }
+    else if (a === 't-nuevo') { const t = now(); if (t == null) { SY.msg = 'Carga el vídeo primero'; pintarSync(); return; } SY.tiros.push({ s: t, lado: SY.tiros.length ? SY.tiros[SY.tiros.length - 1].lado : null, dorsal: null, xy: null, r: null }); SY.t = SY.tiros.length - 1; guardaSync(); pintarSync(); }
+    else if (a === 't-ir') { SY.t = +b.dataset.k; const t = SY.tiros[SY.t]; if (t && SY.player && SY.player.seekTo) { SY.player.seekTo(Math.max(0, t.s - 3), true); } pintarSync(); }
+    else if (a === 't-lado' && SY.tiros[SY.t]) { const t = SY.tiros[SY.t]; if (t.lado !== b.dataset.l) t.dorsal = null; t.lado = b.dataset.l; guardaSync(); pintarSync(); }
+    else if (a === 't-dorsal' && SY.tiros[SY.t]) { SY.tiros[SY.t].dorsal = b.dataset.d || null; guardaSync(); pintarSync(); }
+    else if (a === 't-r' && SY.tiros[SY.t]) { SY.tiros[SY.t].r = b.dataset.r; guardaSync(); pintarSync(); }
+    else if (a === 't-borra' && SY.tiros[SY.t]) { SY.tiros.splice(SY.t, 1); SY.t = -1; guardaSync(); pintarSync(); }
+    else if (a === 'guardar-web') {
+      const pin = ($('#sy-pin') || {}).value || ''; ponLS('mp-pin', pin);
+      const d = JSON.parse(codigoSync())[SY.idp];
+      SY.msg = 'Guardando…'; pintarSync();
+      apiPost('video', { idp: SY.idp, pin, datos: d }).then(r => { SY.msg = r && r._st === 200 ? 'Guardado: ya sale en la web' : (r && r.error) || 'Sin conexión: copia el código y pásalo'; if (r && r._st === 200 && VID) VID[SY.idp] = r.datos; pintarSync(); });
+    }
     else if (a === 'menos' && it && it.s != null) { it.s = Math.max(0, it.s - 2); guardaSync(); irSync(SY.i); }
     else if (a === 'mas' && it && it.s != null) { it.s += 2; guardaSync(); irSync(SY.i); }
     else if (a === 'saltar') irSync(SY.i + 1);
@@ -4247,7 +4338,7 @@
     cargarReac(idp, true);
     setTimeout(() => pintarVotoDirecto(idp, modo === 'resumen' || sn.estado === 'final'), 0);
     const arriba = verRes + alinBtn(sn) + pistaChip(sn) + `<button type="button" class="dv-alin" data-wa="${esc(idp)}" title="Manda el marcador y el enlace del directo por WhatsApp">WhatsApp</button>`
-      + (ctx.mp.L || ctx.mp.V ? `<a class="dv-alin" href="#/banquillo/${encodeURIComponent(idp)}" title="Para el delegado: quién está en pista en cada gol">Banquillo</a>` : '');
+      + (ctx.mp.L || ctx.mp.V ? `<a class="dv-alin" href="${TELEGRAM}" target="_blank" rel="noopener" title="Avisos de cada gol en el móvil">Avisos en Telegram</a><a class="dv-alin" href="#/banquillo/${encodeURIComponent(idp)}" title="Para el delegado: quién está en pista en cada gol">Banquillo</a>` : '');
     return `${arriba ? `<div class="dv-arriba">${arriba}</div>` : ''}${resumenHtml}<div class="dv">
       <div class="dv-izq">
         <div class="dv-caja" data-dv="caja">
@@ -4621,7 +4712,7 @@
     barra.hidden = false;
   }
   document.addEventListener('mp-directo', barraDirecto);
-  document.addEventListener('mp-directo', () => { if (introEl) introDirecto(); else if (!introAbierta && !introVistaCarga && Date.now() - T_CARGA < 5000) abrirIntro(); });
+  document.addEventListener('mp-directo', () => { if (introEl) introDirecto(); else if (!introAbierta && !introVistaCarga && Date.now() - T_CARGA < 5000) abrirIntro(true); });
 
   // el reloj de la parte avanza cada segundo entre respuestas (si el portal lo da)
   setInterval(() => {
@@ -4675,7 +4766,7 @@
     let introVista = false;
     try { introVista = sessionStorage.getItem(INTRO) === '1'; } catch (e) { /* sin almacenamiento */ }
     introVistaCarga = introVista || !esInicio(HASH_INICIAL);
-    if (!introVistaCarga) abrirIntro();
+    if (!introVistaCarga) abrirIntro(true);
     render();
     arrancarDirecto();
     cargarSemana();
