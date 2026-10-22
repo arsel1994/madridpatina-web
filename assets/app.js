@@ -336,6 +336,7 @@
         ${[porCard, figCard, asisCard, sancCard].some(Boolean) ? `<div class="cuatro">${porCard}${figCard}${asisCard}${sancCard}</div>` : ''}
         <div class="card" style="padding:20px 22px">${lab('PRÓXIMOS PARTIDOS')}<div data-grupo style="display:flex;flex-direction:column;margin-top:8px">${proxHtml}</div></div>
       </div>
+      ${wi === 0 ? '<div data-agenda></div>' : ''}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:12px">${tablas}</div>`;
   }
 
@@ -433,6 +434,7 @@
       </div>
       ${lab('CALENDARIO · ' + e.cal.length + ' JORNADAS', 'margin:28px 0 10px')}
       <div class="cal-grid" data-grupo style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px">${e.cal.map((c, i) => calTile(c, e.cal, i)).join('')}</div>
+      <div data-agenda-eq="${esc(e.id)}"></div>
       ${(() => { const jug = e.cal.filter(c => c.mid && A.partidos[c.mid]).reverse();
         return jug.length ? `${lab('PARTIDOS JUGADOS · ' + A.temporada + ' · ' + jug.length, 'margin:28px 0 10px')}
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:12px;align-items:start">${jug.map(c => { const pen = A.partidos[c.mid].pen;   // empate decidido en los penaltis
@@ -442,6 +444,7 @@
               <div style="flex:1;min-width:0"><div style="font-size:13px;color:#A6A6AD;font-weight:600">J${c.j} · ${c.casa ? 'En casa' : 'Fuera'} · ${fd(c.fecha)}</div><div style="font-weight:700;font-size:15px">${esc(c.rival)}</div></div>
               <div style="text-align:right"><div style="${BS}font-weight:800;font-size:32px;line-height:1">${esc((c.resultado || '').replace('-', '–'))}</div><div style="font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:3px;background:${r[1]};color:#fff;margin-top:4px;display:inline-block">${r[0]}</div></div>`)}
             ${actaMini(A.partidos[c.mid], e.nombre)}</div>`; }).join('')}</div>` : ''; })()}
+      <div data-analisis="${esc(e.id)}"></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;margin-top:28px">
         <div>${lab('JUGADORES CLAVE · ' + tClave, 'margin-bottom:10px')}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">${clave}</div>
           <a href="${hLg(e.ligaId, 'mapa')}" style="display:inline-block;margin-top:12px;font-size:14px;font-weight:700">Ver a nuestros jugadores en el mapa de la liga →</a>
@@ -462,12 +465,13 @@
     S.lg = L.id;
     const jsel = jn && jn >= 1 && jn <= L.total ? jn : L.ultima;
     const J0 = L.jornadas.find(j => j.n === jsel) || { partidos: [] };
-    const hasPre = !!L.pre, lt = sub === 'mapa' || sub === 'todas' ? 'mapa' : 'tabla';
+    const hasPre = !!L.pre, lt = sub === 'mapa' || sub === 'todas' ? 'mapa' : sub === 'evolucion' ? 'evolucion' : 'tabla';
     const tabs = A.ligas.map(l => `<a class="blk" href="${hLg(l.id)}"${l.id === L.id ? ' aria-current="page"' : ''} style="padding:10px 18px;border-radius:8px;background:${l.id === L.id ? RED : '#18181B'};color:${l.id === L.id ? '#FFFFFF' : '#C9C9CE'};font-weight:700;font-size:15px;white-space:nowrap">${esc(l.nombre)}</a>`).join('');
-    const subs = [['tabla', 'Clasificación y jornadas', hLg(L.id)], ['mapa', 'Mapa de jugadores', hLg(L.id, 'mapa')]].concat(hasPre ? [['llega', 'Pretemporada', hPre(L.id)]] : [])
+    const subs = [['tabla', 'Clasificación y jornadas', hLg(L.id)], ['evolucion', 'Evolución', hLg(L.id, 'evolucion')], ['mapa', 'Mapa de jugadores', hLg(L.id, 'mapa')]].concat(hasPre ? [['llega', 'Pretemporada', hPre(L.id)]] : [])
       .map(([k, l, h]) => `<a class="blk" href="${h}" style="padding:12px 16px;font-weight:700;font-size:15px;white-space:nowrap;color:${lt === k ? '#F4F4F5' : '#A6A6AD'};border-bottom:3px solid ${lt === k ? RED : 'transparent'};margin-bottom:-1px">${l}</a>`).join('');
     let body;
     if (lt === 'mapa') body = vMapa(L, sub === 'todas');
+    else if (lt === 'evolucion') body = vEvolucion(L);
     else if (lt === 'tabla') {
       const antes = antesDe(L.id, 0);
       const rows = tableRows(L.clasif).map(r => { const d = antes[r.equipo] ? antes[r.equipo] - r.puesto : 0; return `<div class="cl-fila"${swapA(d)} style="${swapS(d, r, 0)}display:grid;grid-template-columns:26px 26px minmax(0,1fr) 30px 30px 30px 30px 44px 44px;gap:8px;align-items:center;padding:8px;border-radius:6px;background:${r.bg};font-size:15px">
@@ -914,6 +918,7 @@
         </div>
         ${p.idp ? videoPartido(p.idp) : ''}
         ${p.nuestro && p.idp && !(VID && VID[p.idp]) ? `<div style="display:flex;justify-content:center;margin-top:22px"><a class="dv-alin" href="#/directo/${encodeURIComponent(p.idp)}/resumen" title="El partido contado otra vez desde el acta: pista, alineaciones, goles, faltas, penaltis y resumen final">▶ Ver resumen</a></div>` : ''}
+        ${p.gl != null && (p.ev || []).length ? `<div data-grafico-partido="${esc(p.mid)}"></div>` : ''}
         ${hasTiros ? `<div style="max-width:640px;margin:28px auto 0">
           <div style="display:flex;justify-content:space-between;${BS}font-weight:800;font-size:28px;line-height:1"><span>${p.tl}</span><span class="lab" style="align-self:center">TIROS A PUERTA</span><span>${p.tv}</span></div>
           <div style="display:flex;gap:3px;height:10px;margin-top:8px" data-grupo data-espera="1300"><div data-anim="mpWipe .6s" style="flex:${p.tl};background:${ours(p.local) ? RED : '#6B6B70'};border-radius:3px;transform-origin:right"></div><div data-anim="mpWipe .6s" style="flex:${p.tv};background:${ours(p.visitante) ? RED : '#6B6B70'};border-radius:3px;transform-origin:left"></div></div>
@@ -1168,6 +1173,412 @@
     if (MAPA) pon(); else cargarMapa().then(pon);
   }
 
+
+  /* ── Análisis (data/analisis.json, de scripts/reporte/analisis.py) y agenda (data/agenda.json y cal/*.ics, de agenda.py) ──
+     Se piden al abrir la página que los usa. Todo sale de las actas y del calendario de la FMP. */
+  let ANA = null, anaP = null, AGE = null, ageP = null;
+  const verDatos = () => encodeURIComponent(A.actualizado || '');
+  const cargarAnalisis = () => anaP || (anaP = fetch('data/analisis.json?v=' + verDatos()).then(r => r.json()).then(d => (ANA = d)).catch(() => { anaP = null; return null; }));
+  const cargarAgenda = () => ageP || (ageP = fetch('data/agenda.json?v=' + verDatos()).then(r => r.json()).then(d => (AGE = d)).catch(() => { ageP = null; return null; }));
+  const pct = (v, d = 0) => dec((v * 100).toFixed(d)) + ' %';
+  const anTog = (on, attrs, txt) => `<button type="button" class="an-tog"${on ? ' aria-pressed="true"' : ' aria-pressed="false"'} ${attrs}>${txt}</button>`;
+  const anK = (k, v, sub, ink) => `<div class="an-k"><div class="k">${k}</div><div class="v"${ink ? ` style="color:${ink}"` : ''}>${v}</div>${sub ? `<div class="s">${sub}</div>` : ''}</div>`;
+  const mpAbr = n => { const e = A.equipos.find(x => x.nombre === n); return e && !e.cantera ? 'MP ' + e.id : abr(n); };
+
+  // ── probabilidad según marcador y minuto: [gana el local, penaltis, gana el visitante] ──
+  function prob(cantera, d, queda) {
+    const T = ANA && ANA.prob && ANA.prob[cantera ? 'cantera' : 'senior']; if (!T) return null;
+    const q = Math.max(0, Math.min(T.min, queda)), q0 = Math.floor(q), q1 = Math.min(T.min, q0 + 1), f = q - q0;
+    const fila = T.tabla[Math.min(4, Math.abs(d))], c = fila[q0].map((v, i) => v + (fila[q1][i] - v) * f);
+    if (!d) return [c[0], c[1], Math.max(0, 1 - c[0] - c[1])];
+    const resto = Math.max(0, 1 - c[0] - c[1]);
+    return d > 0 ? [c[0], c[1], resto] : [resto, c[1], c[0]];
+  }
+  // colores de cada lado en los gráficos: rojo el nuestro; el otro, gris
+  const coloresLados = (l, v) => ours(l) && ours(v) ? [RED, '#C9C9CE'] : ours(l) ? [RED, '#8A8A92'] : ours(v) ? ['#8A8A92', RED] : ['#C9C9CE', '#6B6B70'];
+  const tinta = c => (c === RED ? '#FFFFFF' : '#0D0D0E');
+  const anchoGrafico = (max = 900) => Math.round(Math.min(max, Math.max(300, (innerWidth || 1000) - (innerWidth < 720 ? 72 : 140))));
+
+  /* Gráfico del partido: con el marcador de cada momento, cuántas veces gana cada equipo (y cuántas se va a los penaltis)
+     en los partidos de la FMP desde 2016/17. Los goles, marcados arriba (local) y abajo (visitante). */
+  const PG = {};
+  function graficoPartido(p) {
+    const cantera = /^(alevin|infantil)/.test(p.liga || ''), dur = cantera ? 1200 : 1500, T = 2 * dur;
+    const goles = (p.ev || []).filter(e => e.tipo === 'gol' && /^P[12]$/.test(e.periodo)).map(e => {
+      const q = segs(e.minuto); return q == null || q > dur ? null : { t: (+e.periodo[1] - 1) * dur + dur - q, lado: e.lado === 'local' ? 'L' : 'V', e }; });
+    if (!ANA || goles.some(x => !x) || goles.length !== (p.gl || 0) + (p.gv || 0)) return '';
+    goles.sort((a, b) => a.t - b.t);
+    const tiempos = new Set(); for (let t = 0; t <= T; t += 15) tiempos.add(t);
+    goles.forEach(g => { tiempos.add(Math.max(0, g.t - 0.01)); tiempos.add(g.t); });
+    const ts = [...tiempos].sort((a, b) => a - b);
+    const dif = t => goles.reduce((n, g) => n + (g.t <= t ? (g.lado === 'L' ? 1 : -1) : 0), 0);
+    const pts = ts.map(t => ({ t, d: dif(t), p: prob(cantera, dif(t), (T - t) / 60) }));
+    if (pts.some(x => !x.p)) return '';
+    const W = anchoGrafico(860), H = W < 560 ? 190 : 220, Lm = 6, Rm = 6, Tm = 16, Bm = 26, w = W - Lm - Rm, h = H - Tm - Bm;
+    const sx = t => Lm + t / T * w, sy = v => Tm + v * h;
+    const [cL, cV] = coloresLados(p.local, p.visitante), cE = '#45454C';
+    const banda = (a, b) => { const up = pts.map(x => `${sx(x.t).toFixed(1)},${sy(a(x)).toFixed(1)}`), dn = pts.slice().reverse().map(x => `${sx(x.t).toFixed(1)},${sy(b(x)).toFixed(1)}`); return up.concat(dn).join(' '); };
+    const polyL = banda(() => 0, x => x.p[0]), polyE = banda(x => x.p[0], x => x.p[0] + x.p[1]), polyV = banda(x => x.p[0] + x.p[1], () => 1);
+    const ticks = []; for (let m = 0; m <= T / 60; m += 10) ticks.push(`<text x="${sx(m * 60)}" y="${H - 8}" text-anchor="${m === 0 ? 'start' : m === T / 60 ? 'end' : 'middle'}">${m}'</text>`);
+    const id = 'pg' + (p.idp || p.mid);
+    PG[id] = goles.map(g => { const i = pts.findIndex(x => x.t === g.t), pp = pts[i].p, quien = g.e.jugador ? quienTxt(g.e.jugador) : '';
+      const eq = g.lado === 'L' ? p.local : p.visitante, k = g.lado === 'L' ? 0 : 2;
+      return `<b style="color:#F4F4F5">Minuto ${Math.floor(g.t / 60) + 1}</b> · Gol de ${esc(mpAbr(eq))}${quien ? ' (' + quien + ')' : ''} · ${esc((g.e.marcador || '').replace('-', '–'))}<br>Con ese marcador, ${esc(mpAbr(eq))} acaba ganando el ${pct(pp[k])} de las veces${pp[1] > 0.04 ? ` · a los penaltis, el ${pct(pp[1])}` : ''}.`; });
+    const marcas = goles.map((g, i) => { const x = sx(g.t), y = g.lado === 'L' ? Tm - 8 : Tm + h + 8;
+      return `<g class="pg-g" data-pg="${id}" data-i="${i}" tabindex="0"><rect x="${x - 9}" y="${y - 9}" width="18" height="18" fill="transparent"/><circle cx="${x}" cy="${y}" r="5" fill="${g.lado === 'L' ? cL : cV}" stroke="#0D0D0E" stroke-width="1.5"/></g>`; }).join('');
+    // la frase: si el ganador estuvo muy lejos, o si el que perdió llegó a tenerlo
+    const gana = p.gl > p.gv ? 0 : p.gl < p.gv ? 2 : null, nom = k => { const n = k === 0 ? p.local : p.visitante; return esc(ours(n) ? mpAbr(n) : n); };
+    const antes = pts.filter(x => x.t < T - 30);
+    let frase = '';
+    if (gana != null && antes.length) {
+      const peor = antes.reduce((a, x) => (x.p[gana] < a.p[gana] ? x : a), antes[0]), pierde = 2 - gana, mejorP = antes.reduce((a, x) => (x.p[pierde] > a.p[pierde] ? x : a), antes[0]);
+      const marc = x => { const l = goles.filter(g => g.t <= x.t && g.lado === 'L').length, v = goles.filter(g => g.t <= x.t && g.lado === 'V').length; return l + '–' + v; };
+      if (peor.p[gana] < 0.3) frase = `${nom(gana)} llegó a tener solo un ${pct(peor.p[gana])} de opciones de ganar (minuto ${Math.floor(peor.t / 60) + 1}, con ${marc(peor)}) y acabó ganando.`;
+      else if (mejorP.p[pierde] > 0.55) frase = `${nom(pierde)} llegó a tener un ${pct(mejorP.p[pierde])} de opciones de ganar (minuto ${Math.floor(mejorP.t / 60) + 1}, con ${marc(mejorP)}), pero perdió.`;
+      else if (antes.filter(x => x.p[gana] > 0.6).length > antes.length * 0.6) frase = `${nom(gana)} fue favorito casi todo el partido.`;
+    } else if (gana == null && antes.length) frase = 'Acabó en empate y se decidió en los penaltis.';
+    const n = ANA.prob[cantera ? 'cantera' : 'senior'].partidos;
+    return `<div class="pg" style="max-width:${W}px;margin:28px auto 0">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="lab">CÓMO FUE EL PARTIDO</span>
+        <span style="display:flex;gap:12px;font-size:13px;color:#A6A6AD;flex-wrap:wrap"><span><span style="color:${cL}">■</span> gana ${esc(mpAbr(p.local))}</span><span><span style="color:${cE}">■</span> penaltis</span><span><span style="color:${cV}">■</span> gana ${esc(mpAbr(p.visitante))}</span></span></div>
+      ${frase ? `<div style="font-size:15px;color:#F4F4F5;margin-top:6px">${frase}</div>` : ''}
+      <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Opciones de ganar de cada equipo según el marcador de cada minuto" style="display:block;margin-top:8px;font-size:12px;fill:#8A8A8F;font-family:'IBM Plex Sans Condensed',sans-serif">
+        <polygon points="${polyL}" fill="${cL}"/><polygon points="${polyE}" fill="${cE}"/><polygon points="${polyV}" fill="${cV}"/>
+        <line x1="${sx(dur)}" x2="${sx(dur)}" y1="${Tm}" y2="${Tm + h}" stroke="#0D0D0E" stroke-width="2" stroke-dasharray="3 3"/>
+        <line x1="${Lm}" x2="${Lm + w}" y1="${sy(0.5)}" y2="${sy(0.5)}" stroke="#0D0D0E" stroke-opacity=".35"/>
+        <text x="${Lm + 6}" y="${Tm + 15}" fill="${tinta(cL)}" font-weight="700">${esc(mpAbr(p.local))}</text>
+        <text x="${Lm + 6}" y="${Tm + h - 6}" fill="${tinta(cV)}" font-weight="700">${esc(mpAbr(p.visitante))}</text>
+        ${ticks.join('')}${marcas}</svg>
+      <div class="pg-info" data-info="${id}" aria-live="polite" style="min-height:40px;margin-top:6px;font-size:14px;color:#A6A6AD">Toca un gol (los puntos de arriba y de abajo) para ver cómo cambió el partido.</div>
+      <div style="font-size:12px;color:#6B6B70;margin-top:2px">La línea de puntos es el descanso. Con cada marcador y minuto, cuántas veces acaba ganando cada equipo en ${n.toLocaleString('es')} partidos ${cantera ? 'de Alevín e Infantil' : 'senior'} de la FMP desde 2016/17. No mira quién juega${COMO('probabilidad')}</div></div>`;
+  }
+  const infoPG = g => { const box = view.querySelector(`[data-info="${g.dataset.pg}"]`), t = (PG[g.dataset.pg] || [])[+g.dataset.i]; if (box && t) { view.querySelectorAll('.pg-g.sel').forEach(x => x.classList.remove('sel')); g.classList.add('sel'); box.innerHTML = t; } };
+  document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('.pg-g'); if (g) infoPG(g); });
+  document.addEventListener('pointerover', e => { const g = e.target.closest && e.target.closest('.pg-g'); if (g && e.pointerType === 'mouse') infoPG(g); });
+  document.addEventListener('focusin', e => { const g = e.target.closest && e.target.closest('.pg-g'); if (g) infoPG(g); });
+  function rellenarGraficoPartido() {
+    const el = view.querySelector('[data-grafico-partido]'); if (!el) return;
+    const pon = () => { const p = A.partidos[el.dataset.graficoPartido]; const h = p && ANA ? graficoPartido(p) : ''; if (h) el.innerHTML = h; else el.remove(); };
+    if (ANA) pon(); else cargarAnalisis().then(pon);
+  }
+  // en el directo: con el marcador y el minuto del último apunte del acta
+  function probDirecto(ctx) {
+    const sn = ctx.sn, dur = ctx.dur;
+    if (!ANA || !dur || !sn || sn.estado === 'previa' || sn.estado === 'final' || sn.fase === 'penaltis') return null;
+    const abs = e => (e.periodo - 1) * dur + (segs(e.t) || 0);
+    let t = Math.max(0, ...sn.eventos.filter(e => e.periodo && e.t != null).map(abs));
+    if (sn.estado === 'descanso') t = Math.max(t, dur);
+    const gl = sn.eventos.filter(e => e.tipo === 'GOL' && e.lado === 'L').length, gv = sn.eventos.filter(e => e.tipo === 'GOL' && e.lado === 'V').length;
+    const cantera = dur <= 1200;
+    const pr = prob(cantera, gl - gv, (2 * dur - t) / 60);
+    return pr ? { pr, queda: Math.max(0, Math.round((2 * dur - t) / 60)) } : null;
+  }
+
+  /* ── Equipo: cómo juega (cuándo marca y encaja, el marcador, tiros, disciplina, quién asiste a quién y el próximo rival) ── */
+  const ANA_SEL = {};   // temporada elegida en cada equipo
+  const tramoTxt = (i, nb) => { const m = i * 5; return `entre el minuto ${m} y el ${m + 5}` + (i === nb - 1 ? ' (los últimos 5)' : i === nb / 2 - 1 ? ' (antes del descanso)' : ''); };
+  function svgTramos(x, cantera, nos) {
+    const nb = x.tramos.f.length, mx = Math.max(1, ...x.tramos.f, ...x.tramos.c);
+    const W = Math.min(560, anchoGrafico(560)), H = 210, Lm = 4, Rm = 4, Tm = 18, Bm = 22, w = W - Lm - Rm, h = H - Tm - Bm, mid = Tm + h / 2, bw = w / nb;
+    const barras = x.tramos.f.map((f, i) => { const c = x.tramos.c[i], hf = f / mx * (h / 2 - 12), hc = c / mx * (h / 2 - 12), xx = Lm + i * bw + 3;
+      return `<g><title>${tramoTxt(i, nb)}: ${f} a favor, ${c} en contra</title>
+        ${f ? `<rect x="${xx}" y="${mid - hf}" width="${bw - 6}" height="${hf}" rx="3" fill="${nos ? RED : '#C9C9CE'}"/><text x="${xx + (bw - 6) / 2}" y="${mid - hf - 3}" text-anchor="middle" fill="#F4F4F5">${f}</text>` : ''}
+        ${c ? `<rect x="${xx}" y="${mid + 1}" width="${bw - 6}" height="${hc}" rx="3" fill="#6B6B70"/><text x="${xx + (bw - 6) / 2}" y="${mid + hc + 12}" text-anchor="middle" fill="#C9C9CE">${c}</text>` : ''}</g>`; }).join('');
+    const ticks = Array.from({ length: nb / 2 + 1 }, (_, j) => j * 2).map(i => `<text x="${Lm + i * bw}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === nb ? 'end' : 'middle'}">${i * 5}'</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Goles a favor y en contra en cada tramo de 5 minutos" style="display:block;max-width:${W}px;font-size:12px;fill:#8A8A8F;font-family:'IBM Plex Sans Condensed',sans-serif">
+      <line x1="${Lm}" x2="${Lm + w}" y1="${mid}" y2="${mid}" stroke="#55555B"/><line x1="${Lm + w / 2}" x2="${Lm + w / 2}" y1="${Tm - 6}" y2="${Tm + h}" stroke="#3A3A40" stroke-dasharray="3 3"/>
+      ${barras}${ticks}</svg>`;
+  }
+  function fraseTramos(x, nos) {
+    const nb = x.tramos.f.length, out = [];
+    const pico = (arr, tot) => { if (tot < 8) return null; const i = arr.indexOf(Math.max(...arr)); return arr[i] / tot >= 1.6 / nb && arr[i] >= 4 ? i : null; };
+    const ic = pico(x.tramos.c, x.gc), iF = pico(x.tramos.f, x.gf);
+    if (ic != null) out.push(`${nos ? 'Donde más nos marcan' : 'Donde más le marcan'}: ${tramoTxt(ic, nb)}, ${x.tramos.c[ic]} de ${x.gc} goles (el ${pct(x.tramos.c[ic] / x.gc)}).`);
+    if (iF != null) out.push(`${nos ? 'Donde más marcamos' : 'Donde más marca'}: ${tramoTxt(iF, nb)}, ${x.tramos.f[iF]} de ${x.gf} (el ${pct(x.tramos.f[iF] / x.gf)}).`);
+    return out.join(' ');
+  }
+  const ved = a => `${a[0]} V · ${a[1]} E · ${a[2]} D`;
+  const media = (xs, f) => { const v = xs.map(f).filter(z => z != null && isFinite(z)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  function svgRed(r, ancho) {
+    // los 12 que más goles hacen juntos; líneas más gruesas cuantos más goles entre los dos (en cualquier sentido)
+    const peso = {}, par = {};
+    r.pares.filter(([a]) => a).forEach(([a, b, n]) => { peso[a] = (peso[a] || 0) + n; peso[b] = (peso[b] || 0) + n; const k = [a, b].sort().join('|'); par[k] = (par[k] || 0) + n; });
+    const nodos = Object.keys(peso).sort((a, b) => peso[b] - peso[a]).slice(0, 12);
+    if (nodos.length < 3) return '';
+    const W = Math.min(ancho, 520), H = Math.round(W * 0.82), cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 64;
+    const pos = {}; nodos.forEach((k, i) => { const a = -Math.PI / 2 + i / nodos.length * 2 * Math.PI; pos[k] = [cx + R * Math.cos(a), cy + R * Math.sin(a), a]; });
+    const mx = Math.max(...Object.values(par));
+    const lineas = Object.entries(par).filter(([k]) => k.split('|').every(x => pos[x])).sort((a, b) => a[1] - b[1]).map(([k, n]) => { const [a, b] = k.split('|');
+      return `<line class="rd-l" data-a="${esc(a)}" data-b="${esc(b)}" x1="${pos[a][0].toFixed(1)}" y1="${pos[a][1].toFixed(1)}" x2="${pos[b][0].toFixed(1)}" y2="${pos[b][1].toFixed(1)}" stroke="${RED}" stroke-opacity="${(0.35 + 0.6 * n / mx).toFixed(2)}" stroke-width="${(1.5 + 7 * n / mx).toFixed(1)}" stroke-linecap="round"><title>${n} ${n === 1 ? 'gol' : 'goles'} entre los dos</title></line>`; }).join('');
+    const nm = k => { const x = r.nombres[k]; return x ? iniApe({ nombre: x[0], apellidos: x[1] }) : k; };
+    const puntos = nodos.map(k => { const [x, y, a] = pos[k], c = Math.cos(a), anchor = Math.abs(c) < 0.25 ? 'middle' : c > 0 ? 'start' : 'end', lx = x + Math.cos(a) * 12, ly = y + Math.sin(a) * 12 + (Math.abs(c) < 0.25 ? (Math.sin(a) > 0 ? 10 : -4) : 4);
+      return `<g class="rd-n" data-k="${esc(k)}" tabindex="0"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(5 + 5 * peso[k] / peso[nodos[0]]).toFixed(1)}" fill="#F4F4F5" stroke="#0D0D0E" stroke-width="2"/><text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" fill="#C9C9CE">${esc(nm(k))}</text></g>`; }).join('');
+    return `<svg class="rd" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Quién asiste a quién: las líneas unen a dos jugadores que han hecho goles juntos" style="display:block;max-width:${W}px;margin:0 auto;font-size:12px;font-family:'IBM Plex Sans Condensed',sans-serif">${lineas}${puntos}</svg>`;
+  }
+  document.addEventListener('click', e => { const n = e.target.closest && e.target.closest('.rd-n'); if (!n) return; const svg = n.closest('svg'), k = n.dataset.k, on = !n.classList.contains('sel');
+    svg.querySelectorAll('.rd-n').forEach(x => x.classList.toggle('sel', on && x === n)); svg.classList.toggle('foco', on);
+    svg.querySelectorAll('.rd-l').forEach(l => l.classList.toggle('on', on && (l.dataset.a === k || l.dataset.b === k))); });
+  function bloqueEquipo(e) {
+    const yo = ANA.equipos[e.id]; if (!yo || (!yo.temp && !yo.prev)) return '';
+    const pjT = (yo.temp || {}).pj || 0, pjP = (yo.prev || {}).pj || 0;
+    const sel = ANA_SEL[e.id] || (pjT >= 6 || !pjP ? 'temp' : 'prev'), x = yo[sel] || yo.temp || yo.prev, alc = yo[sel] ? sel : yo.temp ? 'temp' : 'prev';
+    const tPrev = '2025/26', nomT = alc === 'temp' ? 'esta temporada' : tPrev;
+    const liga = Object.values(ANA.equipos).filter(o => o.liga === e.ligaId && o[alc]);
+    const tog = pjP ? `<div class="an-togs">${anTog(alc === 'temp', `data-ana-eq="${e.id}" data-ana-t="temp"`, `Esta temporada · ${pjT} PJ`)}${anTog(alc === 'prev', `data-ana-eq="${e.id}" data-ana-t="prev"`, `${tPrev} · ${pjP} PJ`)}</div>` : '';
+    const poco = x.pj < 6 ? `<div class="an-nota">Con ${x.pj} ${x.pj === 1 ? 'partido' : 'partidos'} todavía dice poco${pjP && alc === 'temp' ? '; la temporada pasada da una idea más completa' : ''}.</div>` : '';
+    // 1 · cuándo
+    const cuando = `<div class="card an-c">${lab('CUÁNDO MARCAMOS Y CUÁNDO NOS MARCAN')}
+      <div class="an-ley"><span><span style="color:${RED}">■</span> a favor (${x.gf})</span><span><span style="color:#6B6B70">■</span> en contra (${x.gc})</span><span>por tramos de 5 minutos</span></div>
+      ${svgTramos(x, e.cantera, true)}<div class="an-frase">${fraseTramos(x, true) || 'Sin un tramo que destaque.'}</div>
+      ${x.conMin < x.pj ? `<div class="an-nota">${x.pj - x.conMin} ${x.pj - x.conMin === 1 ? 'partido no entra' : 'partidos no entran'}: al acta le faltan minutos de algún gol.</div>` : ''}</div>`;
+    // 2 · el marcador
+    const m = x.marcador, prim = m.primero[0] + m.primero[1] + m.primero[2], enc = m.encajaPrimero[0] + m.encajaPrimero[1] + m.encajaPrimero[2];
+    const marcador = `<div class="card an-c">${lab('VENTAJAS Y REMONTADAS')}<div class="an-ks">
+      ${anK('Íbamos ganando y no ganamos', m.ventajaPerdida, m.ventajaPerdida === 1 ? 'partido' : 'partidos', m.ventajaPerdida ? '#FF8A3D' : '')}
+      ${anK('Remontadas', m.remontadas, 'partidos ganados yendo por detrás', m.remontadas ? '#3DD27E' : '')}
+      ${prim ? anK('Cuando marcamos primero', ved(m.primero), `ganamos el ${pct(m.primero[0] / prim)}`) : ''}
+      ${enc ? anK('Cuando nos marcan primero', ved(m.encajaPrimero), `ganamos el ${pct(m.encajaPrimero[0] / enc)}`) : ''}
+      ${m.pen[0] + m.pen[1] ? anK('Tandas de penaltis', `${m.pen[0]}–${m.pen[1]}`, 'ganadas – perdidas') : ''}</div>
+      <div class="an-nota">En el tiempo de juego: un empate que se gana en los penaltis cuenta como «no ganamos».</div></div>`;
+    // 3 · tiros
+    const t = x.tiros, tl = liga.filter(o => o[alc].tiros.pj).map(o => o[alc].tiros);
+    const mT = media(tl, z => z.f / z.pj), mA = media(tl, z => z.gf / z.f), mP = media(tl, z => 1 - z.gc / z.c);
+    const comp = (v, mm, d = 1, suf = '') => mm == null ? '' : `media de la liga: ${dec(mm.toFixed(d))}${suf}`;
+    const tiros = t.pj ? `<div class="card an-c">${lab('TIROS A PUERTA')}<div class="an-ks">
+      ${anK('Tiramos por partido', dec((t.f / t.pj).toFixed(1)), comp(t.f / t.pj, mT))}
+      ${anK('Nos tiran por partido', dec((t.c / t.pj).toFixed(1)), '')}
+      ${anK('Acierto', pct(t.gf / t.f), mA != null ? `1 de cada ${Math.round(t.f / Math.max(1, t.gf))} · media de la liga ${pct(mA)}` : `1 de cada ${Math.round(t.f / Math.max(1, t.gf))}`)}
+      ${anK('Paradas de nuestra portería', pct(1 - t.gc / t.c), mP != null ? `media de la liga ${pct(mP)}` : '')}</div>
+      <div class="an-nota">Los tiros a puerta los apunta el acta en cada portero; no dice quién tira. ${t.pj < x.pj ? `En ${t.pj} de ${x.pj} partidos.` : ''}</div></div>` : '';
+    // 4 · disciplina
+    const d = x.disc;
+    const disc_ = `<div class="card an-c">${lab('DISCIPLINA')}<div class="an-ks">
+      ${anK('Faltas por partido', dec((d.faltas / x.pj).toFixed(1)), `${d.faltas} en ${x.pj} PJ`)}
+      ${anK('Sanción por partido', fmin(d.min / x.pj), `${fmin(d.min)} en total`)}
+      ${anK('Con uno más', `${d.supF}–${d.infC}`, 'goles a favor – en contra')}
+      ${anK('Con uno menos', `${d.infF}–${d.supC}`, 'goles a favor – en contra')}</div>
+      ${d.tipos.length ? `<div class="an-frase">Las faltas que más repetimos: ${d.tipos.map(([k, n]) => `${esc(k.toLowerCase())} (${n})`).join(', ')}.</div>` : ''}</div>`;
+    // 5 · quién asiste a quién
+    const rd = ANA.redes[e.id] && ANA.redes[e.id][alc];
+    let red = '';
+    if (rd && rd.pares.length) {
+      const top = rd.pares.filter(([a]) => a).slice(0, 5), solos = rd.pares.filter(([a]) => !a).reduce((s, z) => s + z[2], 0), tot = rd.pares.reduce((s, z) => s + z[2], 0);
+      const nmL = k => { const p = A.jugadores[k], x = rd.nombres[k]; const t2 = p ? corto(p) : x ? corto({ nombre: x[0], apellidos: x[1] }) : k; return p ? `<a href="${hP(k)}">${esc(t2)}</a>` : esc(t2); };
+      const g = svgRed(rd, anchoGrafico(520));
+      red = `<div class="card an-c an-ancha">${lab('QUIÉN ASISTE A QUIÉN')}<div class="an-nota" style="margin-top:2px">Cada línea une a dos jugadores que han hecho goles juntos (uno asiste y el otro marca); cuanto más gruesa, más goles. Toca un nombre para ver solo los suyos.</div>
+        <div class="an-red">${g}<div>${top.length ? `<div class="an-sub">LAS PAREJAS CON MÁS GOLES</div>${top.map(([a, b, n]) => `<div class="an-fila"><span>${nmL(a)} <span style="color:#6B6B70">→</span> ${nmL(b)}</span><b>${n}</b></div>`).join('')}` : ''}
+          <div class="an-nota">${solos} de ${tot} goles sin asistencia.</div></div></div></div>`;
+    }
+    return `${lab('CÓMO JUEGA EL EQUIPO · ' + nomT.toUpperCase(), 'margin:28px 0 6px')}${tog}${poco}
+      <div class="an-grid">${cuando}${marcador}${tiros}${disc_}${red}</div>${rivalHtml(e, yo)}`;
+  }
+  function rivalHtml(e, yo) {
+    const hoy = hoyISO(), nx = e.cal.filter(c => !c.descanso && !c.resultado && c.fecha && c.fecha >= hoy).sort((a, b) => (a.fecha + (a.hora || '')) < (b.fecha + (b.hora || '')) ? -1 : 1)[0];
+    if (!nx) return '';
+    const riv = ours(nx.rival) ? ANA.equipos[(A.equipos.find(x => x.nombre === nx.rival && x.ligaId === e.ligaId) || {}).id] : ANA.equipos[e.ligaId + '|' + nx.rival];
+    if (!riv) return '';
+    const alc = (yo.temp || {}).pj >= 4 && (riv.temp || {}).pj >= 4 ? 'temp' : yo.prev && riv.prev ? 'prev' : yo.temp && riv.temp ? 'temp' : null;
+    if (!alc) return '';
+    const a = yo[alc], b = riv[alc];
+    const pico = (arr, nb) => { const s = arr.reduce((x, y) => x + y, 0); if (s < 6) return '—'; const i = arr.indexOf(Math.max(...arr)); return `${i * 5}–${i * 5 + 5}'`; };
+    const fila = (k, f, mejor) => { const va = f(a), vb = f(b); return `<div class="an-cmp"><b class="${mejor && va.n != null && vb.n != null && mejor(va.n, vb.n) ? 'gana' : ''}">${va.t}</b><span>${k}</span><b class="${mejor && va.n != null && vb.n != null && mejor(vb.n, va.n) ? 'gana' : ''}">${vb.t}</b></div>`; };
+    const n = (v, d = 1) => ({ n: v, t: v == null || !isFinite(v) ? '—' : dec(v.toFixed(d)) }), pc = v => ({ n: v, t: v == null || !isFinite(v) ? '—' : pct(v) });
+    const mas = (x, y) => x > y, menos = (x, y) => x < y;
+    const h2h = (e.h2h || []).find(h => h.rival === nx.rival);
+    const pel = MAPA && MAPA.ligas[e.ligaId] ? MAPA.ligas[e.ligaId].jug.filter(r => r.eq === nx.rival && r.pj >= 3 && r.x != null).sort((p, q) => q.x - p.x).slice(0, 3) : [];
+    return `${lab('PRÓXIMO RIVAL · ' + esc(nx.rival), 'margin:28px 0 6px')}
+      <div class="card an-c" style="max-width:760px"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px">${disc(crest(nx.rival), 40)}<div><div style="font-weight:700;font-size:16px">${esc(fd(nx.fecha))}${nx.hora ? ' · ' + esc(nx.hora) : ''} · ${nx.casa ? 'en casa' : 'fuera'}</div>
+        <div style="font-size:13px;color:#A6A6AD">${alc === 'temp' ? 'Números de esta temporada' : 'Números de 2025/26 (esta temporada aún llevan pocos partidos)'}${h2h ? ` · historial contra ellos: ${h2h.v}-${h2h.e}-${h2h.d}` : ''}</div></div></div>
+        <div class="an-cmp cab"><b>${esc(mpAbr(e.nombre))}</b><span></span><b>${esc(abr(nx.rival))}</b></div>
+        ${fila('Goles a favor por partido', z => n(z.gf / z.pj), mas)}${fila('Goles en contra por partido', z => n(z.gc / z.pj), menos)}
+        ${fila('Tiros a puerta por partido', z => n(z.tiros.pj ? z.tiros.f / z.tiros.pj : null), mas)}${fila('Acierto', z => pc(z.tiros.pj ? z.tiros.gf / z.tiros.f : null), mas)}
+        ${fila('% de paradas', z => pc(z.tiros.pj ? 1 - z.tiros.gc / z.tiros.c : null), mas)}${fila('Faltas por partido', z => n(z.disc.faltas / z.pj), menos)}
+        ${fila('Ganan si marcan primero', z => { const s = z.marcador.primero.reduce((x, y) => x + y, 0); return pc(s ? z.marcador.primero[0] / s : null); }, mas)}
+        ${fila('Tramo en el que más marcan', z => ({ n: null, t: pico(z.tramos.f) }))}${fila('Tramo en el que más encajan', z => ({ n: null, t: pico(z.tramos.c) }))}
+        ${pel.length ? `<div class="an-sub" style="margin-top:12px">SUS JUGADORES CON MÁS PUNTOS POR PARTIDO</div>${pel.map(r => `<div class="an-fila"><span>${esc(corto({ nombre: r.n, apellidos: r.a }))}</span><b>${dec(r.x.toFixed(2))} <span style="font-size:12px;color:#A6A6AD;font-weight:600">pts/PJ</span></b></div>`).join('')}` : ''}
+        <div class="an-nota">En verde, quién sale mejor en cada fila.</div></div>`;
+  }
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ana-eq]'); if (!b) return;
+    ANA_SEL[b.dataset.anaEq] = b.dataset.anaT; const el = view.querySelector('[data-analisis]'); if (el && ANA) el.innerHTML = bloqueEquipo(A.equipos.find(x => x.id === b.dataset.anaEq)); });
+  function rellenarEquipo() {
+    const el = view.querySelector('[data-analisis]'); if (!el) return;
+    const e = A.equipos.find(x => x.id === el.dataset.analisis); if (!e) return;
+    const pon = () => { if (!ANA) { el.remove(); return; } el.innerHTML = bloqueEquipo(e); };
+    Promise.all([cargarAnalisis(), MAPA ? MAPA : cargarMapa()]).then(pon);
+  }
+
+  /* ── Agenda: ven a vernos (días en casa, con los otros partidos de la pista) y calendarios para el móvil ── */
+  const BASE_WEB = () => location.origin + location.pathname.replace(/[^/]*$/, '');
+  const CAL_OPC = [['club', 'Todo el club'], ['casa', 'Solo en casa'], ['A', 'Equipo A'], ['B', 'Equipo B'], ['C', 'Equipo C'], ['D', 'Equipo D'], ['AL', 'Alevín'], ['IN', 'Infantil']];
+  const CAL_SEL = { k: null };
+  function calHtml(k, solo) {
+    if (!AGE || !AGE.cal) return '';
+    const url = BASE_WEB() + AGE.cal[k], wc = url.replace(/^https?:/, 'webcal:'), g = 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(wc);
+    const opc = solo ? '' : `<div class="an-togs">${CAL_OPC.map(([kk, t]) => anTog(kk === k, `data-cal="${kk}"`, t)).join('')}</div>`;
+    return `${opc}<div class="an-cal"><a class="dv-alin" href="${esc(g)}" target="_blank" rel="noopener">Google Calendar</a><a class="dv-alin" href="${esc(wc)}">iPhone · Outlook</a><button type="button" class="an-tog" data-copiar="${esc(url)}">Copiar enlace</button></div>
+      <div class="an-nota">Se actualiza solo: cuando la FMP pone la hora o cambia un partido, el calendario del móvil lo recoge en unas horas. Cada partido lleva la pista y cómo llegar.</div>`;
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-cal]');
+    if (b) { CAL_SEL.k = b.dataset.cal; const c = b.closest('[data-cal-caja]'); if (c) c.innerHTML = calHtml(CAL_SEL.k); return; }
+    const cp = e.target.closest && e.target.closest('[data-copiar]');
+    if (cp) { const ok = () => { cp.textContent = 'Copiado'; setTimeout(() => { cp.textContent = 'Copiar enlace'; }, 1800); };
+      if (navigator.clipboard) navigator.clipboard.writeText(cp.dataset.copiar).then(ok, () => window.prompt('Copia este enlace:', cp.dataset.copiar)); else window.prompt('Copia este enlace:', cp.dataset.copiar); }
+  });
+  const diaLargo = s => { const [y, m, d] = s.split('-').map(Number); return ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'][new Date(y, m - 1, d).getDay()] + ' ' + d + ' ' + MES[m - 1]; };
+  const eqAge = m => { const e = A.equipos.find(x => x.id === m.eq); return e ? (e.cantera ? 'MP ' + tituloOf(e) : 'MP ' + e.id) : 'MP'; };
+  function diaHtml(d) {
+    const ms = d.nuestros.map(i => AGE.partidos[i]);
+    return `<div class="an-dia"><div class="an-dia-cab"><span>${diaLargo(d.fecha)}</span>${d.mapa ? `<a href="${esc(d.mapa)}" target="_blank" rel="noopener">Cómo llegar →</a>` : ''}</div>
+      <div class="an-pista">${esc(d.pista || 'Pista por confirmar')}${d.habitual ? ' <span>(la habitual; la FMP aún no la ha puesto)</span>' : ''}</div>
+      ${ms.map(m => `<a class="an-par blk" href="${hEq(m.eq)}"><b>${esc(m.hora || 'Por fijar')}</b><span><span style="color:#FF6B63;font-weight:700">${esc(eqAge(m))}</span> ${m.casa ? 'contra' : 'en casa de'} ${esc(m.rival)}</span><span class="l">${esc(m.liga)}</span></a>`).join('')}
+      ${d.otros.length ? `<div class="an-otros">Ese día en la misma pista también: ${d.otros.map(o => `${esc(o.hora || 'hora por fijar')} ${esc(o.local)} – ${esc(o.visitante)} <span>(${esc(o.liga)})</span>`).join(' · ')}</div>` : ''}</div>`;
+  }
+  function rellenarAgenda() {
+    const el = view.querySelector('[data-agenda]'), eq = view.querySelector('[data-agenda-eq]'); if (!el && !eq) return;
+    const pon = () => {
+      if (!AGE) { if (el) el.remove(); if (eq) eq.remove(); return; }
+      const hoy = hoyISO();
+      if (el) {
+        const casa = AGE.dias.filter(d => d.casa && d.fecha >= hoy).slice(0, 3);
+        el.innerHTML = `<div class="an-grid dos" style="margin-top:12px">
+          ${casa.length ? `<div class="card an-c">${lab('EN CASA · VEN A VERNOS')}<div class="an-nota" style="margin-top:2px">Los próximos días que jugamos en casa, con todos los partidos de ese día en la pista.</div>${casa.map(diaHtml).join('')}</div>` : ''}
+          <div class="card an-c">${lab('LOS PARTIDOS, EN TU CALENDARIO')}<div class="an-nota" style="margin-top:2px">Elige qué partidos quieres y añádelos al calendario del móvil.</div><div data-cal-caja>${calHtml(CAL_SEL.k || 'club')}</div></div>
+          <div data-hitos class="card an-c">${hitosHtml()}</div></div>`;
+        if (!el.querySelector('[data-hitos] .an-fila')) { const hh = el.querySelector('[data-hitos]'); if (hh) hh.remove(); }
+      }
+      if (eq) {
+        const e = A.equipos.find(x => x.id === eq.dataset.agendaEq);
+        const prox = AGE.partidos.filter(m => m.eq === e.id && m.fecha && m.fecha >= hoy);
+        const sig = prox[0], sigCasa = prox.find(m => m.casa);
+        const linea = (t, m) => m ? `<div class="an-fila" style="align-items:flex-start"><span><span class="an-sub" style="display:block;margin:0">${t}</span>${esc(fd(m.fecha))} · ${esc(m.hora || 'hora por fijar')} · ${m.casa ? 'contra' : 'en casa de'} ${esc(m.rival)}<br><span style="color:#A6A6AD">${esc(m.pista || 'Pista por confirmar')}${m.habitual ? ' (la habitual)' : ''}</span></span>${m.mapa ? `<a href="${esc(m.mapa)}" target="_blank" rel="noopener" style="white-space:nowrap">Cómo llegar →</a>` : ''}</div>` : '';
+        eq.innerHTML = `<div class="an-grid dos" style="margin-top:12px"><div class="card an-c">${linea('PRÓXIMO PARTIDO', sig)}${sigCasa && sigCasa !== sig ? linea('PRÓXIMO EN CASA', sigCasa) : ''}${!sig ? '<div class="an-nota">No quedan partidos en el calendario.</div>' : ''}</div>
+          <div class="card an-c">${lab('SUS PARTIDOS, EN TU CALENDARIO')}<div data-cal-caja>${calHtml(e.id, true)}</div></div></div>`;
+      }
+    };
+    if (AGE) pon(); else cargarAgenda().then(pon);
+  }
+
+  /* ── Hitos a la vista: a quién le falta poco para una cifra redonda con el club (histórico + esta temporada) ── */
+  const UMBRAL = { g: [10, 25, 50, 75, 100, 150, 200, 250, 300, 400, 500], a: [10, 25, 50, 75, 100, 150, 200, 250, 300, 400, 500], pj: [25, 50, 100, 150, 200, 250, 300, 400, 500], par: [100, 250, 500, 750, 1000, 1500, 2000, 3000] };
+  const UMBRAL_TXT = { g: ['gol', 'goles'], a: ['asistencia', 'asistencias'], pj: ['partido', 'partidos'], par: ['parada', 'paradas'] };
+  const CERCA = { g: 3, a: 3, pj: 2, par: 40 };
+  function totalesClub(p) {
+    const hj = H && H.byTok[H.tok(p.nombre + ' ' + p.apellidos)], car0 = (hj && hj.carrera) || {}, ya = (p.temporadas || {})[A.temporada] || {};
+    const parH = hj ? hj.temporadas.filter(t => t.rol === 'GOALIE' && t.tiros).reduce((s, t) => s + t.tiros - (t.gc || 0), 0) : 0;
+    const parY = (p.partidos || []).filter(x => x.pct != null).reduce((s, x) => s + (x.par || 0), 0);
+    return { g: (car0.g || 0) + (ya.goles || 0), a: (car0.a || 0) + (ya.asistencias || 0), pj: (car0.pj || 0) + (ya.pj || 0), par: parH + parY };
+  }
+  function hitosDe(p) {
+    const tot = totalesClub(p), out = [];
+    Object.keys(UMBRAL).forEach(k => { if (k === 'par' ? !p.portero : (k !== 'pj' && p.portero)) return;
+      const u = UMBRAL[k].find(v => v > tot[k]); if (u && u - tot[k] <= CERCA[k] && tot[k] > 0) out.push({ k, u, falta: u - tot[k] }); });
+    return out;
+  }
+  const hitoTxt = h => `A ${h.falta} ${UMBRAL_TXT[h.k][h.falta === 1 ? 0 : 1]} ${h.k === 'a' || h.k === 'par' ? 'de las' : 'de los'} ${h.u}`;
+  function hitosHtml() {
+    if (!H) return '';
+    const xs = [];
+    Object.values(A.jugadores).filter(p => equiposDe(p).length).forEach(p => hitosDe(p).forEach(h => xs.push({ p, h })));
+    xs.sort((a, b) => a.h.falta / CERCA[a.h.k] - b.h.falta / CERCA[b.h.k] || b.h.u - a.h.u);
+    if (!xs.length) return '';
+    return `${lab('HITOS A LA VISTA')}<div class="an-nota" style="margin-top:2px">Jugadores a los que les falta poco para una cifra redonda con el club, contando todas sus temporadas.</div>
+      ${xs.slice(0, 8).map(({ p, h }) => `<a class="an-fila blk" href="${hP(p.k)}"><span><b>${esc(corto(p))}</b> <span style="color:#A6A6AD">· ${esc(equiposDe(p).map(e => e.cantera ? tituloOf(e) : 'MP ' + e.id).join(' · '))}</span></span><span class="h">${esc(hitoTxt(h))}</span></a>`).join('')}`;
+  }
+
+  /* ── Ficha: partido a partido, tandas de penaltis y faltas ── */
+  function svgTemporada(p) {
+    const xs = (p.partidos || []).slice().sort((a, b) => ((A.partidos[a.mid] || {}).fecha || '') < ((A.partidos[b.mid] || {}).fecha || '') ? -1 : 1);
+    if (xs.length < 2) return '';
+    const gk = xs.every(x => x.pct != null);
+    const W = Math.min(720, anchoGrafico(720)), H = 150, Lm = 4, Rm = 4, Tm = 18, Bm = 24, w = W - Lm - Rm, h = H - Tm - Bm, bw = Math.min(56, w / xs.length);
+    const mx = gk ? 100 : Math.max(2, ...xs.map(x => (x.g || 0) + (x.a || 0)));
+    const bars = xs.map((x, i) => { const cx = Lm + i * bw + bw / 2, ww = Math.max(6, bw - 10);
+      if (gk) { const hh = (x.pct || 0) / mx * h; return `<g><title>vs ${esc(x.rival)}: ${dec(x.pct)} % de paradas</title><rect x="${cx - ww / 2}" y="${Tm + h - hh}" width="${ww}" height="${hh}" rx="3" fill="${RED}"/><text x="${cx}" y="${Tm + h - hh - 4}" text-anchor="middle" fill="#F4F4F5">${Math.round(x.pct)}</text><text x="${cx}" y="${H - 6}" text-anchor="middle">${esc(abr(x.rival).split(' ')[0])}</text></g>`; }
+      const hg = (x.g || 0) / mx * h, ha = (x.a || 0) / mx * h;
+      return `<g><title>vs ${esc(x.rival)}: ${x.g || 0} G, ${x.a || 0} A</title>${hg ? `<rect x="${cx - ww / 2}" y="${Tm + h - hg}" width="${ww}" height="${hg}" rx="2" fill="${RED}"/>` : ''}${ha ? `<rect x="${cx - ww / 2}" y="${Tm + h - hg - ha - (hg ? 2 : 0)}" width="${ww}" height="${ha}" rx="2" fill="#8A8A8F"/>` : ''}
+        ${(x.g || 0) + (x.a || 0) ? `<text x="${cx}" y="${Tm + h - hg - ha - (hg && ha ? 2 : 0) - 4}" text-anchor="middle" fill="#F4F4F5">${(x.g || 0) + (x.a || 0)}</text>` : `<text x="${cx}" y="${Tm + h - 4}" text-anchor="middle" fill="#55555B">0</text>`}<text x="${cx}" y="${H - 6}" text-anchor="middle">${esc(abr(x.rival).split(' ')[0])}</text></g>`; }).join('');
+    return `<div class="card an-c" style="margin-bottom:10px">${lab('PARTIDO A PARTIDO')}<div class="an-ley">${gk ? '<span>% de paradas en cada partido</span>' : `<span><span style="color:${RED}">■</span> goles</span><span><span style="color:#8A8A8F">■</span> asistencias</span>`}</div>
+      <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${gk ? 'Porcentaje de paradas' : 'Goles y asistencias'} en cada partido de la temporada" style="display:block;max-width:${W}px;font-size:12px;fill:#8A8A8F;font-family:'IBM Plex Sans Condensed',sans-serif"><line x1="${Lm}" x2="${Lm + w}" y1="${Tm + h}" y2="${Tm + h}" stroke="#3A3A40"/>${bars}</svg></div>`;
+  }
+  function rellenarFicha() {
+    const el = view.querySelector('[data-ficha-extra]'); if (!el) return;
+    const pon = () => { const j = ANA && ANA.jugadores[el.dataset.fichaExtra]; if (!j) { el.remove(); return; }
+      const filas = [];
+      if (j.tandas) { const c = j.tandas.club, t = j.tandas.temp;
+        filas.push(`<div class="an-fila" style="align-items:flex-start"><span><span class="an-sub" style="display:block;margin:0">TANDAS DE PENALTIS CON EL CLUB</span>${c[0]} ${c[0] === 1 ? 'lanzamiento' : 'lanzamientos'} · ${c[1]} ${c[1] === 1 ? 'gol' : 'goles'}${t[0] ? ` · esta temporada, ${t[1]} de ${t[0]}` : ''}</span><b>${pct(c[1] / c[0])}</b></div>`); }
+      if (j.faltas) { const lista = xs => xs.slice(0, 4).map(([k, n]) => `${esc(k.toLowerCase())} (${n})`).join(', ');
+        filas.push(`<div class="an-fila" style="align-items:flex-start"><span><span class="an-sub" style="display:block;margin:0">LAS FALTAS QUE MÁS LE PITAN</span>En el club: ${lista(j.faltas.club)}${j.faltas.temp ? `<br><span style="color:#A6A6AD">Esta temporada: ${lista(j.faltas.temp)}</span>` : ''}</span></div>`); }
+      el.innerHTML = `${lab('PENALTIS Y FALTAS', 'margin-bottom:2px')}${filas.join('')}`; };
+    if (ANA) pon(); else cargarAnalisis().then(pon);
+  }
+
+  /* ── Liga: la clasificación jornada a jornada y dónde puede acabar cada equipo ── */
+  function tablaHasta(L, n) {   // con los resultados del calendario (también los que aún esperan acta)
+    const t = {}; L.clasif.forEach(r => { t[r.equipo] = { e: r.equipo, pts: 0, gf: 0, gc: 0, pj: 0 }; });
+    (L.cal || []).filter(c => c.j <= n && c.gl != null).forEach(c => { const l = t[c.local], v = t[c.visitante]; if (!l || !v) return;
+      const pen = c.mid && A.partidos[c.mid];
+      l.pj++; v.pj++; l.gf += c.gl; l.gc += c.gv; v.gf += c.gv; v.gc += c.gl;
+      if (c.gl > c.gv) l.pts += 3; else if (c.gl < c.gv) v.pts += 3; else if (pen && pen.pen) { (pen.pen === c.local ? l : v).pts += 2; (pen.pen === c.local ? v : l).pts += 1; } else { l.pts += 1; v.pts += 1; } });
+    return Object.values(t).sort((a, b) => b.pts - a.pts || (b.gf - b.gc) - (a.gf - a.gc) || b.gf - a.gf || a.e.localeCompare(b.e, 'es'));
+  }
+  function svgEvolucion(L) {
+    const ult = L.ultima || 0; if (ult < 2) return '';
+    const js = Array.from({ length: ult }, (_, i) => i + 1), eqs = L.clasif.map(r => r.equipo), n = eqs.length;
+    const pos = {}; eqs.forEach(e => { pos[e] = []; });
+    js.forEach(j => { const tb = j === ult ? L.clasif.map(r => ({ e: r.equipo })) : tablaHasta(L, j); tb.forEach((r, i) => { if (pos[r.e]) pos[r.e].push(i + 1); }); });
+    const W = anchoGrafico(900), lab0 = W < 560 ? 64 : 120, H = 24 + n * (W < 560 ? 22 : 26), Lm = 26, Rm = lab0, Tm = 12, Bm = 22, w = W - Lm - Rm, h = H - Tm - Bm;
+    const sx = j => Lm + (ult === 1 ? w / 2 : (j - 1) / (ult - 1) * w), sy = p => Tm + (p - 1) / Math.max(1, n - 1) * h;
+    const linea = e => { const nos = ours(e), d = pos[e].map((p, i) => `${i ? 'L' : 'M'}${sx(i + 1).toFixed(1)},${sy(p).toFixed(1)}`).join(' ');
+      return `<g class="ev-e${nos ? ' nos' : ''}" data-e="${esc(e)}" tabindex="0"><path d="${d}" fill="none" stroke="${nos ? RED : '#55555B'}" stroke-width="${nos ? 3.5 : 2}" stroke-linejoin="round" stroke-linecap="round"/>
+        ${pos[e].map((p, i) => `<circle cx="${sx(i + 1).toFixed(1)}" cy="${sy(p).toFixed(1)}" r="${nos ? 4.5 : 3}" fill="${nos ? RED : '#55555B'}"/>`).join('')}
+        <text x="${(sx(ult) + 10).toFixed(1)}" y="${(sy(pos[e][pos[e].length - 1]) + 4).toFixed(1)}" fill="${nos ? '#FF6B63' : '#A6A6AD'}" font-weight="${nos ? 700 : 500}">${esc(W < 560 ? abr(e) : e)}</text><title>${esc(e)}: ${pos[e].map((p, i) => 'J' + (i + 1) + ' ' + p + 'º').join(' · ')}</title></g>`; };
+    const ejes = js.map(j => `<text x="${sx(j)}" y="${H - 6}" text-anchor="middle">J${j}</text>`).join('') + Array.from({ length: n }, (_, i) => `<text x="${Lm - 8}" y="${sy(i + 1) + 4}" text-anchor="end">${i + 1}</text>`).join('');
+    return `<svg class="ev" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Puesto de cada equipo después de cada jornada" style="display:block;max-width:${W}px;font-size:12px;fill:#6B6B70;font-family:'IBM Plex Sans Condensed',sans-serif">${ejes}${eqs.filter(e => !ours(e)).map(linea).join('')}${eqs.filter(ours).map(linea).join('')}</svg>`;
+  }
+  document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('.ev-e'); if (!g) return; const svg = g.closest('svg'), on = !g.classList.contains('sel');
+    svg.querySelectorAll('.ev-e').forEach(x => x.classList.toggle('sel', on && x === g)); svg.classList.toggle('foco', on); });
+  // simulación del resto de la liga: goles con una Poisson por equipo (ataque y defensa de esta temporada, acercados a la media
+  // de la liga con 8 partidos «de media» para que pocos partidos no pesen de más); empate → penaltis al 50 %
+  function simularLiga(L, veces = 4000) {
+    const eqs = L.clasif.map(r => r.equipo), n = eqs.length, idx = Object.fromEntries(eqs.map((e, i) => [e, i]));
+    const jug = (L.cal || []).filter(c => c.gl != null), quedan = (L.cal || []).filter(c => c.gl == null && idx[c.local] != null && idx[c.visitante] != null);
+    if (!quedan.length) return null;
+    const gf = Array(n).fill(0), gc = Array(n).fill(0), pj = Array(n).fill(0);
+    jug.forEach(c => { const l = idx[c.local], v = idx[c.visitante]; if (l == null || v == null) return; gf[l] += c.gl; gc[l] += c.gv; gf[v] += c.gv; gc[v] += c.gl; pj[l]++; pj[v]++; });
+    const tot = pj.reduce((a, b) => a + b, 0), mu = tot ? gf.reduce((a, b) => a + b, 0) / tot : 4, K = 8;
+    const at = gf.map((g, i) => ((g + K * mu) / (pj[i] + K)) / mu), de = gc.map((g, i) => ((g + K * mu) / (pj[i] + K)) / mu);
+    const base = tablaHasta(L, 99), pts0 = eqs.map(e => base.find(r => r.e === e).pts), dg0 = eqs.map(e => { const r = base.find(x => x.e === e); return r.gf - r.gc; });
+    const poi = lam => { let L_ = Math.exp(-lam), k = 0, p = 1; do { k++; p *= Math.random(); } while (p > L_); return k - 1; };
+    const cuenta = eqs.map(() => Array(n).fill(0));
+    for (let s = 0; s < veces; s++) {
+      const pts = pts0.slice(), dg = dg0.slice();
+      quedan.forEach(c => { const l = idx[c.local], v = idx[c.visitante], a = poi(mu * at[l] * de[v]), b = poi(mu * at[v] * de[l]);
+        dg[l] += a - b; dg[v] += b - a; if (a > b) pts[l] += 3; else if (b > a) pts[v] += 3; else if (Math.random() < 0.5) { pts[l] += 2; pts[v] += 1; } else { pts[v] += 2; pts[l] += 1; } });
+      eqs.map((e, i) => i).sort((x, y) => pts[y] - pts[x] || dg[y] - dg[x] || Math.random() - 0.5).forEach((i, p) => { cuenta[i][p]++; });
+    }
+    return { eqs, prob: cuenta.map(r => r.map(c => c / veces)), quedan: quedan.length };
+  }
+  function vEvolucion(L) {
+    const ev = svgEvolucion(L), sim = simularLiga(L);
+    const n = L.clasif.length;
+    let mat = '';
+    if (sim) {
+      const orden = sim.eqs.map((e, i) => i).sort((a, b) => sim.prob[b].reduce((s, v, p) => s + v * (n - p), 0) - sim.prob[a].reduce((s, v, p) => s + v * (n - p), 0));
+      const celda = v => { const a = Math.min(1, v * 2.2); return `<td style="background:rgba(211,32,42,${(a * 0.9).toFixed(2)});color:${a > 0.5 ? '#FFFFFF' : '#A6A6AD'}">${v >= 0.005 ? Math.round(v * 100) : ''}</td>`; };
+      const nos = orden.filter(i => ours(sim.eqs[i])).map(i => { const pr = sim.prob[i], best = pr.indexOf(Math.max(...pr));
+        let lo = best, hi = best, acc = pr[best]; while (acc < 0.6 && (lo > 0 || hi < n - 1)) { if (hi < n - 1 && (lo === 0 || pr[hi + 1] >= pr[lo - 1])) acc += pr[++hi]; else acc += pr[--lo]; }
+        const arriba = pr.slice(0, Math.ceil(n / 2)).reduce((a, b) => a + b, 0);
+        return `<div class="an-fila"><span><b style="color:#FF6B63">${esc(mpAbr(sim.eqs[i]))}</b> · lo más probable: ${lo === hi ? (lo + 1) + 'º' : `entre el ${lo + 1}º y el ${hi + 1}º`} (${pct(acc)})</span><span class="h">${pr[0] >= 0.01 ? `1º: ${pct(pr[0])}` : `mitad de arriba: ${pct(arriba)}`}</span></div>`; }).join('');
+      mat = `<div class="card an-c">${lab('¿DÓNDE PUEDE ACABAR CADA EQUIPO?')}<div class="an-nota" style="margin-top:2px">Jugamos los ${sim.quedan} partidos que quedan 4.000 veces con lo que lleva marcado y encajado cada equipo esta temporada. Cada casilla: en cuántas de cada 100 acaba en ese puesto.${COMO('probabilidad')}</div>
+        ${nos}<div class="an-tabla"><table><thead><tr><th></th>${Array.from({ length: n }, (_, p) => `<th>${p + 1}º</th>`).join('')}</tr></thead><tbody>
+        ${orden.map(i => `<tr class="${ours(sim.eqs[i]) ? 'nos' : ''}"><th>${esc(W_corta(sim.eqs[i]))}</th>${sim.prob[i].map(celda).join('')}</tr>`).join('')}</tbody></table></div>
+        <div class="an-nota">Con pocas jornadas jugadas casi todo está abierto; se afina cada semana. No sabe de bajas ni de fichajes.</div></div>`;
+    }
+    return `<div class="an-grid una" style="margin-top:20px">${ev ? `<div class="card an-c">${lab('CLASIFICACIÓN JORNADA A JORNADA')}<div class="an-nota" style="margin-top:2px">El puesto de cada equipo después de cada jornada. Toca una línea para seguirla.</div>${ev}</div>` : '<div class="card an-c"><div class="an-nota">Hacen falta dos jornadas para dibujar la evolución.</div></div>'}${mat}</div>`;
+  }
+  const W_corta = n => (innerWidth < 560 ? abr(n) : n);
+
   /* ── 6. Ficha de jugador ────────────────────────────────── */
   // FMPe (scripts/reporte/fmpe.py): puntos por partido × factor de su liga × 18, o sea, puntos en una temporada de Senior 1
   const FMPE_PJ = 18;
@@ -1246,12 +1657,14 @@
           ${car ? `<div class="kpis" data-anim="mpUp .4s cubic-bezier(.2,.8,.2,1) .6s" style="display:flex;gap:10px;flex-wrap:wrap">${esPortero && tirosT
             ? tile('% de paradas', dec(Math.round((tirosT - gcT) / tirosT * 1000) / 10) + '<span style="font-size:24px">%</span>', 'color:#FF6B63') + tile('Paradas en el club', tirosT - gcT)
             : tile('Goles en el club', car.g, 'color:#FF6B63') + tile('Asistencias', car.a)}${tile('Partidos', car.pj)}${tile('Temporadas', car.temporadas)}${tile('Sanción', fmin(car.pim || 0))}</div>` : ''}
+          ${(() => { const hs = H && equiposDe(A.jugadores[k] || p).length ? hitosDe(A.jugadores[k] || p) : []; return hs.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:-8px">${hs.map(h => `<span class="an-hito">${esc(hitoTxt(h))} con el club</span>`).join('')}</div>` : ''; })()}
           <div data-grupo data-espera="900">${lab('POR TEMPORADA', 'margin-bottom:' + (order.some(kk => TS[kk].fmpe != null) ? '2px' : '12px'))}${order.some(kk => TS[kk].fmpe != null) ? '<div style="font-size:13px;color:#A6A6AD;margin-bottom:10px">FMPe: los puntos que habría hecho en una temporada de Liga Senior 1, para comparar ligas distintas' + COMO('fmpe') + '</div>' : ''}${temps}</div>
           ${conEquipo ? `<div data-grupo data-espera="900">${lab('CON EL EQUIPO', 'margin-bottom:2px')}<div style="font-size:13px;color:#A6A6AD;margin-bottom:4px">Lo que dice el acta: en cuántos goles del equipo participa, en qué situación marca y con quién combina${COMO('ficha')}</div>${conEquipo}</div>` : ''}
+          <div data-ficha-extra="${esc(p.k)}"></div>
           <div data-parecidos="${esc(p.k)}" data-liga="${t ? esc(t.ligaId) : ''}" data-portero="${esPortero ? 1 : ''}"></div>
         </div>
       </div>
-      ${p.partidos.length ? `${lab('PARTIDOS ' + A.temporada, 'margin:28px 0 10px')}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">${partidos}</div>` : ''}`;
+      ${p.partidos.length ? `${lab('PARTIDOS ' + A.temporada, 'margin:28px 0 10px')}${svgTemporada(p)}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">${partidos}</div>` : ''}`;
   }
 
   /* ── Cómo lo calculamos: cada número que publicamos, de dónde sale y qué no puede decir ─────────────────────────────── */
@@ -1355,14 +1768,27 @@
       ${P('En la ficha de cada jugador nuestro salen los 3 jugadores de otros clubes con los números más parecidos: goles y asistencias por partido (en la escala de Senior 1), parte de los goles de su equipo en los que participa y minutos de sanción por partido. Cada número pesa lo mismo. Senior se compara con senior, la cantera con la cantera y los porteros con porteros, por % de paradas y tiros por partido.')}
       <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['No mide la defensa ni nada que no esté en el acta', 'Con pocos partidos, el punto de cada jugador se mueve mucho', 'En la cantera no hay factor entre ligas: los números van tal cual'], '!')}</div>`);
 
+    // 7 · probabilidades y análisis del equipo
+    if (!ANA) cargarAnalisis().then(d => { if (d && /^#\/metodo/.test(location.hash)) render(); });
+    const T7 = ANA && ANA.prob && ANA.prob.senior, cel = (d, q) => { const r = T7.tabla[d][q]; return `${Math.round(r[0] * 100)} % · ${Math.round(r[1] * 100)} % · ${Math.round(Math.max(0, 1 - r[0] - r[1]) * 100)} %`; };
+    const probM = sec('probabilidad', '07', 'PROBABILIDADES Y ANÁLISIS', 'Qué pasa normalmente con cada marcador', 'Con todos los partidos de la FMP desde 2016/17 sabemos cuántas veces acaba ganando el que va por delante según la ventaja y los minutos que quedan. Con eso se dibuja el gráfico de cada partido, las opciones de ganar del directo y la simulación de la liga.', `
+      ${T7 ? H('Senior: el que va ganando… gana · empata (penaltis) · pierde') + tabla(['Ventaja', 'Quedan 10 min', 'Quedan 5 min', 'Quedan 2 min'], [1, 2, 3].map(d => `<tr>${td(d === 3 ? '3 goles o más' : d + (d === 1 ? ' gol' : ' goles'))}${td(cel(d, 10), 'n')}${td(cel(d, 5), 'n')}${td(cel(d, 2), 'n')}</tr>`)) + `<p class="mt-nota">Con ${T7.partidos} partidos senior completos (con el minuto de todos los goles). La cantera tiene su propia tabla, con partes de 20 minutos.</p>` : ''}
+      ${lista(['<b>Gráfico del partido</b>: en cada momento, con el marcador y los minutos que quedan, cuántas veces gana cada equipo y cuántas se va a los penaltis. No sabe quién juega ni cómo va el partido: solo el marcador y el reloj. No cuenta el factor campo.', '<b>Opciones de ganar en el directo</b>: lo mismo, con el minuto del último apunte del acta (el acta no publica el reloj en marcha).', '<b>¿Dónde puede acabar cada equipo?</b>: jugamos 4.000 veces los partidos que quedan. Los goles de cada partido salen al azar según lo que marca y encaja cada equipo esta temporada, acercado a la media de la liga como si llevara 8 partidos más «normales» (así, con pocas jornadas, un resultado no pesa de más). Un empate se decide a los penaltis al 50 %.'])}
+      ${H('Cómo juega cada equipo')}
+      ${lista(['<b>Cuándo marca y cuándo encaja</b>: los goles de cada tramo de 5 minutos, con el minuto del acta. Si al acta le falta el minuto de algún gol, ese partido no entra.', '<b>Ventajas y remontadas</b>: partidos en los que fue por delante y no ganó en el tiempo de juego (un empate que se gana en los penaltis cuenta como no ganado), los que ganó yendo por detrás y cómo acaba cuando marca o encaja primero.', '<b>Tiros a puerta</b>: los que recibe cada portero, que es lo único que apunta el acta. Así sabemos los tiros de cada equipo, pero no quién tira. Acierto = goles ÷ tiros.', '<b>Con uno más y con uno menos</b>: los goles marcados con superioridad o inferioridad, contados como en el directo.', '<b>Quién asiste a quién</b>: las parejas que han hecho goles juntas (uno asiste y otro marca). Desde 2025/26 el acta solo da el dorsal de quien asiste; se busca en la alineación de ese partido.', '<b>Próximo rival</b>: los mismos números de los dos equipos, de esta temporada si los dos llevan 4 partidos o más; si no, de la temporada pasada.'])}
+      ${H('Hitos a la vista y agenda')}
+      ${lista(['<b>Hitos a la vista</b>: a quién le faltan como mucho 3 goles o 3 asistencias, 2 partidos o 40 paradas para una cifra redonda (10, 25, 50, 75, 100, 150…) con el club, contando todas sus temporadas.', '<b>Pista de cada partido</b>: la del calendario de la FMP. Si la FMP no la pone (el calendario de Infantil 2 no la publica), la pista habitual del equipo local, y se avisa.', '<b>Calendarios para el móvil</b>: los mismos partidos, en un enlace que Google Calendar, el iPhone u Outlook vuelven a leer cada pocas horas.'])}
+      <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['Son frecuencias del pasado, no una predicción de lo que va a pasar', 'No sabe de bajas, lesiones ni fichajes', 'Con pocos partidos jugados, los números de cada equipo se mueven mucho'], '!')}</div>`);
+
     const indice = [['datos', '01', 'Los datos', 'De dónde sale cada número'], ['fmpe', '02', 'FMPe', 'Los puntos de cada liga, en la misma escala'],
       ['pretemporada', '03', 'Pretemporada', 'Fuerza, peligrosos y porteros de cada liga'], ['directo', '04', 'En directo', 'Hitos, superioridades y rivales peligrosos'],
-      ['ficha', '05', 'Ficha del jugador', 'Con quién combina cada uno'], ['mapa', '06', 'Mapa y arquetipos', 'Dónde está cada uno, su arquetipo y a quién se parece']]
+      ['ficha', '05', 'Ficha del jugador', 'Con quién combina cada uno'], ['mapa', '06', 'Mapa y arquetipos', 'Dónde está cada uno, su arquetipo y a quién se parece'],
+      ['probabilidad', '07', 'Probabilidades y análisis', 'Opciones de ganar, simulación de la liga y cómo juega cada equipo']]
       .map(([id, n, t, x]) => `<a class="blk" href="#/metodo/${id}"><span class="n">${n}</span><b>${t}</b><span class="x">${x}</span></a>`).join('');
     return `<div class="mt-hero"><div class="lab" style="color:#FF6B63">MADRIDPATINA · MÉTODO</div><h1>Cómo lo calculamos</h1>
         <p>Qué mide cada número de la web, de dónde sale y cómo se calcula. Todo son cuentas con los datos de las actas de la federación.</p></div>
       <nav class="mt-indice" aria-label="Apartados">${indice}</nav>
-      ${datos}${fmpe}${pre}${directo}${ficha}${mapaM}`;
+      ${datos}${fmpe}${pre}${directo}${ficha}${mapaM}${probM}`;
   }
 
   /* ── 7. Histórico ───────────────────────────────────────── */
@@ -1581,7 +2007,7 @@
     secAntes = TOP[v];
     let html;
     if (v === 'equipo') html = vEquipo(parts[1]);
-    else if (v === 'liga') html = vLiga(parts[1], parts[2] === 'llega' ? 'llega' : parts[2] === 'mapa' ? (parts[3] === 'todas' ? 'todas' : 'mapa') : null, parts[2] === 'j' ? parseInt(parts[3], 10) : null);
+    else if (v === 'liga') html = vLiga(parts[1], parts[2] === 'llega' ? 'llega' : parts[2] === 'mapa' ? (parts[3] === 'todas' ? 'todas' : 'mapa') : parts[2] === 'evolucion' ? 'evolucion' : null, parts[2] === 'j' ? parseInt(parts[3], 10) : null);
     else if (v === 'partido') html = vPartido(parts[1]);
     else if (v === 'jugadores') html = vJugadores(parts[1]);
     else if (v === 'jugador') html = vJugador(parts[1]);
@@ -1608,6 +2034,10 @@
     rellenarParecidos();
     rellenarArquetipo();
     rellenarPerfiles();
+    rellenarGraficoPartido();
+    rellenarEquipo();
+    rellenarAgenda();
+    rellenarFicha();
     billetes(view);
     // con la intro delante, la web se anima al cerrarla
     if (introEl) animarAlCerrar = true; else animar(view);
@@ -2918,6 +3348,9 @@
       const ppO = l => sn.eventos.filter(e => exclusion(e) && e.lado !== l).length;
       filas.push(['GOLES EN SUPERIORIDAD', ppG('L') + '/' + ppO('L'), ppG('V') + '/' + ppO('V'), ppG('L'), ppG('V')]);
     }
+    const pd = probDirecto(ctx);
+    if (pd) filas.push(['OPCIONES DE GANAR', pct(pd.pr[0]), pct(pd.pr[2]), pd.pr[0], pd.pr[2]]);
+    else if (!ANA) cargarAnalisis().then(d => { if (d) pintarDirecto(); });
     return filas;
   }
   function juegoHtml(ctx) {
