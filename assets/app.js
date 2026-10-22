@@ -895,7 +895,7 @@
     const vd = p.idp && VID && VID[p.idp];
     const golVid = e => vd && e.tipo === 'gol' && e.jugador ? vd.ev[`${String(e.periodo).replace('P', '')}-${e.minuto}-GOL-${e.jugador.dorsal}`] : null;
     const nomDorsal = (l, d) => { const x = ((l === 'L' ? p.alin_l : p.alin_v) || []).concat((l === 'L' ? p.por_l : p.por_v) || []).find(y => String(y.dorsal) === String(d)); return '#' + d + (x ? ' ' + corto(x) : ''); };
-    const enPista = e => { const g = golVid(e); if (!g || !g.pista) return ''; return ['L', 'V'].filter(l => (g.pista[l] || []).length).map(l => `<div style="font-size:13px;color:#A6A6AD;margin-top:2px">En pista (${esc(mpAbr(l === 'L' ? p.local : p.visitante))}): ${g.pista[l].map(d => esc(nomDorsal(l, d))).join(', ')}</div>`).join(''); };
+    const enPista = e => { const g = e.tipo === 'gol' && e.jugador ? { pista: pistaGol(p.idp, `${String(e.periodo).replace('P', '')}-${e.minuto}-GOL-${e.jugador.dorsal}`) } : null; if (!g || !g.pista) return ''; return ['L', 'V'].filter(l => (g.pista[l] || []).length).map(l => `<div style="font-size:13px;color:#A6A6AD;margin-top:2px">En pista (${esc(mpAbr(l === 'L' ? p.local : p.visitante))}): ${g.pista[l].map(d => esc(nomDorsal(l, d))).join(', ')}</div>`).join(''); };
     const evRow = e => { const eqn = e.lado === 'local' ? p.local : e.lado === 'visitante' ? p.visitante : ''; const T = TIPO[e.tipo] || [e.tipo, '#A6A6AD'];
       const txt = e.tipo === 'gol' ? quienTxt(e.jugador) + (e.asistencia ? ` <span style="color:#A6A6AD">· asist. ${quienTxt(e.asistencia)}</span>` : '')
         : e.tipo === 'falta' ? quienTxt(e.jugador) + ` <span style="color:#A6A6AD">· ${e.falta ? esc(e.falta) + ' · ' : ''}${fmin(e.minutos)}</span>`
@@ -929,6 +929,7 @@
           <div style="display:flex;gap:3px;height:10px;margin-top:8px" data-grupo data-espera="1300"><div data-anim="mpWipe .6s" style="flex:${p.tl};background:${ours(p.local) ? RED : '#6B6B70'};border-radius:3px;transform-origin:right"></div><div data-anim="mpWipe .6s" style="flex:${p.tv};background:${ours(p.visitante) ? RED : '#6B6B70'};border-radius:3px;transform-origin:left"></div></div>
         </div>` : ''}
       </div>
+      ${p.nuestro && p.idp && p.gl != null ? `<div data-voto="${esc(p.mid)}"></div>` : ''}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:12px" data-grupo data-espera="1700">${side(p.local, p.gol_l, p.por_l, p.alin_l, p.staff_l, 0)}${side(p.visitante, p.gol_v, p.por_v, p.alin_v, p.staff_v, 100)}</div>
       ${info.length || eventos ? `<div class="card" style="margin-top:12px;padding:18px 20px">
         ${info.length ? `<div style="display:flex;gap:12px 32px;flex-wrap:wrap">${info.map(([k, v]) => `<div><div style="font-size:13px;font-weight:700;color:#A6A6AD">${k}</div><div style="font-weight:600;font-size:16px">${esc(v)}</div></div>`).join('')}</div>` : ''}
@@ -1659,13 +1660,14 @@
         .map(([id, e]) => ({ idp: m.idp, s: e.s, t: e.t, p: e.p, m: e.m, rival: lado === 'L' ? m.visitante : m.local, fecha: m.fecha })); });
     // en pista en los goles con el vídeo marcado: a favor y en contra
     let mas = 0, menos = 0, pjV = 0; const mios = [];
-    (p.partidos || []).forEach(x => { const m = A.partidos[x.mid], v = m && m.idp && VID[m.idp]; if (!v) return;
+    (p.partidos || []).forEach(x => { const m = A.partidos[x.mid], v = (m && m.idp && VID[m.idp]) || { ev: {} }; if (!m || !m.idp) return;
       const enL = [m.alin_l, m.por_l, m.gol_l].some(l => (l || []).some(y => y.k === p.k)), lado = enL ? 'L' : 'V';
       const fila = ((enL ? m.alin_l : m.alin_v) || []).concat((enL ? m.por_l : m.por_v) || []).find(y => y.k === p.k), dors = String((fila && fila.dorsal) || p.dorsal || '');
-      const gs = Object.values(v.ev || {}).filter(e => e.tipo === 'GOL' && e.pista && (e.pista[lado] || []).length); if (gs.length) pjV++;
+      const gs = (m.ev || []).filter(e => e.tipo === 'gol' && e.jugador && /^P[12]$/.test(e.periodo)).map(e => ({ lado: e.lado === 'local' ? 'L' : 'V', pista: pistaGol(m.idp, `${e.periodo[1]}-${e.minuto}-GOL-${e.jugador.dorsal}`) }))
+        .filter(e => e.pista && (e.pista[lado] || []).length); if (gs.length) pjV++;
       gs.forEach(e => { if (e.pista[lado].includes(dors)) { if (e.lado === lado) mas++; else menos++; } });
       Object.values(v.ev || {}).forEach(e => { if (e.tipo === 'GOL' && e.xy && e.lado === lado && (e.q || '').startsWith('#' + dors + ' ')) mios.push(e); }); });
-    const pm = pjV ? `<div style="margin-top:12px">${lab('EN PISTA EN LOS GOLES', 'margin-bottom:2px')}<div class="an-nota" style="margin-top:0">En ${pjV === 1 ? 'el partido' : 'los ' + pjV + ' partidos'} con el vídeo marcado: goles de su equipo y en contra mientras estaba en pista.</div>
+    const pm = pjV ? `<div style="margin-top:12px">${lab('EN PISTA EN LOS GOLES', 'margin-bottom:2px')}<div class="an-nota" style="margin-top:0">En ${pjV === 1 ? 'el partido' : 'los ' + pjV + ' partidos'} en los que se apuntó quién estaba en pista (en el vídeo o desde el banquillo): goles de su equipo y en contra mientras jugaba.</div>
       <div class="an-ks" style="max-width:480px;grid-template-columns:repeat(3,minmax(0,1fr))">${anK('A favor', '+' + mas, '', '#3DD27E')}${anK('En contra', '−' + menos, '', menos ? '#FF6B63' : '')}${anK('Balance', (mas - menos > 0 ? '+' : '') + (mas - menos))}</div></div>` : '';
     const mapa = mios.length ? `<div style="margin-top:12px">${lab('DESDE DÓNDE MARCA', 'margin-bottom:6px')}<div style="width:min(100%,260px)">${mediaPista(mios.map(e => `<circle cx="${e.xy[0] * PISTA_W}" cy="${e.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>`).join(''), 'width="100%" role="img" aria-label="Media pista con el sitio de sus goles marcados en vídeo"')}</div></div>` : '';
     if (!yo.length) return pm;
@@ -1708,7 +1710,7 @@
   function rellenarVideoFicha() {
     const el = view.querySelector('[data-goles-video]'); if (!el) return;
     const pon = () => { const p = A.jugadores[el.dataset.golesVideo], h = p ? golesVideo(p) : ''; if (h) el.innerHTML = h; else el.remove(); };
-    if (VID) pon(); else cargarVideos().then(pon);
+    Promise.all([VID ? VID : cargarVideos(), PIS ? PIS : cargarPistas()]).then(pon);
   }
 
   /* Tarjeta para compartir (imagen de 1080 × 1350): la ficha de un jugador o el resultado de un partido. Se dibuja en el
@@ -1846,8 +1848,160 @@
   }
   function rellenarTirosPartido() {
     const el = view.querySelector('[data-tiros-partido]'); if (!el) return;
-    const pon = () => { const p = A.partidos[el.dataset.tirosPartido]; const h = p && TIR ? graficoTiros(p) : ''; if (h) el.innerHTML = h; else el.remove(); };
+    const pon = () => { const p = A.partidos[el.dataset.tirosPartido]; const h = p && TIR ? graficoTiros(p) : ''; if (h) { el.innerHTML = h; return; }
+      if (!p || !p.idp) { el.remove(); return; }
+      tirosApi(p.idp).then(d => { if (!d) { el.remove(); return; } TIR = TIR || {}; TIR[p.idp] = d; const h2 = graficoTiros(p); if (h2) el.innerHTML = h2; else el.remove(); }); };
     if (TIR) pon(); else Promise.all([cargarTiros(), ANA ? ANA : cargarAnalisis()]).then(pon);
+  }
+
+
+  /* ── Afición y banquillo: el servicio del directo en Vercel guarda votos, emojis, quién está en pista y los tiros que
+     graba el vigía (/api/voto, /api/reaccion, /api/pista, /api/tiros). Si el servicio no tiene almacén, todo esto se oculta. */
+  const API = new URLSearchParams(location.search).get('api') === 'local' ? 'http://localhost:5193/api/' : 'https://madridpatina-directo.vercel.app/api/';
+  const DISP = (() => { try { let d = localStorage.getItem('mp-disp'); if (!d) { d = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('mp-disp', d); } return d; }
+    catch (e) { return 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); } })();
+  // ¿tiene almacén el servicio? Lo comprueba cada noche el proceso semanal (data/servicio.json); si no, ni se le pregunta
+  let srvP = null;
+  const servicioListo = () => srvP || (srvP = API.includes('localhost') ? Promise.resolve(true)
+    : fetch('data/servicio.json?v=' + verDatos()).then(r => (r.ok ? r.json() : {})).then(d => !!(d && d.almacen)).catch(() => false));
+  const apiGet = q => servicioListo().then(ok => (ok ? fetch(API + q, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).catch(() => null) : null));
+  const apiPost = (q, cuerpo) => servicioListo().then(ok => (ok ? fetch(API + q, { method: 'POST', body: JSON.stringify(cuerpo) }).then(r => r.json().then(j => Object.assign(j, { _st: r.status }))).catch(() => null) : null));
+  const leeLS = (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } };
+  const ponLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } };
+  const normId = id => String(id || '').replace(/-0+(\d+)$/, '-$1');   // «…-GOL-05» y «…-GOL-5» son el mismo gol
+
+  // quién estaba en pista en cada gol: lo marcado en el vídeo y lo apuntado desde el banquillo (data/pista.json + lo último del servicio)
+  let PIS = null, pisP = null; const PIS_VIVO = {};
+  const cargarPistas = () => pisP || (pisP = fetch('data/pista.json?v=' + verDatos()).then(r => (r.ok ? r.json() : {})).then(d => (PIS = d || {})).catch(() => (PIS = {})));
+  function pistaGol(idp, id) {
+    const n = normId(id), v = VID && VID[idp], deVid = v && Object.entries(v.ev || {}).find(([k]) => normId(k) === n);
+    if (deVid && deVid[1].pista) return deVid[1].pista;
+    const de = (o) => { const x = o && Object.entries(o).find(([k]) => normId(k) === n); return x ? x[1] : null; };
+    return de(PIS_VIVO[idp]) || de(PIS && PIS[idp]) || null;
+  }
+
+  // ── emojis en el directo («la grada») ──
+  const EMO = [['aplauso', '👏', 'Aplausos'], ['fuego', '🔥', 'Fuego'], ['sorpresa', '😮', 'Sorpresa'], ['fuerza', '💪', 'Ánimo'], ['corazon', '❤️', 'Corazón']];
+  const REAC = { idp: null, datos: null, t: 0 };
+  function reacHtml(idp) {
+    if (!REAC.datos || REAC.idp !== idp) return '';
+    const r = REAC.datos.reacciones;
+    return `<div class="an-reac"><span class="lab">LA GRADA</span><div class="b">${EMO.map(([k, e, t]) => `<button type="button" data-reac="${k}" aria-label="${t}: ${r[k] || 0}"><span aria-hidden="true">${e}</span><b>${r[k] || 0}</b></button>`).join('')}</div></div>`;
+  }
+  const pintarReac = () => { const c = $('[data-dv="reac"]'); if (c) c.innerHTML = reacHtml(DV.idp); };
+  function cargarReac(idp, ya) {
+    if (!idp || (!ya && REAC.idp === idp && Date.now() - REAC.t < 20000)) return;
+    REAC.t = Date.now();
+    apiGet('reaccion?idp=' + encodeURIComponent(idp)).then(d => { if (d && d.reacciones) { REAC.idp = idp; REAC.datos = d; pintarReac(); } });
+  }
+  document.addEventListener('mp-directo', () => { if (DV.idp && /^#\/directo\//.test(location.hash)) cargarReac(DV.idp); });
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-reac]'); if (!b || !REAC.datos) return;
+    const k = b.dataset.reac; REAC.datos.reacciones[k] = (REAC.datos.reacciones[k] || 0) + 1; pintarReac();
+    if (MOV) { const f = document.createElement('span'); f.className = 'an-flota'; f.textContent = (EMO.find(x => x[0] === k) || [])[1] || ''; const r = b.getBoundingClientRect();
+      f.style.left = (r.left + r.width / 2) + 'px'; f.style.top = r.top + 'px'; document.body.appendChild(f); setTimeout(() => f.remove(), 1100); }
+    apiPost('reaccion', { idp: REAC.idp, e: k, d: DISP }).then(d => { if (d && d.reacciones) { REAC.datos = d; pintarReac(); } }); });
+
+  // ── votación al mejor del partido (nuestros partidos; se vota hasta 7 días después) ──
+  function candidatos(p) {
+    const lados = [['l', p.local], ['v', p.visitante]].filter(([, n]) => ours(n));
+    return lados.flatMap(([s]) => ((s === 'l' ? p.alin_l : p.alin_v) || []).concat(s === 'l' ? p.por_l || [] : p.por_v || []))
+      .filter((x, i, xs) => x.k && xs.findIndex(y => y.k === x.k) === i).sort((a, b) => (+a.dorsal) - (+b.dorsal));
+  }
+  function votoHtml(p, d) {
+    const cand = candidatos(p); if (!cand.length) return '';
+    const mio = leeLS('mp-voto-' + p.idp, null), hoy = hoyISO(), dias = (Date.parse(hoy) - Date.parse(p.fecha)) / 864e5, abierta = dias <= 7;
+    const tot = d.total || 0;
+    if (!mio && abierta) return `${lab('¿QUIÉN FUE EL MEJOR?', 'margin-bottom:2px')}<div class="an-nota" style="margin-top:0">Vota a un jugador nuestro. Un voto por móvil; se puede votar hasta 7 días después del partido.${tot ? ` Ya han votado ${tot}.` : ''}</div>
+      <div class="an-togs">${cand.map(x => `<button type="button" class="an-tog" data-votar="${esc(x.k)}">#${esc(x.dorsal)} ${esc(corto(x))}</button>`).join('')}</div>`;
+    if (!tot) return '';
+    const orden = cand.map(x => [x, d.votos[x.k] || 0]).filter(([, n]) => n).sort((a, b) => b[1] - a[1]), mx = orden.length ? orden[0][1] : 1;
+    return `${lab('EL MEJOR DEL PARTIDO, SEGÚN LA AFICIÓN', 'margin-bottom:2px')}<div class="an-nota" style="margin-top:0">${tot} ${tot === 1 ? 'voto' : 'votos'}${mio === 'ya' ? ' · desde este móvil ya se había votado' : mio && cand.find(x => x.k === mio) ? ' · el tuyo: ' + esc(corto(cand.find(x => x.k === mio))) : ''}${abierta ? ' · se puede votar hasta 7 días después del partido' : ''}</div>
+      ${orden.slice(0, 6).map(([x, n]) => `<div class="an-voto"><span>#${esc(x.dorsal)} ${esc(corto(x))}</span><div class="bar"><i style="width:${(n / mx * 100).toFixed(1)}%"></i></div><b>${Math.round(n / tot * 100)} %</b></div>`).join('')}`;
+  }
+  function rellenarVoto() {
+    const el = view.querySelector('[data-voto]'); if (!el) return;
+    const p = A.partidos[el.dataset.voto]; if (!p || !p.idp) { el.remove(); return; }
+    apiGet('voto?idp=' + encodeURIComponent(p.idp)).then(d => { if (!d) { el.remove(); return; } const h = votoHtml(p, d); if (h) el.innerHTML = `<div class="card an-c" style="margin-top:12px">${h}</div>`; else el.remove(); });
+  }
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-votar]'); if (!b) return;
+    const el = b.closest('[data-voto]'), p = el && A.partidos[el.dataset.voto]; if (!p) return;
+    el.querySelectorAll('[data-votar]').forEach(x => { x.disabled = true; });
+    apiPost('voto', { idp: p.idp, k: b.dataset.votar, d: DISP }).then(d => {
+      if (d && (d._st === 200 || d._st === 409 || d._st === 429)) { ponLS('mp-voto-' + p.idp, d._st === 200 ? b.dataset.votar : 'ya'); el.innerHTML = `<div class="card an-c" style="margin-top:12px">${votoHtml(p, d)}</div>`; }
+      else { el.querySelectorAll('[data-votar]').forEach(x => { x.disabled = false; }); } }); });
+
+  // ── tiros grabados por el vigía (antes de que el proceso semanal los publique en data/tiros.json) ──
+  const TIR_VIVO = {};
+  const tirosApi = idp => (idp in TIR_VIVO ? Promise.resolve(TIR_VIVO[idp]) : apiGet('tiros?idp=' + encodeURIComponent(idp)).then(d => (TIR_VIVO[idp] = d && d.s ? d : null)));
+
+  /* ── Banquillo (#/banquillo/{idp}): el delegado apunta quién está en pista en cada gol, con líneas preparadas para ir rápido.
+     Se guarda en el servicio con el PIN del banquillo; si no hay servicio, se queda en este móvil. ── */
+  const BQ = { idp: null, S: null, sel: {}, guardado: {}, editar: null, msg: '' };
+  function lineas(l) { const n = BQ.S && BQ.S[l === 'L' ? 'local' : 'visitante']; return leeLS('mp-lineas-' + (n || l), [[], [], []]); }
+  function golesBQ() { return ((BQ.S && BQ.S.eventos) || []).filter(e => e.tipo === 'GOL' && e.id).slice().sort((a, b) => (a.periodo - b.periodo) || (segs(a.t) - segs(b.t))); }
+  function bqHtml() {
+    const S = BQ.S, ctx = ctxDirecto(S), lados = ['L', 'V'].filter(l => ctx.mp[l]);
+    const jug = l => ((S.plantillas || {})[l] || []).slice().sort((a, b) => (+a.dorsal) - (+b.dorsal));
+    const chip = (l, j, on, attrs) => `<button type="button" class="an-tog" aria-pressed="${on ? 'true' : 'false'}" ${attrs}>#${esc(j.dorsal)} ${esc(j.jugador_corto || '')}</button>`;
+    const lin = lados.map(l => { const ls = lineas(l); return `<div class="an-sub">LÍNEAS DE ${esc(ctx.abr[l])}</div>${ls.map((x, i) => `<div class="bq-lin"><b>L${i + 1}</b>${BQ.editar === l + i
+      ? `<div class="an-togs">${jug(l).map(j => chip(l, j, x.includes(String(j.dorsal)), `data-bq="linea-j" data-l="${l}" data-i="${i}" data-d="${esc(j.dorsal)}"`)).join('')}</div><button type="button" class="dv-alin" data-bq="linea-ok">Hecho</button>`
+      : `<span>${x.length ? x.map(d => '#' + esc(d)).join(' ') : 'sin jugadores'}</span><button type="button" class="an-tog" data-bq="linea-editar" data-l="${l}" data-i="${i}">Cambiar</button>`}</div>`).join('')}`; }).join('');
+    const goles = golesBQ().map(e => { const id = normId(e.id), sel = BQ.sel[id] || { L: [], V: [] }, gu = BQ.guardado[id];
+      const marc = (e.marcador || '').replace('-', '–'), min = Math.floor(((e.periodo - 1) * (S.duracion_periodo || 1500) + (segs(e.t) || 0)) / 60) + 1;
+      return `<div class="bq-gol"><div class="cab"><b>${esc(marc)}</b><span>minuto ${min} · gol de ${esc(ctx.abr[e.lado] || '')}${e.dorsal ? ' · #' + esc(e.dorsal) + ' ' + esc(e.jugador_corto || '') : ''}</span><em class="${gu === 'ok' ? 'ok' : gu ? 'mal' : ''}">${gu === 'ok' ? 'Guardado' : gu || ''}</em></div>
+        ${lados.map(l => `<div class="an-sub">${esc(ctx.abr[l])} EN PISTA · ${sel[l].length}</div><div class="an-togs">${lineas(l).map((x, i) => x.length ? `<button type="button" class="an-tog bq-l" data-bq="poner-linea" data-id="${esc(id)}" data-l="${l}" data-i="${i}">L${i + 1}</button>` : '').join('')}
+          ${jug(l).map(j => chip(l, j, sel[l].includes(String(j.dorsal)), `data-bq="j" data-id="${esc(id)}" data-l="${l}" data-d="${esc(j.dorsal)}"`)).join('')}</div>`).join('')}
+        <button type="button" class="dv-alin" data-bq="guardar" data-id="${esc(id)}">Guardar este gol</button></div>`; }).reverse().join('');
+    return `<div class="sy"><div class="lab" style="color:#FF6B63">BANQUILLO</div><h1>${esc(S.local || '')} <span>${S.gl ?? ''}–${S.gv ?? ''}</span> ${esc(S.visitante || '')}</h1>
+      <p class="sy-ayuda">Para el delegado: en cada gol, marca quién de los nuestros estaba en pista (con el portero) y pulsa «Guardar este gol». Prepara las líneas antes del partido y luego basta con tocar L1, L2 o L3 y corregir. Los goles van apareciendo solos, como en el directo. Con eso la web calcula el más/menos de cada jugador.</p>
+      <div class="bq-pin"><label for="bq-pin">PIN del banquillo</label><input id="bq-pin" type="password" inputmode="numeric" autocomplete="off" value="${esc(leeLS('mp-pin', ''))}"><span class="an-nota" style="margin:0">Se guarda en este móvil.</span></div>
+      ${BQ.msg ? `<div class="an-frase">${esc(BQ.msg)}</div>` : ''}
+      <div class="card an-c" style="margin-top:12px">${lin}</div>
+      <div style="margin-top:12px">${lab('GOLES · EL ÚLTIMO, ARRIBA', 'margin-bottom:6px')}${goles || '<div class="an-nota">Aún no hay goles en el acta.</div>'}</div></div>`;
+  }
+  const pintarBQ = () => { const c = view.querySelector('[data-bq-caja]'); if (c && BQ.S) c.innerHTML = bqHtml(); };
+  function vBanquillo(idp) {
+    if (BQ.idp !== idp) Object.assign(BQ, { idp, S: null, sel: leeLS('mp-banq-' + idp, {}), guardado: {}, editar: null, msg: '' });
+    const S = LIVE.snaps[idp] || BQ.S;
+    if (!S) {
+      const url = DIRECTO_EJEMPLO ? DIRECTO_URL : DIRECTO_URL + '?idp=' + encodeURIComponent(idp);
+      fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(d => {
+        BQ.S = (d.partidos || []).find(x => x.idp === idp) || null;
+        if (location.hash.indexOf('#/banquillo/' + idp) === 0) render();
+      }).catch(() => { const w = $('[data-bq-espera]'); if (w) w.textContent = 'Sin conexión con el acta de la federación.'; });
+      return '<div class="loading" data-bq-espera>Cargando el acta del partido…</div>';
+    }
+    BQ.S = S;
+    apiGet('pista?idp=' + encodeURIComponent(idp)).then(d => { if (!d || !d.ev) return; Object.entries(d.ev).forEach(([k, v]) => { const n = normId(k); if (!BQ.sel[n] || !(BQ.sel[n].L.length + BQ.sel[n].V.length)) BQ.sel[n] = { L: v.L || [], V: v.V || [] }; BQ.guardado[n] = BQ.guardado[n] || 'ok'; }); pintarBQ(); });
+    return `<div data-bq-caja>${bqHtml()}</div>`;
+  }
+  document.addEventListener('mp-directo', () => { if (BQ.idp && location.hash.indexOf('#/banquillo/' + BQ.idp) === 0 && LIVE.snaps[BQ.idp]) { BQ.S = LIVE.snaps[BQ.idp]; pintarBQ(); } });
+  document.addEventListener('input', e => { if (e.target && e.target.id === 'bq-pin') ponLS('mp-pin', e.target.value); });
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-bq]'); if (!b || !BQ.S) return;
+    const a = b.dataset.bq, id = b.dataset.id, l = b.dataset.l;
+    const selDe = k => (BQ.sel[k] = BQ.sel[k] || { L: [], V: [] });
+    if (a === 'j') { const s = selDe(id)[l], i = s.indexOf(b.dataset.d); if (i >= 0) s.splice(i, 1); else s.push(b.dataset.d); BQ.guardado[id] = 'Sin guardar'; }
+    else if (a === 'poner-linea') { selDe(id)[l] = lineas(l)[+b.dataset.i].slice(); BQ.guardado[id] = 'Sin guardar'; }
+    else if (a === 'linea-editar') BQ.editar = l + b.dataset.i;
+    else if (a === 'linea-ok') BQ.editar = null;
+    else if (a === 'linea-j') { const n = BQ.S[l === 'L' ? 'local' : 'visitante'] || l, ls = lineas(l), x = ls[+b.dataset.i], i = x.indexOf(b.dataset.d); if (i >= 0) x.splice(i, 1); else x.push(b.dataset.d); ponLS('mp-lineas-' + n, ls); }
+    else if (a === 'guardar') {
+      const s = selDe(id), pin = ($('#bq-pin') || {}).value || '';
+      BQ.guardado[id] = 'Guardando…'; pintarBQ();
+      apiPost('pista', { idp: BQ.idp, id, L: s.L, V: s.V, pin }).then(d => { BQ.guardado[id] = d && d._st === 200 ? 'ok' : (d && d.error) || 'Sin conexión: queda guardado en este móvil'; pintarBQ(); });
+    }
+    ponLS('mp-banq-' + BQ.idp, BQ.sel);
+    pintarBQ();
+  });
+
+  // en la página de un partido nuestro: lo último que haya apuntado el banquillo (y data/pista.json)
+  function rellenarPistaVivo() {
+    const m = /^#\/partido\/([^/]+)/.exec(location.hash), p = m && A.partidos[decodeURIComponent(m[1])];
+    if (!p || !p.idp || !p.nuestro) return;
+    const repinta = () => { if (location.hash === m[0]) render(); };
+    if (!PIS) cargarPistas().then(d => { if (d && d[p.idp]) repinta(); });
+    if (!(p.idp in PIS_VIVO)) { PIS_VIVO[p.idp] = null; apiGet('pista?idp=' + encodeURIComponent(p.idp)).then(d => { PIS_VIVO[p.idp] = (d && d.ev) || {}; if (Object.keys(PIS_VIVO[p.idp]).length) repinta(); }); }
   }
 
   /* ── 6. Ficha de jugador ────────────────────────────────── */
@@ -2018,7 +2172,9 @@
       ${H('El resumen de un partido')}
       ${P('Reproduce el partido con los minutos del acta. Los tiros y las paradas de cada portero solo se ven al final, porque el acta definitiva no dice cuándo fue cada tiro.')}
       ${H('Tiros a puerta minuto a minuto')}
-      ${P('Durante el partido, el acta digital va subiendo los tiros de cada portero cada uno o dos minutos. Desde octubre de 2026 guardamos esas subidas desde el directo, y la página del partido dibuja los tiros de cada equipo a lo largo del partido. El acta no publica el reloj, así que el minuto se estima con la hora de cada apunte (los goles, faltas y tiempos muertos llevan su minuto): puede ir uno o dos minutos arriba o abajo. Si el acta deja de subir los tiros un rato y luego los apunta de golpe, ese tramo sale en discontinuo. El total siempre se comprueba con el acta definitiva.')}`);
+      ${P('Durante el partido, el acta digital va subiendo los tiros de cada portero cada uno o dos minutos. Desde octubre de 2026 un programa las guarda cada minuto mientras se juega, y la página del partido dibuja los tiros de cada equipo a lo largo del partido. El acta no publica el reloj, así que el minuto se estima con la hora de cada apunte (los goles, faltas y tiempos muertos llevan su minuto): puede ir uno o dos minutos arriba o abajo. Si el acta deja de subir los tiros un rato y luego los apunta de golpe, ese tramo sale en discontinuo. El total siempre se comprueba con el acta definitiva.')}
+      ${H('La afición y el banquillo')}
+      ${lista(['<b>La grada</b>: en el directo, cualquiera puede mandar emojis (aplauso, fuego, sorpresa, ánimo, corazón). Se cuentan todos.', '<b>El mejor del partido</b>: en nuestros partidos se vota a un jugador nuestro hasta 7 días después. Un voto por móvil.', '<b>En pista</b>: el delegado apunta desde el banquillo quién estaba en pista en cada gol (con el PIN del banquillo), o se marca después en el vídeo. Con eso salen el más/menos de cada jugador (goles de su equipo y en contra mientras jugaba) y, con el vídeo, desde dónde se marcó.'])}`);
 
     // 5 · ficha del jugador
     const ficha = sec('ficha', '05', 'FICHA DEL JUGADOR', 'Con el equipo', 'En la ficha de cada jugador nuestro, su peso en los goles del equipo. Solo con datos del acta y a partir de 3 partidos.', `
@@ -2244,8 +2400,8 @@
     jugadores: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.2" cy="9" r="2.6"/><path d="M16.5 14.1c2.8.3 5 2.3 5 5.9"/>',
     legado: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 6h3a3 3 0 0 1-3 3.5M7 6H4a3 3 0 0 0 3 3.5"/>',
   };
-  const TOP = { directo: 'jornada', jornada: 'jornada', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'pretemporada', metodo: 'metodo', sincronizar: 'jornada', video: 'jornada' };
-  const TITLES = { directo: 'En directo', jornada: 'Jornada', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido' };
+  const TOP = { banquillo: 'jornada', directo: 'jornada', jornada: 'jornada', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'pretemporada', metodo: 'metodo', sincronizar: 'jornada', video: 'jornada' };
+  const TITLES = { banquillo: 'Banquillo', directo: 'En directo', jornada: 'Jornada', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido' };
   let prevRoute = null, navReset = false, goingBack = false;
   // 7a · la píldora roja se desliza desde la sección anterior (y se recoloca si cambia el ancho de la ventana)
   let pilAntes = null, secAntes = null, animarAlCerrar = false;
@@ -2292,6 +2448,7 @@
     else if (v === 'directo') html = vDirecto(parts[1], parts[2]);
     else if (v === 'metodo') html = vMetodo();
     else if (v === 'sincronizar') html = vSincronizar(parts[1]);
+    else if (v === 'banquillo') html = parts[1] ? vBanquillo(parts[1]) : '<div class="sy"><div class="lab" style="color:#FF6B63">BANQUILLO</div><p class="sy-ayuda">Entra desde el directo del partido (botón «Banquillo»).</p></div>';
     else if (v === 'video') html = vVideo(parts[1], parts[2]);
     else html = vJornada(parts[1]);
     const back = S.hist.length && v !== 'jornada' ? '<a class="back" href="#" data-back>← Volver</a>' : '';
@@ -2318,6 +2475,8 @@
     rellenarFlujo();
     rellenarComparar();
     rellenarVideoFicha();
+    rellenarVoto();
+    rellenarPistaVivo();
     billetes(view);
     // con la intro delante, la web se anima al cerrarla
     if (introEl) animarAlCerrar = true; else animar(view);
@@ -4066,7 +4225,9 @@
     if (modo === 'resumen') RSM.saltado = false;
     const verRes = modo === 'resumen' ? '<button type="button" class="dv-alin" data-ver-resumen>▶ Resumen final</button>'
       : sn.estado === 'final' ? `<a class="dv-alin" href="#/directo/${encodeURIComponent(idp)}/resumen">▶ Ver resumen</a>` : '';
-    const arriba = verRes + alinBtn(sn) + pistaChip(sn) + `<button type="button" class="dv-alin" data-wa="${esc(idp)}" title="Manda el marcador y el enlace del directo por WhatsApp">WhatsApp</button>`;
+    cargarReac(idp, true);
+    const arriba = verRes + alinBtn(sn) + pistaChip(sn) + `<button type="button" class="dv-alin" data-wa="${esc(idp)}" title="Manda el marcador y el enlace del directo por WhatsApp">WhatsApp</button>`
+      + (ctx.mp.L || ctx.mp.V ? `<a class="dv-alin" href="#/banquillo/${encodeURIComponent(idp)}" title="Para el delegado: quién está en pista en cada gol">Banquillo</a>` : '');
     return `${arriba ? `<div class="dv-arriba">${arriba}</div>` : ''}${resumenHtml}<div class="dv">
       <div class="dv-izq">
         <div class="dv-caja" data-dv="caja">
@@ -4082,7 +4243,7 @@
         <div class="dv-lista"><div class="dv-lcab"><span>MINUTO A MINUTO <a class="dv-como" href="#/metodo/directo">¿qué significa cada aviso?</a></span><span data-dv="lcab">${cabLista(sn).replace(/^<span[^>]*>|<\/span>$/g, '')}</span></div>
           <div class="dv-filas" data-dv="filas">${filasHtml(ctx)}</div></div>
       </div>
-      <div class="dv-der" data-dv="der">${juegoHtml(ctx)}<div data-dv="ficha">${fichaHtml(ctx)}</div><div style="display:flex;flex-direction:column;gap:8px" data-dv="hoy">${hoyHtml()}</div></div>
+      <div class="dv-der" data-dv="der">${juegoHtml(ctx)}<div data-dv="reac">${reacHtml(idp)}</div><div data-dv="ficha">${fichaHtml(ctx)}</div><div style="display:flex;flex-direction:column;gap:8px" data-dv="hoy">${hoyHtml()}</div></div>
     </div>`;
   }
   function pintarMarcador() {
