@@ -1306,3 +1306,14 @@ a.an-par.blk, .an-par { display: grid; grid-template-columns: minmax(58px, auto)
 .ev-e { cursor: pointer; outline: none; }
 .ev.foco .ev-e:not(.sel) { opacity: .25; }
 .ev-e.sel path { stroke-width: 4; }
+
+.an-sel { font: inherit; font-size: 15px; width: 100%; max-width: 520px; padding: 9px 12px; border-radius: 8px; border: 1px solid #3A3A40; background: #121214; color: #F4F4F5; margin-bottom: 8px; }
+.fl-b, .fl-n { cursor: pointer; outline: none; }
+.fl-b:hover, .fl-b:focus, .fl-b.sel { fill-opacity: 1; stroke: #FFFFFF; stroke-width: 1; }
+.fl-n.sel rect, .fl-n:focus rect { stroke: #FFFFFF; stroke-width: 2; }
+.tj-capa { position: fixed; inset: 0; z-index: 200; background: rgba(13,13,14,.88); display: grid; place-items: center; padding: 16px; padding-top: max(16px, env(safe-area-inset-top, 0px)); }
+.tj-caja { display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 100%; }
+.tj-img { color: #A6A6AD; font-size: 15px; min-height: 120px; display: grid; place-items: center; }
+.tj-img img { display: block; max-width: min(100%, 480px); max-height: 72vh; height: auto; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+.tj-bot { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.tj-bot .dv-alin { font-size: 14px; padding: 9px 14px; color: #FFFFFF; text-decoration: none; }

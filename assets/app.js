@@ -917,7 +917,7 @@
           ${team(p.visitante, hT(p.visitante))}
         </div>
         ${p.idp ? videoPartido(p.idp) : ''}
-        ${p.nuestro && p.idp && !(VID && VID[p.idp]) ? `<div style="display:flex;justify-content:center;margin-top:22px"><a class="dv-alin" href="#/directo/${encodeURIComponent(p.idp)}/resumen" title="El partido contado otra vez desde el acta: pista, alineaciones, goles, faltas, penaltis y resumen final">▶ Ver resumen</a></div>` : ''}
+        ${p.gl != null ? `<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:22px">${p.nuestro && p.idp && !(VID && VID[p.idp]) ? `<a class="dv-alin" href="#/directo/${encodeURIComponent(p.idp)}/resumen" title="El partido contado otra vez desde el acta: pista, alineaciones, goles, faltas, penaltis y resumen final">▶ Ver resumen</a>` : ''}<button type="button" class="dv-alin" data-tarjeta="partido" data-id="${esc(p.mid)}" title="Una imagen con el resultado para compartir">Compartir resultado</button></div>` : ''}
         ${p.gl != null && (p.ev || []).length ? `<div data-grafico-partido="${esc(p.mid)}"></div>` : ''}
         ${hasTiros ? `<div style="max-width:640px;margin:28px auto 0">
           <div style="display:flex;justify-content:space-between;${BS}font-weight:800;font-size:28px;line-height:1"><span>${p.tl}</span><span class="lab" style="align-self:center">TIROS A PUERTA</span><span>${p.tv}</span></div>
@@ -1579,6 +1579,202 @@
   }
   const W_corta = n => (innerWidth < 560 ? abr(n) : n);
 
+
+  /* ── Legado: de un equipo del club a otro, temporada a temporada (flujo de analisis.json) ── */
+  const FLU = { todo: false, vista: null };
+  const FLU_ORDEN = ['A', 'B', 'C', 'D', 'E', 'Cantera'];
+  const FLU_TXT = e => (e === 'Cantera' ? 'Cantera' : 'MP ' + e);
+  function svgFlujo() {
+    const F = ANA && ANA.flujo; if (!F || F.temporadas.length < 2) return '';
+    const n0 = FLU.todo ? 0 : Math.max(0, F.temporadas.length - 6), temps = F.temporadas.slice(n0), nodos = F.nodos.slice(n0);
+    const enl = F.enlaces.filter(x => x.i >= n0).map(x => Object.assign({}, x, { i: x.i - n0 }));
+    const maxTot = Math.max(...nodos.map(c => Object.values(c).reduce((a, b) => a + b, 0)));
+    const colW = 116, W = Math.max(anchoGrafico(1100), temps.length * colW + 100), H = 470, Tm = 34, Bm = 28, nodoW = 16, gap = 10;
+    const u = (H - Tm - Bm - gap * 5) / maxTot, sx = i => 72 + i * (W - 130) / Math.max(1, temps.length - 1);
+    const pos = nodos.map((c, i) => { let y = Tm; const o = {}; FLU_ORDEN.filter(e => c[e]).forEach(e => { o[e] = { y, h: c[e] * u, sal: y, ent: y }; y += c[e] * u + gap; }); return o; });
+    const ultima = temps.length - 1;
+    // bandas dentro del club; quien llega o se va, como cifras junto a cada bloque
+    const bandas = [], llegan = {}, salen = {};
+    enl.forEach(x => {
+      if (FLU_ORDEN.includes(x.de) && FLU_ORDEN.includes(x.a)) bandas.push(x);
+      else if (x.a !== 'fuera') { const k = x.i + 1 + '|' + x.a; llegan[k] = (llegan[k] || 0) + x.n; }
+      else { const k = x.i + '|' + x.de; salen[k] = (salen[k] || 0) + x.n; }
+    });
+    bandas.sort((a, b) => a.i - b.i || FLU_ORDEN.indexOf(a.de) - FLU_ORDEN.indexOf(b.de) || FLU_ORDEN.indexOf(a.a) - FLU_ORDEN.indexOf(b.a));
+    FLU.vista = { temps, bandas, nombres: F.nombres, enl, n0 };
+    const paths = bandas.map((x, j) => { const A_ = pos[x.i][x.de], B_ = pos[x.i + 1][x.a]; if (!A_ || !B_) return ''; const h = x.n * u;
+      const x0 = sx(x.i) + nodoW / 2, x1 = sx(x.i + 1) - nodoW / 2, y0 = A_.sal, y1 = B_.ent; A_.sal += h; B_.ent += h; const xm = (x0 + x1) / 2;
+      const igual = x.de === x.a, col = igual ? '#3A3A40' : FLU_ORDEN.indexOf(x.a) < FLU_ORDEN.indexOf(x.de) ? '#1A7A43' : '#8E1219';
+      return `<path class="fl-b" data-j="${j}" tabindex="0" d="M${x0},${y0} C${xm},${y0} ${xm},${y1} ${x1},${y1} L${x1},${y1 + h} C${xm},${y1 + h} ${xm},${y0 + h} ${x0},${y0 + h} Z" fill="${col}" fill-opacity="${igual ? 0.55 : 0.75}"><title>${x.n} de ${FLU_TXT(x.de)} a ${FLU_TXT(x.a)}</title></path>`; }).join('');
+    const bloques = pos.map((o, i) => Object.entries(o).map(([e, b]) => { const x = sx(i) - nodoW / 2, ll = llegan[i + '|' + e], sa = salen[i + '|' + e];
+      return `<g class="fl-n" data-i="${i}" data-e="${esc(e)}" tabindex="0"><rect x="${x}" y="${b.y}" width="${nodoW}" height="${Math.max(2, b.h)}" rx="3" fill="${e === 'A' ? RED : '#C9C9CE'}"/>
+        ${b.h >= 14 ? `<text x="${x - 5}" y="${b.y + b.h / 2 + 4}" text-anchor="end" fill="#F4F4F5" font-weight="700">${esc(e === 'Cantera' ? 'Cant.' : e)} ${nodos[i][e]}</text>` : ''}
+        ${ll ? `<text x="${x + nodoW + 4}" y="${b.y + 11}" fill="#3DD27E" font-size="11">+${ll}</text>` : ''}${sa && i < ultima ? `<text x="${x + nodoW + 4}" y="${b.y + b.h - 2}" fill="#FF6B63" font-size="11">−${sa}</text>` : ''}</g>`; }).join('')).join('');
+    const cab = temps.map((t, i) => `<text x="${sx(i)}" y="18" text-anchor="middle" fill="#A6A6AD" font-weight="700">${esc(t)}</text>`).join('');
+    return `<div class="an-tabla" style="margin-top:6px"><svg class="fl" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Paso de jugadores entre los equipos del club, temporada a temporada" style="display:block;font-size:12px;font-family:'IBM Plex Sans Condensed',sans-serif">${cab}${paths}${bloques}</svg></div>`;
+  }
+  function infoFlujo(el) {
+    const V = FLU.vista, box = view.querySelector('[data-info="flujo"]'); if (!V || !box) return;
+    const nom = k => { const x = V.nombres[k]; if (!x) return esc(k); const t = corto({ nombre: x[0], apellidos: x[1] }); return A.jugadores[k] ? `<a href="${hP(k)}">${esc(t)}</a>` : esc(t); };
+    view.querySelectorAll('.fl-b.sel, .fl-n.sel').forEach(x => x.classList.remove('sel')); el.classList.add('sel');
+    if (el.classList.contains('fl-b')) { const x = V.bandas[+el.dataset.j];
+      box.innerHTML = `<b style="color:#F4F4F5">${x.n} de ${FLU_TXT(x.de)} (${V.temps[x.i]}) a ${FLU_TXT(x.a)} (${V.temps[x.i + 1]})</b><br>${x.k.map(nom).join(', ')}`; return; }
+    const i = +el.dataset.i, e = el.dataset.e, ult = i === V.temps.length - 1;
+    const de = V.enl.filter(x => x.i === i - 1 && x.a === e && !FLU_ORDEN.includes(x.de)), va = V.enl.filter(x => x.i === i && x.de === e && x.a === 'fuera');
+    const lin = (t, xs) => xs.length ? `<br>${t}: ${xs.flatMap(x => x.k).map(nom).join(', ')}` : '';
+    box.innerHTML = `<b style="color:#F4F4F5">${FLU_TXT(e)} en ${V.temps[i]}</b>${lin('Llegan nuevos', de.filter(x => x.de === 'nuevo'))}${lin('Vuelven', de.filter(x => x.de === 'vuelve'))}${lin(ult ? '' : 'No siguen la temporada siguiente', ult ? [] : va)}`;
+  }
+  document.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.fl-b, .fl-n'); if (el) infoFlujo(el);
+    const t = e.target.closest && e.target.closest('[data-flujo-todo]'); if (t) { FLU.todo = t.dataset.flujoTodo === '1'; rellenarFlujo(); } });
+  function rellenarFlujo() {
+    const el = view.querySelector('[data-flujo]'); if (!el) return;
+    const pon = () => { const g = svgFlujo(); if (!g) { el.remove(); return; }
+      const F = ANA.flujo, ult = F.temporadas[F.temporadas.length - 1];
+      el.innerHTML = `${lab('DE UN EQUIPO A OTRO', 'margin:28px 0 6px')}<div class="card an-c">
+        <div class="an-nota" style="margin-top:0">Cada bloque es un equipo del club en una temporada (con su número de jugadores); las bandas, los que pasan de un equipo a otro. En verde, los que suben; en rojo oscuro, los que bajan; en gris, los que siguen. Junto a cada bloque, <span style="color:#3DD27E">los que llegan</span> y <span style="color:#FF6B63">los que no siguen</span>. Alevín e Infantil van juntos como cantera. Toca una banda o un bloque para ver los nombres.</div>
+        <div class="an-togs">${anTog(!FLU.todo, 'data-flujo-todo="0"', 'Últimas 6 temporadas')}${anTog(FLU.todo, 'data-flujo-todo="1"', 'Desde 2016/17')}</div>
+        ${g}<div class="pg-info" data-info="flujo" aria-live="polite" style="min-height:40px;margin-top:8px;font-size:14px;color:#A6A6AD;line-height:1.5">Toca una banda o un bloque.</div>
+        <div class="an-nota">${esc(ult)} va en curso: quien aún no ha jugado esta temporada cuenta como que no sigue.</div></div>`; };
+    if (ANA) pon(); else cargarAnalisis().then(pon);
+  }
+
+  /* ── Ficha: sus goles en vídeo, comparar con otro jugador y tarjeta para compartir ── */
+  function golesVideo(p) {
+    if (!VID) return '';
+    const yo = (p.partidos || []).flatMap(x => { const m = A.partidos[x.mid], v = m && m.idp && VID[m.idp]; if (!v || !x.g) return [];
+      const enL = [m.alin_l, m.gol_l].some(l => (l || []).some(y => y.k === p.k)), lado = enL ? 'L' : 'V';
+      const fila = ((enL ? m.alin_l : m.alin_v) || []).concat((enL ? m.gol_l : m.gol_v) || []).find(y => y.k === p.k), dors = String((fila && fila.dorsal) || p.dorsal || '');   // el dorsal de ese partido (las camisetas se prestan)
+      return Object.entries(v.ev || {}).filter(([, e]) => e.tipo === 'GOL' && e.lado === lado && (e.q || '').startsWith('#' + dors + ' '))
+        .map(([id, e]) => ({ idp: m.idp, s: e.s, t: e.t, p: e.p, m: e.m, rival: lado === 'L' ? m.visitante : m.local, fecha: m.fecha })); });
+    if (!yo.length) return '';
+    return `${lab('SUS GOLES EN VÍDEO', 'margin-bottom:6px')}<div style="display:flex;gap:8px;flex-wrap:wrap">${yo.map(g => `<a class="dv-alin" href="#/video/${encodeURIComponent(g.idp)}/${Math.max(0, Math.round(g.s - ANTES_JUGADA))}">▶ ${esc(g.m ? g.m.replace('-', '–') : 'Gol')} · ${g.p}ª parte ${esc(g.t)} · vs ${esc(abr(g.rival))}</a>`).join('')}</div>`;
+  }
+  const CMP = {};
+  function compararHtml(k, otro) {
+    const yo = entradaMapa(k), el = otro && entradasMapa(otro)[0];
+    if (!yo) return '';
+    const cant = !!MAPA.ligas[yo.liga].cantera, todos = [];   // senior con senior y cantera con cantera
+    Object.entries(MAPA.ligas).filter(([, L]) => !!L.cantera === cant).forEach(([id, L]) => L.jug.forEach(r => { if (r.k !== k && r.y != null) todos.push({ k: r.k, t: `${corto({ nombre: r.n, apellidos: r.a })} · ${r.eq} · ${L.nombre.replace('Liga ', '')}` }); }));
+    todos.sort((a, b) => a.t.localeCompare(b.t, 'es'));
+    const opts = `<option value="">Elige un jugador…</option>` + todos.map(x => `<option value="${esc(x.k)}"${x.k === otro ? ' selected' : ''}>${esc(x.t)}</option>`).join('');
+    const ligaN = r => (MAPA.ligas[r.liga] || {}).nombre || '';
+    let tabla = '';
+    if (el) {
+      const fila = (t, f, mejor) => { const a = f(yo), b = f(el); return `<div class="an-cmp"><b class="${mejor && a.n != null && b.n != null && mejor(a.n, b.n) ? 'gana' : ''}">${a.t}</b><span>${t}</span><b class="${mejor && a.n != null && b.n != null && mejor(b.n, a.n) ? 'gana' : ''}">${b.t}</b></div>`; };
+      const nn = (v, d = 2) => ({ n: v, t: v == null ? '—' : dec((+v).toFixed(d)) }), mas = (x, y) => x > y + 1e-9;
+      const nomR = r => corto({ nombre: r.n, apellidos: r.a });
+      tabla = `<div class="an-cmp cab"><b>${esc(nomR(yo))}</b><span></span><b>${esc(nomR(el))}</b></div>
+        <div class="an-cmp"><b style="font-size:14px">${esc(yo.eq)}<br><span style="color:#A6A6AD;font-weight:600">${esc(ligaN(yo).replace('Liga ', ''))}</span></b><span>Equipo</span><b style="font-size:14px">${esc(el.eq)}<br><span style="color:#A6A6AD;font-weight:600">${esc(ligaN(el).replace('Liga ', ''))}</span></b></div>
+        ${fila('Partidos que cuentan', r => ({ n: null, t: r.pj + (r.antes ? '*' : '') }))}
+        ${fila('Goles por partido', r => nn(r.gl), mas)}${fila('Asistencias por partido', r => nn(r.al), mas)}
+        ${fila('Puntos por partido, en su liga', r => nn(r.x), mas)}
+        ${!MAPA.ligas[yo.liga].cantera && !MAPA.ligas[el.liga].cantera ? fila('Puntos por partido, escala de Senior 1', r => nn(r.xf), mas) : ''}
+        ${fila('% de los goles de su equipo en los que participa', r => ({ n: r.pp, t: r.pp != null ? r.pp + ' %' : '—' }), mas)}
+        ${fila('Parte de sus puntos que son goles', r => ({ n: null, t: r.y != null ? r.y + ' %' : '—' }))}
+        ${fila('Arquetipo', r => ({ n: null, t: r.arq && ARQ[r.arq] ? `<span style="font-size:14px">${esc(ARQ[r.arq][0])}</span>` : '—' }))}
+        <div class="an-nota">${yo.antes || el.antes ? '* Con la temporada pasada, porque esta lleva menos de 6 partidos. ' : ''}En verde, quién sale mejor. ${cant ? 'En la cantera no hay escala común entre ligas: los números van tal cual.' : 'Entre ligas senior distintas, la fila que vale es la de la escala de Senior 1 (FMPe).'}</div>`;
+    }
+    return `${lab('COMPARAR CON OTRO JUGADOR', 'margin-bottom:6px')}<label class="sr-only" for="cmp-sel">Jugador con el que comparar</label><select id="cmp-sel" class="an-sel" data-cmp="${esc(k)}">${opts}</select>${tabla}`;
+  }
+  document.addEventListener('change', e => { const s = e.target.closest && e.target.closest('[data-cmp]'); if (!s) return; CMP[s.dataset.cmp] = s.value;
+    const box = view.querySelector('[data-comparar]'); if (box) box.innerHTML = compararHtml(s.dataset.cmp, s.value); const s2 = view.querySelector('#cmp-sel'); if (s2) s2.focus(); });
+  function rellenarComparar() {
+    const el = view.querySelector('[data-comparar]'); if (!el) return;
+    const pon = () => { const h = MAPA ? compararHtml(el.dataset.comparar, CMP[el.dataset.comparar]) : ''; if (h) el.innerHTML = h; else el.remove(); };
+    if (MAPA) pon(); else cargarMapa().then(pon);
+  }
+  function rellenarVideoFicha() {
+    const el = view.querySelector('[data-goles-video]'); if (!el) return;
+    const pon = () => { const p = A.jugadores[el.dataset.golesVideo], h = p ? golesVideo(p) : ''; if (h) el.innerHTML = h; else el.remove(); };
+    if (VID) pon(); else cargarVideos().then(pon);
+  }
+
+  /* Tarjeta para compartir (imagen de 1080 × 1350): la ficha de un jugador o el resultado de un partido. Se dibuja en el
+     navegador y se comparte con el menú del móvil o se descarga. A los menores, sin foto (como en toda la web). */
+  const cargaImg = src => new Promise(res => { if (!src) return res(null); const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+  async function fuentesListas() { try { await Promise.all(["900 100px 'Big Shoulders Display'", "800 100px 'Big Shoulders Display'", "600 40px 'IBM Plex Sans Condensed'", "700 40px 'IBM Plex Sans Condensed'"].map(f => document.fonts.load(f))); } catch (e) { /* con la de sistema */ } }
+  function ajusta(ctx, t, max, px, peso, fam = 'Big Shoulders Display') { let s = px; do { ctx.font = `${peso} ${s}px '${fam}'`; s -= 4; } while (ctx.measureText(t).width > max && s > 20); return s + 4; }
+  function cubre(ctx, im, x, y, w, h, fy = 0.18) { const r = Math.max(w / im.width, h / im.height), iw = im.width * r, ih = im.height * r; ctx.drawImage(im, x + (w - iw) / 2, y + (h - ih) * fy, iw, ih); }
+  function pieTarjeta(ctx, esc_) {
+    ctx.fillStyle = '#18181B'; ctx.fillRect(0, 1250, 1080, 100);
+    if (esc_) { ctx.save(); ctx.beginPath(); ctx.arc(110, 1300, 34, 0, 7); ctx.clip(); ctx.drawImage(esc_, 76, 1266, 68, 68); ctx.restore(); }
+    ctx.fillStyle = '#F4F4F5'; ctx.font = "900 40px 'Big Shoulders Display'"; ctx.fillText('MADRIDPATINA', 164, 1300);
+    ctx.fillStyle = '#A6A6AD'; ctx.font = "600 26px 'IBM Plex Sans Condensed'"; ctx.fillText('Temporada ' + A.temporada + ' · arsel1994.github.io/madridpatina-web', 164, 1334);
+  }
+  async function tarjetaJugador(k) {
+    const p = A.jugadores[k]; if (!p) return null;
+    await fuentesListas();
+    const c = document.createElement('canvas'); c.width = 1080; c.height = 1350; const x = c.getContext('2d');
+    const [foto, escMP] = await Promise.all([cargaImg(p.foto), cargaImg('escudos/badge/madridpatina.webp')]);
+    x.fillStyle = '#0D0D0E'; x.fillRect(0, 0, 1080, 1350);
+    const g = x.createLinearGradient(0, 0, 1080, 720); g.addColorStop(0, '#D3202A'); g.addColorStop(1, '#8E1219'); x.fillStyle = g; x.fillRect(0, 0, 1080, 720);
+    if (foto) { x.save(); x.beginPath(); x.rect(0, 0, 1080, 720); x.clip(); cubre(x, foto, 380, 0, 700, 720); x.restore(); }
+    else { x.fillStyle = 'rgba(0,0,0,.18)'; x.font = "900 520px 'Big Shoulders Display'"; x.textAlign = 'right'; x.fillText(ini(p.nombre, p.apellidos), 1040, 640); x.textAlign = 'left'; }
+    const sombra = x.createLinearGradient(0, 420, 0, 720); sombra.addColorStop(0, 'rgba(0,0,0,0)'); sombra.addColorStop(1, 'rgba(0,0,0,.55)'); x.fillStyle = sombra; x.fillRect(0, 420, 1080, 300);
+    x.fillStyle = '#FFFFFF'; x.font = "900 300px 'Big Shoulders Display'"; x.fillText(p.dorsal || '', 56, 690);
+    const eq = equiposDe(p), t = (p.temporadas || {})[A.temporada] || {};
+    x.fillStyle = '#FF6B63'; x.font = "700 34px 'IBM Plex Sans Condensed'"; x.fillText(((eq.length ? eq.map(e => e.cantera ? 'MP ' + tituloOf(e) : e.nombre).join(' · ') : p.equipo || '') + (eq[0] ? ' · ' + eq[0].liga : '')).toUpperCase(), 56, 790);
+    x.fillStyle = '#F4F4F5'; ajusta(x, p.nombre.toUpperCase(), 968, 130, 900); x.fillText(p.nombre.toUpperCase(), 56, 910);
+    x.fillStyle = '#A6A6AD'; ajusta(x, p.apellidos.toUpperCase(), 968, 66, 700); x.fillText(p.apellidos.toUpperCase(), 56, 984);
+    const gk = (p.partidos || []).length && (p.partidos || []).every(z => z.pct != null);
+    const tir = gk ? p.partidos.reduce((a, z) => a + (z.tiros || 0), 0) : 0, par = gk ? p.partidos.reduce((a, z) => a + (z.par || 0), 0) : 0;
+    const tiles = gk ? [['PJ', t.pj || 0], ['% PARADAS', tir ? dec((par / tir * 100).toFixed(1)) : '—'], ['PARADAS', par]] : [['PJ', t.pj || 0], ['GOLES', t.goles || 0], ['ASIST.', t.asistencias || 0], ['PUNTOS', (t.goles || 0) + (t.asistencias || 0)]];
+    const tw = (968 - (tiles.length - 1) * 16) / tiles.length;
+    tiles.forEach(([k2, v], i) => { const xx = 56 + i * (tw + 16); x.fillStyle = '#18181B'; x.fillRect(xx, 1030, tw, 170); x.fillStyle = '#A6A6AD'; x.font = "700 26px 'IBM Plex Sans Condensed'"; x.fillText(k2, xx + 22, 1074);
+      x.fillStyle = i === 1 ? '#FF6B63' : '#F4F4F5'; x.font = "900 96px 'Big Shoulders Display'"; x.fillText(String(v), xx + 20, 1172); });
+    x.fillStyle = '#6B6B70'; x.font = "600 24px 'IBM Plex Sans Condensed'"; x.fillText('Temporada ' + A.temporada + (t.pj ? '' : ' · aún sin jugar'), 56, 1232);
+    pieTarjeta(x, escMP);
+    return { canvas: c, nombre: 'madridpatina-' + k + '.png', texto: corto(p) + ' · MADRIDPATINA ' + A.temporada };
+  }
+  async function tarjetaPartido(mid) {
+    const p = A.partidos[mid]; if (!p || p.gl == null) return null;
+    await fuentesListas();
+    const c = document.createElement('canvas'); c.width = 1080; c.height = 1350; const x = c.getContext('2d');
+    const [el, ev, escMP] = await Promise.all([cargaImg(crest(p.local)), cargaImg(crest(p.visitante)), cargaImg('escudos/badge/madridpatina.webp')]);
+    x.fillStyle = '#0D0D0E'; x.fillRect(0, 0, 1080, 1350);
+    const nos = ours(p.local) ? 'l' : ours(p.visitante) ? 'v' : null, gana = p.gl > p.gv ? 'l' : p.gl < p.gv ? 'v' : (p.pen ? (p.pen === p.local ? 'l' : 'v') : null);
+    const res = !nos ? 'RESULTADO' : ours(p.local) && ours(p.visitante) ? 'DERBI' : gana === nos ? (p.gl === p.gv ? 'VICTORIA EN LOS PENALTIS' : 'VICTORIA') : gana ? (p.gl === p.gv ? 'DERROTA EN LOS PENALTIS' : 'DERROTA') : 'EMPATE';
+    x.fillStyle = res.startsWith('VICTORIA') ? '#1A7A43' : res.startsWith('DERROTA') || res === 'RESULTADO' ? '#3A3A40' : RED; x.fillRect(0, 0, 1080, 110);
+    x.fillStyle = '#FFFFFF'; x.font = "900 64px 'Big Shoulders Display'"; x.textAlign = 'center'; x.fillText(res, 540, 78);
+    x.fillStyle = '#A6A6AD'; x.font = "700 30px 'IBM Plex Sans Condensed'"; x.fillText((p.ligaNombre + ' · Jornada ' + p.jornada + ' · ' + fd(p.fecha)).toUpperCase(), 540, 180);
+    const disco = (im, cx) => { x.save(); x.beginPath(); x.arc(cx, 400, 150, 0, 7); x.fillStyle = '#26262A'; x.fill(); x.clip(); if (im) x.drawImage(im, cx - 150, 250, 300, 300); x.restore(); x.lineWidth = 6; x.strokeStyle = '#FFFFFF'; x.beginPath(); x.arc(cx, 400, 150, 0, 7); x.stroke(); };
+    disco(el, 270); disco(ev, 810);
+    const nm = n => (ours(n) ? mpAbr(n) : n);
+    x.fillStyle = ours(p.local) ? '#FF6B63' : '#F4F4F5'; ajusta(x, nm(p.local), 440, 54, 800); x.fillText(nm(p.local), 270, 620);
+    x.fillStyle = ours(p.visitante) ? '#FF6B63' : '#F4F4F5'; ajusta(x, nm(p.visitante), 440, 54, 800); x.fillText(nm(p.visitante), 810, 620);
+    x.fillStyle = '#FFFFFF'; x.font = "900 300px 'Big Shoulders Display'"; x.fillText(p.gl + '–' + p.gv, 540, 930);
+    if (p.pen) { x.fillStyle = '#A6A6AD'; x.font = "700 30px 'IBM Plex Sans Condensed'"; x.fillText('Gana en los penaltis: ' + nm(p.pen), 540, 990); }
+    const goles = (lado) => (lado === 'l' ? p.gol_l : p.gol_v).filter(g => g.g).map(g => corto(g) + (g.g > 1 ? ' (' + g.g + ')' : '')).join(' · ');
+    const nuestros = nos ? goles(nos) : '';
+    if (nuestros) { x.fillStyle = '#A6A6AD'; x.font = "700 26px 'IBM Plex Sans Condensed'"; x.fillText('GOLES DE ' + nm(nos === 'l' ? p.local : p.visitante).toUpperCase(), 540, 1070);
+      x.fillStyle = '#F4F4F5'; ajusta(x, nuestros, 960, 34, 600, 'IBM Plex Sans Condensed'); x.fillText(nuestros, 540, 1120); }
+    x.textAlign = 'left';
+    pieTarjeta(x, escMP);
+    return { canvas: c, nombre: 'madridpatina-' + mid + '.png', texto: nm(p.local) + ' ' + p.gl + '–' + p.gv + ' ' + nm(p.visitante) };
+  }
+  let tarjetaAbierta = null;
+  async function abrirTarjeta(tipo, id) {
+    const capa = document.createElement('div'); capa.className = 'tj-capa'; capa.setAttribute('role', 'dialog'); capa.setAttribute('aria-modal', 'true'); capa.setAttribute('aria-label', 'Imagen para compartir');
+    capa.innerHTML = '<div class="tj-caja"><div class="tj-img">Preparando la imagen…</div><div class="tj-bot"></div></div>';
+    document.body.appendChild(capa); tarjetaAbierta = capa;
+    const cerrar = () => { capa.remove(); tarjetaAbierta = null; document.removeEventListener('keydown', tecla); };
+    const tecla = e => { if (e.key === 'Escape') cerrar(); };
+    document.addEventListener('keydown', tecla);
+    capa.addEventListener('click', e => { if (e.target === capa || e.target.closest('[data-tj-cerrar]')) cerrar(); });
+    const r = await (tipo === 'jugador' ? tarjetaJugador(id) : tarjetaPartido(id));
+    if (!r) { cerrar(); return; }
+    const url = r.canvas.toDataURL('image/png');
+    capa.querySelector('.tj-img').innerHTML = `<img src="${url}" alt="Imagen para compartir: ${esc(r.texto)}">`;
+    const blob = await new Promise(res => r.canvas.toBlob(res, 'image/png'));
+    const file = blob && new File([blob], r.nombre, { type: 'image/png' });
+    const puede = file && navigator.canShare && navigator.canShare({ files: [file] });
+    capa.querySelector('.tj-bot').innerHTML = `${puede ? '<button type="button" class="dv-alin" data-tj-compartir>Compartir</button>' : ''}<a class="dv-alin" href="${url}" download="${esc(r.nombre)}">Descargar</a><button type="button" class="an-tog" data-tj-cerrar>Cerrar</button>`;
+    const b = capa.querySelector('[data-tj-compartir]');
+    if (b) b.addEventListener('click', () => navigator.share({ files: [file], title: 'MADRIDPATINA', text: r.texto }).catch(() => {}));
+    (b || capa.querySelector('a')).focus();
+  }
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-tarjeta]'); if (!b) return; e.preventDefault(); abrirTarjeta(b.dataset.tarjeta, b.dataset.id); });
+
   /* ── 6. Ficha de jugador ────────────────────────────────── */
   // FMPe (scripts/reporte/fmpe.py): puntos por partido × factor de su liga × 18, o sea, puntos en una temporada de Senior 1
   const FMPE_PJ = 18;
@@ -1651,7 +1847,7 @@
             ${t ? `<a href="${hEq(t.id)}" style="font-size:14px;font-weight:700;letter-spacing:.12em">${esc((p.equipo || '').toUpperCase() + ' · ' + t.liga.toUpperCase())}</a>` : `<div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:#FF6B63">${esc((p.equipo || '').toUpperCase())}</div>`}
             <h1 class="pt"><span style="display:block;${BS}font-weight:900;font-size:clamp(44px,6vw,76px);line-height:.9;margin-top:6px">${esc(p.nombre.toUpperCase())}</span>
             <span style="display:block;${BS}font-weight:700;font-size:clamp(24px,3vw,36px);line-height:1;color:#A6A6AD">${esc(p.apellidos.toUpperCase())}</span></h1>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${tags.map(tg => `<span style="font-size:13px;font-weight:700;letter-spacing:.06em;padding:4px 10px;border-radius:4px;background:#26262A">${tg}</span>`).join('')}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px">${tags.map(tg => `<span style="font-size:13px;font-weight:700;letter-spacing:.06em;padding:4px 10px;border-radius:4px;background:#26262A">${tg}</span>`).join('')}<button type="button" class="dv-alin" data-tarjeta="jugador" data-id="${esc(p.k)}" title="Una imagen con su ficha para compartir">Compartir</button></div>
           </div>
           <div data-arquetipo="${esc(p.k)}" data-liga="${t ? esc(t.ligaId) : ''}" data-fem="${p.fem ? 1 : ''}"></div>
           ${car ? `<div class="kpis" data-anim="mpUp .4s cubic-bezier(.2,.8,.2,1) .6s" style="display:flex;gap:10px;flex-wrap:wrap">${esPortero && tirosT
@@ -1660,8 +1856,10 @@
           ${(() => { const hs = H && equiposDe(A.jugadores[k] || p).length ? hitosDe(A.jugadores[k] || p) : []; return hs.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:-8px">${hs.map(h => `<span class="an-hito">${esc(hitoTxt(h))} con el club</span>`).join('')}</div>` : ''; })()}
           <div data-grupo data-espera="900">${lab('POR TEMPORADA', 'margin-bottom:' + (order.some(kk => TS[kk].fmpe != null) ? '2px' : '12px'))}${order.some(kk => TS[kk].fmpe != null) ? '<div style="font-size:13px;color:#A6A6AD;margin-bottom:10px">FMPe: los puntos que habría hecho en una temporada de Liga Senior 1, para comparar ligas distintas' + COMO('fmpe') + '</div>' : ''}${temps}</div>
           ${conEquipo ? `<div data-grupo data-espera="900">${lab('CON EL EQUIPO', 'margin-bottom:2px')}<div style="font-size:13px;color:#A6A6AD;margin-bottom:4px">Lo que dice el acta: en cuántos goles del equipo participa, en qué situación marca y con quién combina${COMO('ficha')}</div>${conEquipo}</div>` : ''}
+          <div data-goles-video="${esc(p.k)}"></div>
           <div data-ficha-extra="${esc(p.k)}"></div>
           <div data-parecidos="${esc(p.k)}" data-liga="${t ? esc(t.ligaId) : ''}" data-portero="${esPortero ? 1 : ''}"></div>
+          ${esPortero ? '' : `<div data-comparar="${esc(p.k)}"></div>`}
         </div>
       </div>
       ${p.partidos.length ? `${lab('PARTIDOS ' + A.temporada, 'margin:28px 0 10px')}${svgTemporada(p)}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">${partidos}</div>` : ''}`;
@@ -1908,6 +2106,7 @@
               <span${t.bal} style="text-align:right;${BS}font-weight:800;font-size:20px">${h.v}-${h.e}-${h.d}</span></div>`; }).join('')}</div>
         </div>
       </div>
+      <div data-flujo></div>
       ${hi.carrera.length ? `${lab('MÁXIMOS GOLEADORES DE LA HISTORIA DEL CLUB', 'margin:28px 0 10px')}
         <div class="card" style="padding:6px 20px">${hi.carrera.map(cr => `<div class="fila-barra" style="--c1:32px;display:grid;grid-template-columns:32px minmax(0,1fr) minmax(60px,260px) 90px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #26262A">
             <span style="${BS}font-weight:900;font-size:26px;color:${RED}">${cr.n}</span>
@@ -2038,6 +2237,9 @@
     rellenarEquipo();
     rellenarAgenda();
     rellenarFicha();
+    rellenarFlujo();
+    rellenarComparar();
+    rellenarVideoFicha();
     billetes(view);
     // con la intro delante, la web se anima al cerrarla
     if (introEl) animarAlCerrar = true; else animar(view);
