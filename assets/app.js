@@ -3249,7 +3249,7 @@
           ${modo === 'resumen' ? `<div class="tv-cortina on" id="tv-cortina"><div class="tc"><img class="tc-esc" src="escudos/badge/madridpatina-alpha.svg" alt=""><b class="tc-nom">MADRIDPATINA</b><i class="tc-raya"></i><div class="tc-pill"><span class="d" id="tv-cortina-t">RESUMEN EN VÍDEO</span><span class="t" id="tv-cortina-i">${esc(ctx.abr.L)} vs ${esc(ctx.abr.V)}</span></div><button type="button" class="tc-otra" id="tv-otra" data-tv="otra" hidden>↺ Ver otra vez</button></div></div>` : ''}
           <button type="button" class="tv-full" data-tv="full" title="Pantalla completa" aria-label="Pantalla completa">${ICO_FULL}${ICO_SALIR}</button>
           ${modo === 'resumen' ? `<div class="tv-ctrl"><button type="button" data-tv="prev" aria-label="Atrasar evento" title="Atrasar evento">${ICO_ANT}</button><button type="button" data-tv="next" aria-label="Adelantar evento" title="Adelantar evento">${ICO_SIG}</button></div>
-          <button type="button" class="tv-empieza" id="tv-empieza" data-tv="empieza"><b>▶</b><span>Ver el resumen</span><small>En el móvil se verá a pantalla completa y en horizontal</small></button>` : ''}
+          <button type="button" class="tv-empieza" id="tv-empieza" data-tv="empieza"><b aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg></b><span>Ver el resumen</span><small>En el móvil se verá a pantalla completa y en horizontal</small></button>` : ''}
         </div></div></div></div>`;
   }
   /* Música de fondo del resumen: «Energetic Sport» de MondaMusic (Pixabay, licencia de contenido de Pixabay: uso libre y

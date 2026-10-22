@@ -974,8 +974,11 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .tv-cortina.on .tc-pill { animation: lzPillIn .6s .38s cubic-bezier(.33,1,.68,1) both; }
 @keyframes lzTcEsc { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .tv-cortina.on .tc-esc, .tv-cortina.on .tc-nom, .tv-cortina.on .tc-raya, .tv-cortina.on .tc-pill { animation: lzFade .2s both; } }
-.tv-empieza { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; background: radial-gradient(ellipse at 50% 50%, rgba(13,13,14,.35) 0%, rgba(13,13,14,.82) 75%); color: #FFFFFF; }
-.tv-empieza b { display: grid; place-items: center; width: clamp(64px, 10cqw, 120px); height: clamp(64px, 10cqw, 120px); border-radius: 50%; background: #D3202A; font-size: clamp(26px, 4cqw, 48px); padding-left: .15em; box-shadow: 0 10px 40px rgba(211,32,42,.5); }
+/* antes de empezar, solo el botón sobre negro: tapa la cortina, el marcador y los controles */
+.tv-empieza { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: clamp(8px, 1.4cqw, 16px); border: 0; padding: 0; font: inherit; background: #0D0D0E; color: #FFFFFF; cursor: pointer; }
+.tv-empieza b { display: grid; place-items: center; width: clamp(64px, 9cqw, 110px); height: clamp(64px, 9cqw, 110px); border-radius: 50%; background: #D3202A; transition: transform .15s; }
+.tv-empieza b svg { width: 46%; height: 46%; fill: #FFFFFF; margin-left: 6%; }
+.tv-empieza:hover b, .tv-empieza:focus-visible b { transform: scale(1.06); }
 .tv-empieza span { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: clamp(22px, 3.4cqw, 44px); text-transform: uppercase; }
 .tv-empieza small { font-size: clamp(11px, 1.3cqw, 15px); color: #C9C9CE; }
 /* control del reproductor: pastilla abajo a la izquierda (42 px del borde en el lienzo de 1920), con un tamaño mínimo para el dedo */
