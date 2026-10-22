@@ -4338,7 +4338,7 @@
     cargarReac(idp, true);
     setTimeout(() => pintarVotoDirecto(idp, modo === 'resumen' || sn.estado === 'final'), 0);
     const arriba = verRes + alinBtn(sn) + pistaChip(sn) + `<button type="button" class="dv-alin" data-wa="${esc(idp)}" title="Manda el marcador y el enlace del directo por WhatsApp">WhatsApp</button>`
-      + (ctx.mp.L || ctx.mp.V ? `<a class="dv-alin" href="${TELEGRAM}" target="_blank" rel="noopener" title="Avisos de cada gol en el móvil">Avisos en Telegram</a><a class="dv-alin" href="#/banquillo/${encodeURIComponent(idp)}" title="Para el delegado: quién está en pista en cada gol">Banquillo</a>` : '');
+      + (ctx.mp.L || ctx.mp.V ? `<a class="dv-alin" href="${TELEGRAM}" target="_blank" rel="noopener" title="Avisos de cada gol en el móvil">Avisos en Telegram</a>` : '');
     return `${arriba ? `<div class="dv-arriba">${arriba}</div>` : ''}${resumenHtml}<div class="dv">
       <div class="dv-izq">
         <div class="dv-caja" data-dv="caja">
