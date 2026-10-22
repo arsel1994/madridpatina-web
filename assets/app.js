@@ -687,11 +687,13 @@
       const yo = mpLbl(e.equipo, L.nombre);
       (e.altas || []).forEach(x => { const t = tipoAlta(x, e.equipo, L.nombre)[0];
         if (t === 'club') return;   // sigue en el mismo equipo
+        if (x.desde === 'MADRIDPATINA' && e.equipo === 'MADRIDPATINA') return;   // de Alevín a Infantil o al revés: muchos juegan en los dos
         if (t === 'sube' || t === 'baja') { if (!vistos.has(x.k)) { vistos.add(x.k); G.interno.push({ x, de: mpLbl(x.desde, x.desdeLiga), a: yo, t, nota: x.nota }); } }
         else if (t === 'vuelve' || (t === 'fuera' && vuK.has(x.k))) G.vuelven.push({ x, a: yo });
         else if (t === 'fuera') G.llegan.push({ x, a: yo });
         else G.debutan.push({ x, a: yo }); });
       (e.bajas || []).forEach(x => {
+        if (x.destino === 'MADRIDPATINA' && e.equipo === 'MADRIDPATINA') return;   // sigue en la cantera, en la otra categoría
         if (x.destino && ours(x.destino)) { if (!vistos.has(x.k)) { vistos.add(x.k); const a = mpLbl(x.destino, x.destinoLiga); G.interno.push({ x, de: yo, a, t: mpRango(a) < mpRango(yo) ? 'sube' : 'baja', nota: x.nota }); } }
         else if (vistos.has(x.k)) return;   // la misma persona en dos equipos nuestros: una sola vez
         else if (x.destino) { vistos.add(x.k); G.seVan.push({ x, de: yo }); }
@@ -758,7 +760,14 @@
     const st = s2 => s2 && s2.pj ? `${s2.pj} PJ · ${s2.goles} G ${s2.asistencias} A` : '';
     const tag = e => { const t = T[e.tipo] || T.sigue; return e.tipo === 'sigue' ? '' : ` <span style="font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:3px;background:${t[1]};color:${e.tipo === 'sube' || e.tipo === 'baja' ? '#0D0D0E' : '#fff'};vertical-align:2px">${t[2]}</span>`; };
     const eqs = P.equipos.slice().sort((a, b) => (a.fuerza ? a.fuerza.puesto : 99) - (b.fuerza ? b.fuerza.puesto : 99));
-    const nA = P.equipos.reduce((n, e) => n + (e.altas || []).length, 0), nB = P.equipos.reduce((n, e) => n + (e.bajas || []).length, 0);
+    // nuestra cantera: Alevín e Infantil juntos (muchos juegan en los dos), sin los pasos de una categoría a otra y con la
+    // misma lista en las dos páginas, como en Equipos
+    const canteraL = /^(alevin|infantil)/.test(L.id), CANT = 'MADRIDPATINA';
+    const deCantera = campo => { const v = new Set(); return A.ligas.filter(l => /^(alevin|infantil)/.test(l.id) && l.pre)
+      .flatMap(l => l.pre.equipos.filter(e => e.nuestro).flatMap(e => e[campo] || []))
+      .filter(x => (campo === 'altas' ? x.desde : x.destino) !== CANT).filter(x => { const q = x.k || x.nombre + ' ' + x.apellidos; return !v.has(q) && v.add(q); }); };
+    const nA = P.equipos.reduce((n, e) => n + (e.nuestro && canteraL ? deCantera('altas') : e.altas || []).length, 0),
+      nB = P.equipos.reduce((n, e) => n + (e.nuestro && canteraL ? deCantera('bajas') : e.bajas || []).length, 0);
     const nLlegan = P.equipos.filter(e => e.tipo !== 'sigue').length;
     const kpis = [['Equipos', P.equipos.length, '#F4F4F5']].concat(nLlegan < P.equipos.length ? [['Llegan de otra liga o son nuevos', nLlegan, '#3DD27E']] : []).concat([
       ['Altas', nA, '#F4F4F5'], ['Bajas', nB, '#A6A6AD']]).concat(L.rookies.length ? [['Debutantes', L.rookies.length, '#FF6B63']] : [])
@@ -788,14 +797,16 @@
     const lin = (x, sub, dir, i) => { const al = dir === 'alta';
       return `<div data-anim="${al ? 'mpInL' : 'mpInR'} .45s cubic-bezier(.2,.8,.2,1) ${(al ? 150 : 250) + i * 110}ms" style="padding:${al ? '7px 0 7px 10px' : '7px 10px 7px 0'};border-bottom:1px solid #26262A;box-shadow:inset ${al ? '3px' : '-3px'} 0 0 ${al ? '#3DD27E' : '#FF5A52'}"><div style="font-weight:600">${jn(x)}${x.portero ? ` <span style="font-size:12px;color:#A6A6AD">· ${x.fem ? 'portera' : 'portero'}</span>` : ''}${x.tag ? ` <span style="font-size:11px;font-weight:700;padding:1px 6px;border-radius:3px;background:${x.tag[2]};color:#0D0D0E;white-space:nowrap">${esc(x.tag[1])}</span>` : ''}</div><div style="font-size:12px;color:#A6A6AD">${sub}</div></div>`; };
     const ab = orden.map(e => {
-      const altas = (e.altas || []).map((x, i) => { const t = tipoAlta(x, e.equipo, L.nombre), interno = t[0] === 'sube' || t[0] === 'baja';
+      const juntos = e.nuestro && canteraL, lAltas = juntos ? deCantera('altas') : e.altas || [], lBajas = juntos ? deCantera('bajas') : e.bajas || [];
+      const altas = lAltas.map((x, i) => { const t = tipoAlta(x, e.equipo, L.nombre), interno = t[0] === 'sube' || t[0] === 'baja';
         const de = interno ? esc(x.desdeLiga || '') : x.desde ? 'de ' + esc(x.desde) + (x.desdeLiga ? ' · ' + esc(x.desdeLiga) : '') : esc(x.nota || 'Nuevo');
         return lin(Object.assign({}, x, { tag: t }), [de, x.stats && x.stats.pj ? '25/26: ' + st(x.stats) : ''].filter(Boolean).join(' · '), 'alta', i); }).join('') || '<div style="padding:7px 0;color:#A6A6AD;font-size:14px">Ninguna</div>';
-      const bajas = (e.bajas || []).map((x, i) => lin(x, x.destino ? '→ ' + esc(x.destino) + (x.destinoLiga ? ' · ' + esc(x.destinoLiga) : '') : esc(x.nota || 'Sin partidos esta temporada'), 'baja', i)).join('') || '<div style="padding:7px 0;color:#A6A6AD;font-size:14px">Ninguna</div>';
+      const bajas = lBajas.map((x, i) => lin(x, x.destino ? '→ ' + esc(x.destino) + (x.destinoLiga ? ' · ' + esc(x.destinoLiga) : '') : esc(x.nota || 'Sin partidos esta temporada'), 'baja', i)).join('') || '<div style="padding:7px 0;color:#A6A6AD;font-size:14px">Ninguna</div>';
       return `<div class="card" style="padding:16px 18px;border:1px solid ${e.nuestro ? RED : '#18181B'}">
         <div style="display:flex;align-items:center;gap:12px">${disc(crest(e.equipo), 36)}<div style="min-width:0;flex:1">
           <div style="font-weight:800;font-size:17px;color:${e.nuestro ? '#FF6B63' : '#F4F4F5'}">${esc(e.equipo)}${tag(e)}</div></div></div>
-        <details${e.nuestro ? ' open' : ''} style="margin-top:10px"><summary style="cursor:pointer;font-weight:700;font-size:14px;color:#C9C9CE;padding:6px 0">Altas ${(e.altas || []).length} · Bajas ${(e.bajas || []).length}</summary>
+        ${juntos ? '<div style="font-size:13px;color:#A6A6AD;margin-top:8px">Alevín e Infantil juntos, porque muchos juegan en los dos. Solo los que llegan nuevos al club y los que ya no están en ningún equipo nuestro.</div>' : ''}
+        <details${e.nuestro ? ' open' : ''} style="margin-top:10px"><summary style="cursor:pointer;font-weight:700;font-size:14px;color:#C9C9CE;padding:6px 0">Altas ${lAltas.length} · Bajas ${lBajas.length}</summary>
           <div data-grupo style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:4px 18px">
             <div><div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#3DD27E;margin-top:6px">ALTAS</div>${altas}</div>
             <div><div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#FF5A52;margin-top:6px">BAJAS</div>${bajas}</div>
@@ -806,7 +817,7 @@
           ${disc(crest(e.equipo), 36)}<span style="${BS}font-weight:800;font-size:19px;white-space:nowrap">${esc(abr(e.equipo))}</span>
           <div style="display:flex;height:12px;border-radius:3px;overflow:hidden;background:#26262A"><div style="width:${pct}%;background:${e.nuestro ? RED : '#8A8A8F'}"></div></div>
           <span style="text-align:right;${BS}font-weight:800;font-size:22px">${pct}%</span>
-          <span style="text-align:right;font-size:13px;color:#C9C9CE;white-space:nowrap">${e.p.nuevos ? '+' + e.p.nuevos + (e.p.nuevos === 1 ? ' nuevo' : ' nuevos') : 'sin nuevos'}</span></div>`; }).join('');
+          <span style="text-align:right;font-size:13px;color:#C9C9CE;white-space:nowrap">${(n => n ? '+' + n + (n === 1 ? ' nuevo' : ' nuevos') : 'sin nuevos')(e.nuestro && canteraL ? (e.altas || []).filter(x => x.desde !== CANT).length : e.p.nuevos)}</span></div>`; }).join('');
     const rk = L.rookies.slice().sort((a, b) => (b.nuestro - a.nuestro) || ((a.edad || 99) - (b.edad || 99)));
     const rook = rk.map((r, i) => box(hP(r.k), `background:#18181B;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;border:2px solid ${r.nuestro ? RED : '#18181B'};--brillo:${(i % 6) * 0.5}s`, `
           <div class="ini" style="aspect-ratio:4/5;background:#26262A;font-size:52px;color:#55555B">${esc(ini(r.nombre, r.apellidos))}${photo(r.foto)}
