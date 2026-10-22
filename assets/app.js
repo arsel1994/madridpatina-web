@@ -892,6 +892,10 @@
     const durP = /^(alevin|infantil)/.test(p.liga || '') ? 1200 : 1500;
     const jugado = m => { const q = segs(m); if (q == null || q > durP) return m || ''; const t = durP - q; return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
     const derbiMP = ours(p.local) && ours(p.visitante);
+    const vd = p.idp && VID && VID[p.idp];
+    const golVid = e => vd && e.tipo === 'gol' && e.jugador ? vd.ev[`${String(e.periodo).replace('P', '')}-${e.minuto}-GOL-${e.jugador.dorsal}`] : null;
+    const nomDorsal = (l, d) => { const x = ((l === 'L' ? p.alin_l : p.alin_v) || []).concat((l === 'L' ? p.por_l : p.por_v) || []).find(y => String(y.dorsal) === String(d)); return '#' + d + (x ? ' ' + corto(x) : ''); };
+    const enPista = e => { const g = golVid(e); if (!g || !g.pista) return ''; return ['L', 'V'].filter(l => (g.pista[l] || []).length).map(l => `<div style="font-size:13px;color:#A6A6AD;margin-top:2px">En pista (${esc(mpAbr(l === 'L' ? p.local : p.visitante))}): ${g.pista[l].map(d => esc(nomDorsal(l, d))).join(', ')}</div>`).join(''); };
     const evRow = e => { const eqn = e.lado === 'local' ? p.local : e.lado === 'visitante' ? p.visitante : ''; const T = TIPO[e.tipo] || [e.tipo, '#A6A6AD'];
       const txt = e.tipo === 'gol' ? quienTxt(e.jugador) + (e.asistencia ? ` <span style="color:#A6A6AD">· asist. ${quienTxt(e.asistencia)}</span>` : '')
         : e.tipo === 'falta' ? quienTxt(e.jugador) + ` <span style="color:#A6A6AD">· ${e.falta ? esc(e.falta) + ' · ' : ''}${fmin(e.minutos)}</span>`
@@ -899,7 +903,7 @@
       // en un derbi los dos escudos son el mismo: se pone el equipo (MP C, MP D)
       return `<div style="display:grid;grid-template-columns:50px ${derbiMP ? '38px' : '24px'} minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border-radius:6px;background:${ours(eqn) ? '#2A1416' : 'transparent'}">
         <span style="${BS}font-weight:800;font-size:18px;color:#A6A6AD;font-variant-numeric:tabular-nums">${esc(jugado(e.minuto))}</span>${derbiMP ? `<span style="${BS}font-weight:800;font-size:15px;line-height:1;white-space:nowrap;color:#F4F4F5">${esc(eqn ? abr(eqn) : '')}</span>` : disc(crest(eqn), 22)}
-        <div style="min-width:0;font-size:15px;line-height:1.35"><span style="font-size:12px;font-weight:700;letter-spacing:.08em;color:${T[1]}">${T[0]}</span>${eqn && !derbiMP ? (e.tipo === 'tiempo_muerto' || e.tipo === 'cambio_portero' ? ` <span style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#C9C9CE">· ${esc(abr(eqn))}</span>` : `<span class="sr-only"> de ${esc(eqn)}</span>`) : ''} ${txt}</div>
+        <div style="min-width:0;font-size:15px;line-height:1.35"><span style="font-size:12px;font-weight:700;letter-spacing:.08em;color:${T[1]}">${T[0]}</span>${eqn && !derbiMP ? (e.tipo === 'tiempo_muerto' || e.tipo === 'cambio_portero' ? ` <span style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#C9C9CE">· ${esc(abr(eqn))}</span>` : `<span class="sr-only"> de ${esc(eqn)}</span>`) : ''} ${txt}${enPista(e)}</div>
         <span style="${BS}font-weight:800;font-size:22px">${e.tipo === 'gol' && e.marcador ? esc(e.marcador.replace('-', '–')) : ''}</span></div>`; };
     const eventos = [...new Set((p.ev || []).map(e => e.periodo))].map(g => lab(PER[g] || g, 'margin:16px 0 4px') + p.ev.filter(e => e.periodo === g).map(evRow).join('')).join('');
     const info = [p.pista ? ['Pista', p.pista] : null, p.arb && p.arb.length ? [p.arb.length > 1 ? 'Árbitros' : 'Árbitro', p.arb.join(' · ')] : null].filter(Boolean);
@@ -917,8 +921,9 @@
           ${team(p.visitante, hT(p.visitante))}
         </div>
         ${p.idp ? videoPartido(p.idp) : ''}
-        ${p.gl != null ? `<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:22px">${p.nuestro && p.idp && !(VID && VID[p.idp]) ? `<a class="dv-alin" href="#/directo/${encodeURIComponent(p.idp)}/resumen" title="El partido contado otra vez desde el acta: pista, alineaciones, goles, faltas, penaltis y resumen final">▶ Ver resumen</a>` : ''}<button type="button" class="dv-alin" data-tarjeta="partido" data-id="${esc(p.mid)}" title="Una imagen con el resultado para compartir">Compartir resultado</button></div>` : ''}
+        ${p.gl != null ? `<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:22px">${p.nuestro && p.idp && !(VID && VID[p.idp]) ? `<a class="dv-alin" href="#/directo/${encodeURIComponent(p.idp)}/resumen" title="El partido contado otra vez desde el acta: pista, alineaciones, goles, faltas, penaltis y resumen final">▶ Ver resumen</a>` : ''}<button type="button" class="dv-alin" data-tarjeta="partido" data-id="${esc(p.mid)}" title="Una imagen con el resultado para compartir">Compartir resultado</button><a class="dv-alin" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(`${ours(p.local) ? mpAbr(p.local) : p.local} ${p.gl}–${p.gv} ${ours(p.visitante) ? mpAbr(p.visitante) : p.visitante} · ${p.ligaNombre}, jornada ${p.jornada}. El partido: ${BASE_WEB()}#/partido/${encodeURIComponent(p.mid)}`)}">WhatsApp</a></div>` : ''}
         ${p.gl != null && (p.ev || []).length ? `<div data-grafico-partido="${esc(p.mid)}"></div>` : ''}
+        ${p.idp ? `<div data-tiros-partido="${esc(p.mid)}"></div>` : ''}
         ${hasTiros ? `<div style="max-width:640px;margin:28px auto 0">
           <div style="display:flex;justify-content:space-between;${BS}font-weight:800;font-size:28px;line-height:1"><span>${p.tl}</span><span class="lab" style="align-self:center">TIROS A PUERTA</span><span>${p.tv}</span></div>
           <div style="display:flex;gap:3px;height:10px;margin-top:8px" data-grupo data-espera="1300"><div data-anim="mpWipe .6s" style="flex:${p.tl};background:${ours(p.local) ? RED : '#6B6B70'};border-radius:3px;transform-origin:right"></div><div data-anim="mpWipe .6s" style="flex:${p.tv};background:${ours(p.visitante) ? RED : '#6B6B70'};border-radius:3px;transform-origin:left"></div></div>
@@ -927,6 +932,12 @@
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:12px" data-grupo data-espera="1700">${side(p.local, p.gol_l, p.por_l, p.alin_l, p.staff_l, 0)}${side(p.visitante, p.gol_v, p.por_v, p.alin_v, p.staff_v, 100)}</div>
       ${info.length || eventos ? `<div class="card" style="margin-top:12px;padding:18px 20px">
         ${info.length ? `<div style="display:flex;gap:12px 32px;flex-wrap:wrap">${info.map(([k, v]) => `<div><div style="font-size:13px;font-weight:700;color:#A6A6AD">${k}</div><div style="font-weight:600;font-size:16px">${esc(v)}</div></div>`).join('')}</div>` : ''}
+        ${(() => { const gs = (p.ev || []).filter(e => golVid(e) && golVid(e).xy); if (!gs.length) return '';
+          const [cL, cV] = coloresLados(p.local, p.visitante);
+          const pts = gs.map((e, i) => { const g = golVid(e); return `<g><title>${esc(e.marcador || '')} · ${quienTxt(e.jugador)}</title><circle cx="${g.xy[0] * PISTA_W}" cy="${g.xy[1] * PISTA_H}" r="11" fill="${e.lado === 'local' ? cL : cV}" stroke="#0D0D0E" stroke-width="2"/><text x="${g.xy[0] * PISTA_W}" y="${g.xy[1] * PISTA_H + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="${tinta(e.lado === 'local' ? cL : cV)}">${i + 1}</text></g>`; }).join('');
+          return `<div style="margin-top:${info.length ? 20 : 0}px">${lab('DESDE DÓNDE FUERON LOS GOLES')}<div style="font-size:13px;color:#A6A6AD;margin-top:4px">Marcados en el vídeo, mirando a la portería en la que entró cada gol. El número es el orden del gol.</div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:8px"><div style="width:min(100%,300px)">${mediaPista(pts, 'width="100%" role="img" aria-label="Media pista con el sitio desde el que se marcó cada gol"')}</div>
+            <div style="font-size:13px;color:#A6A6AD"><div><span style="color:${cL}">●</span> ${esc(mpAbr(p.local))}</div><div><span style="color:${cV}">●</span> ${esc(mpAbr(p.visitante))}</div><div style="margin-top:6px">${gs.length} de ${(p.gl || 0) + (p.gv || 0)} goles marcados</div></div></div></div>`; })()}
         ${eventos ? `<div style="margin-top:${info.length ? 20 : 0}px">${lab('EVENTOS DEL PARTIDO')}<div style="font-size:13px;color:#A6A6AD;margin-top:4px">Minuto jugado de cada parte.</div>${eventos}</div>` : ''}
       </div>` : ''}`;
   }
@@ -1646,8 +1657,19 @@
       const fila = ((enL ? m.alin_l : m.alin_v) || []).concat((enL ? m.gol_l : m.gol_v) || []).find(y => y.k === p.k), dors = String((fila && fila.dorsal) || p.dorsal || '');   // el dorsal de ese partido (las camisetas se prestan)
       return Object.entries(v.ev || {}).filter(([, e]) => e.tipo === 'GOL' && e.lado === lado && (e.q || '').startsWith('#' + dors + ' '))
         .map(([id, e]) => ({ idp: m.idp, s: e.s, t: e.t, p: e.p, m: e.m, rival: lado === 'L' ? m.visitante : m.local, fecha: m.fecha })); });
-    if (!yo.length) return '';
-    return `${lab('SUS GOLES EN VÍDEO', 'margin-bottom:6px')}<div style="display:flex;gap:8px;flex-wrap:wrap">${yo.map(g => `<a class="dv-alin" href="#/video/${encodeURIComponent(g.idp)}/${Math.max(0, Math.round(g.s - ANTES_JUGADA))}">▶ ${esc(g.m ? g.m.replace('-', '–') : 'Gol')} · ${g.p}ª parte ${esc(g.t)} · vs ${esc(abr(g.rival))}</a>`).join('')}</div>`;
+    // en pista en los goles con el vídeo marcado: a favor y en contra
+    let mas = 0, menos = 0, pjV = 0; const mios = [];
+    (p.partidos || []).forEach(x => { const m = A.partidos[x.mid], v = m && m.idp && VID[m.idp]; if (!v) return;
+      const enL = [m.alin_l, m.por_l, m.gol_l].some(l => (l || []).some(y => y.k === p.k)), lado = enL ? 'L' : 'V';
+      const fila = ((enL ? m.alin_l : m.alin_v) || []).concat((enL ? m.por_l : m.por_v) || []).find(y => y.k === p.k), dors = String((fila && fila.dorsal) || p.dorsal || '');
+      const gs = Object.values(v.ev || {}).filter(e => e.tipo === 'GOL' && e.pista && (e.pista[lado] || []).length); if (gs.length) pjV++;
+      gs.forEach(e => { if (e.pista[lado].includes(dors)) { if (e.lado === lado) mas++; else menos++; } });
+      Object.values(v.ev || {}).forEach(e => { if (e.tipo === 'GOL' && e.xy && e.lado === lado && (e.q || '').startsWith('#' + dors + ' ')) mios.push(e); }); });
+    const pm = pjV ? `<div style="margin-top:12px">${lab('EN PISTA EN LOS GOLES', 'margin-bottom:2px')}<div class="an-nota" style="margin-top:0">En ${pjV === 1 ? 'el partido' : 'los ' + pjV + ' partidos'} con el vídeo marcado: goles de su equipo y en contra mientras estaba en pista.</div>
+      <div class="an-ks" style="max-width:480px;grid-template-columns:repeat(3,minmax(0,1fr))">${anK('A favor', '+' + mas, '', '#3DD27E')}${anK('En contra', '−' + menos, '', menos ? '#FF6B63' : '')}${anK('Balance', (mas - menos > 0 ? '+' : '') + (mas - menos))}</div></div>` : '';
+    const mapa = mios.length ? `<div style="margin-top:12px">${lab('DESDE DÓNDE MARCA', 'margin-bottom:6px')}<div style="width:min(100%,260px)">${mediaPista(mios.map(e => `<circle cx="${e.xy[0] * PISTA_W}" cy="${e.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>`).join(''), 'width="100%" role="img" aria-label="Media pista con el sitio de sus goles marcados en vídeo"')}</div></div>` : '';
+    if (!yo.length) return pm;
+    return `${lab('SUS GOLES EN VÍDEO', 'margin-bottom:6px')}<div style="display:flex;gap:8px;flex-wrap:wrap">${yo.map(g => `<a class="dv-alin" href="#/video/${encodeURIComponent(g.idp)}/${Math.max(0, Math.round(g.s - ANTES_JUGADA))}">▶ ${esc(g.m ? g.m.replace('-', '–') : 'Gol')} · ${g.p}ª parte ${esc(g.t)} · vs ${esc(abr(g.rival))}</a>`).join('')}</div>${mapa}${pm}`;
   }
   const CMP = {};
   function compararHtml(k, otro) {
@@ -1773,7 +1795,60 @@
     if (b) b.addEventListener('click', () => navigator.share({ files: [file], title: 'MADRIDPATINA', text: r.texto }).catch(() => {}));
     (b || capa.querySelector('a')).focus();
   }
+  // WhatsApp no deja publicar solo en grupos ni canales: el botón prepara el mensaje y cada uno lo manda a quien quiera
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-wa]'); if (!b) return;
+    const sn = DV.idp === b.dataset.wa ? snapDV() : null; if (!sn) return;
+    const c = ctxDirecto(sn), nm = l => (c.mp[l] ? c.abr[l] : c.nombre[l]), url = BASE_WEB() + '#/directo/' + encodeURIComponent(b.dataset.wa);
+    const marc = `${nm('L')} ${sn.gl || 0}–${sn.gv || 0} ${nm('V')}`;
+    const txt = sn.estado === 'final' ? `Final: ${marc}${sn.penaltis && sn.penaltis.ganador ? ' (gana ' + nm(sn.penaltis.ganador) + ' en los penaltis)' : ''}. El partido, en la web del club: ${url}`
+      : sn.estado === 'previa' ? `Hoy juegan ${nm('L')} y ${nm('V')}${sn.hora ? ' a las ' + sn.hora : ''}${sn.pista ? ' en ' + pistaBonita(sn.pista) : ''}. Directo: ${url}`
+      : `En directo: ${marc}. Síguelo en la web del club: ${url}`;
+    window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank', 'noopener'); });
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-tarjeta]'); if (!b) return; e.preventDefault(); abrirTarjeta(b.dataset.tarjeta, b.dataset.id); });
+
+
+  /* ── Tiros a puerta durante el partido (data/tiros.json, de scripts/reporte/tiros_vivo.py con las capturas del directo) ── */
+  let TIR = null, tirP = null;
+  const cargarTiros = () => tirP || (tirP = fetch('data/tiros.json?v=' + verDatos()).then(r => r.json()).then(d => (TIR = d)).catch(() => { tirP = null; return null; }));
+  function graficoTiros(p) {
+    const x = TIR && p.idp && TIR[p.idp]; if (!x || x.s.length < 5) return '';
+    const dur = x.dur, T = 2 * dur, s = x.s, fin = s[s.length - 1], mx = Math.max(4, fin[1], fin[2]);
+    const W = anchoGrafico(860), H = W < 560 ? 200 : 230, Lm = 30, Rm = 40, Tm = 12, Bm = 26, w = W - Lm - Rm, h = H - Tm - Bm;
+    const sx = t => Lm + Math.min(T, t) / T * w, sy = v => Tm + h - v / mx * h;
+    const [cL, cV] = coloresLados(p.local, p.visitante);
+    // laguna: más de 8 minutos sin que el acta suba los tiros y luego muchos de golpe; ahí no sabemos cuándo fue cada uno
+    const laguna = (a, b) => b[0] - a[0] > 480 && (b[1] - a[1]) + (b[2] - a[2]) > 4;
+    const hayLaguna = s.some((z, i) => i && laguna(s[i - 1], z));
+    const escalon = (k, discontinua) => { let d = '', prev = [0, 0, 0], val0 = 0;
+      s.forEach(z => { const val = z[k]; const xa = sx(prev[0]).toFixed(1), xb = sx(z[0]).toFixed(1);
+        if (laguna(prev, z)) { if (discontinua) d += ` M${xa},${sy(val0).toFixed(1)} L${xb},${sy(val).toFixed(1)}`; }
+        else if (!discontinua) d += ` M${xa},${sy(val0).toFixed(1)} L${xb},${sy(val0).toFixed(1)} L${xb},${sy(val).toFixed(1)}`;
+        prev = z; val0 = val; });
+      if (!discontinua) d += ` M${sx(prev[0]).toFixed(1)},${sy(val0).toFixed(1)} L${sx(T)},${sy(val0).toFixed(1)}`;
+      return d.trim() || 'M0,0'; };
+    const valEn = (t, k) => { let v = 0; s.forEach(z => { if (z[0] <= t) v = z[k]; }); return v; };
+    const goles = (p.ev || []).filter(e => e.tipo === 'gol' && /^P[12]$/.test(e.periodo)).map(e => { const q = segs(e.minuto); return q == null || q > dur ? null : { t: (+e.periodo[1] - 1) * dur + dur - q, lado: e.lado === 'local' ? 1 : 2, m: e.marcador }; }).filter(Boolean);
+    const marcas = goles.map(g => `<circle cx="${sx(g.t).toFixed(1)}" cy="${sy(valEn(g.t, g.lado)).toFixed(1)}" r="5" fill="${g.lado === 1 ? cL : cV}" stroke="#0D0D0E" stroke-width="1.5"><title>Gol (${esc((g.m || '').replace('-', '–'))}), minuto ${Math.floor(g.t / 60) + 1}</title></circle>`).join('');
+    const ticksX = []; for (let m = 0; m <= T / 60; m += 10) ticksX.push(`<text x="${sx(m * 60)}" y="${H - 8}" text-anchor="${m === 0 ? 'start' : m === T / 60 ? 'end' : 'middle'}">${m}'</text>`);
+    const st = mx > 40 ? 20 : 10, ticksY = []; for (let v = st; v <= mx; v += st) ticksY.push(`<line x1="${Lm}" x2="${Lm + w}" y1="${sy(v)}" y2="${sy(v)}" stroke="#26262A"/><text x="${Lm - 6}" y="${sy(v) + 4}" text-anchor="end">${v}</text>`);
+    const p1 = [valEn(dur, 1), valEn(dur, 2)], p2 = [fin[1] - p1[0], fin[2] - p1[1]], n = k => esc(mpAbr(k === 1 ? p.local : p.visitante));
+    return `<div style="max-width:${W}px;margin:28px auto 0">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="lab">TIROS A PUERTA DURANTE EL PARTIDO</span>
+        <span style="display:flex;gap:12px;font-size:13px;color:#A6A6AD"><span><span style="color:${cL}">━</span> ${n(1)}</span><span><span style="color:${cV}">━</span> ${n(2)}</span><span>● gol</span></span></div>
+      ${s.some((z, i) => i && laguna(s[i - 1], z) && s[i - 1][0] < dur && z[0] > dur) ? '' : `<div style="font-size:15px;color:#F4F4F5;margin-top:6px">1.ª parte: ${n(1)} ${p1[0]} – ${p1[1]} ${n(2)} · 2.ª parte: ${n(1)} ${p2[0]} – ${p2[1]} ${n(2)}</div>`}
+      <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Tiros a puerta acumulados de cada equipo a lo largo del partido" style="display:block;margin-top:8px;font-size:12px;fill:#8A8A8F;font-family:'IBM Plex Sans Condensed',sans-serif">
+        ${ticksY.join('')}<line x1="${sx(dur)}" x2="${sx(dur)}" y1="${Tm}" y2="${Tm + h}" stroke="#55555B" stroke-dasharray="3 3"/><line x1="${Lm}" x2="${Lm + w}" y1="${Tm + h}" y2="${Tm + h}" stroke="#55555B"/>
+        <path d="${escalon(2)}" fill="none" stroke="${cV}" stroke-width="2.5" stroke-linejoin="round"/><path d="${escalon(1)}" fill="none" stroke="${cL}" stroke-width="2.5" stroke-linejoin="round"/>
+        ${hayLaguna ? `<path d="${escalon(2, true)}" fill="none" stroke="${cV}" stroke-width="2" stroke-dasharray="4 5"/><path d="${escalon(1, true)}" fill="none" stroke="${cL}" stroke-width="2" stroke-dasharray="4 5"/>` : ''}
+        <text x="${Lm + w + 6}" y="${sy(fin[1]) + 4}" fill="${cL}" font-weight="700">${fin[1]}</text><text x="${Lm + w + 6}" y="${sy(fin[2]) + 4 + (Math.abs(fin[1] - fin[2]) / mx * h < 14 ? 14 : 0)}" fill="${cV}" font-weight="700">${fin[2]}</text>
+        ${marcas}${ticksX.join('')}</svg>
+      <div style="font-size:12px;color:#6B6B70;margin-top:4px">Los tiros los apunta el acta de cada portero durante el partido, y los guardamos desde el directo. El acta no publica el reloj: el minuto de cada tiro es aproximado (uno o dos minutos arriba o abajo). La línea de puntos vertical es el descanso.${hayLaguna ? ' <b style="color:#C9C9CE">En los tramos discontinuos, el acta dejó de subir los tiros y luego los apuntó de golpe: solo sabemos cuántos hubo en total en ese rato.</b>' : ''}</div></div>`;
+  }
+  function rellenarTirosPartido() {
+    const el = view.querySelector('[data-tiros-partido]'); if (!el) return;
+    const pon = () => { const p = A.partidos[el.dataset.tirosPartido]; const h = p && TIR ? graficoTiros(p) : ''; if (h) el.innerHTML = h; else el.remove(); };
+    if (TIR) pon(); else Promise.all([cargarTiros(), ANA ? ANA : cargarAnalisis()]).then(pon);
+  }
 
   /* ── 6. Ficha de jugador ────────────────────────────────── */
   // FMPe (scripts/reporte/fmpe.py): puntos por partido × factor de su liga × 18, o sea, puntos en una temporada de Senior 1
@@ -1941,7 +2016,9 @@
       <div class="mt-dos al"><div class="mt-riv" aria-hidden="true"><div class="j"><b>22</b><span>Rival 1<small>PELIGRO · 1,15 puntos por partido en 2025/26</small></span></div><div class="j otro"><b>7</b><span>Rival 2</span></div><div class="j"><b>4</b><span>Rival 3<small>PELIGRO · 0,93 puntos por partido en 2025/26</small></span></div></div>
         <div>${P('Los 3 jugadores del rival con más puntos por partido, sumando esta temporada antes del partido y la pasada (4 partidos o más, o 2 de esta temporada), siempre que pasen de 0,4. En senior cuentan todas las ligas senior, pasadas a la del partido con el FMPe. Al lado se muestran sus números reales.')}</div></div>
       ${H('El resumen de un partido')}
-      ${P('Reproduce el partido con los minutos del acta. Los tiros y las paradas de cada portero solo se ven al final, porque el acta no dice cuándo fue cada tiro.')}`);
+      ${P('Reproduce el partido con los minutos del acta. Los tiros y las paradas de cada portero solo se ven al final, porque el acta definitiva no dice cuándo fue cada tiro.')}
+      ${H('Tiros a puerta minuto a minuto')}
+      ${P('Durante el partido, el acta digital va subiendo los tiros de cada portero cada uno o dos minutos. Desde octubre de 2026 guardamos esas subidas desde el directo, y la página del partido dibuja los tiros de cada equipo a lo largo del partido. El acta no publica el reloj, así que el minuto se estima con la hora de cada apunte (los goles, faltas y tiempos muertos llevan su minuto): puede ir uno o dos minutos arriba o abajo. Si el acta deja de subir los tiros un rato y luego los apunta de golpe, ese tramo sale en discontinuo. El total siempre se comprueba con el acta definitiva.')}`);
 
     // 5 · ficha del jugador
     const ficha = sec('ficha', '05', 'FICHA DEL JUGADOR', 'Con el equipo', 'En la ficha de cada jugador nuestro, su peso en los goles del equipo. Solo con datos del acta y a partir de 3 partidos.', `
@@ -2234,6 +2311,7 @@
     rellenarArquetipo();
     rellenarPerfiles();
     rellenarGraficoPartido();
+    rellenarTirosPartido();
     rellenarEquipo();
     rellenarAgenda();
     rellenarFicha();
@@ -3179,12 +3257,14 @@
     const dur = SY.S.duracion_periodo || 1500;   // otra parte: lo que quedaba de la anterior y unos minutos de descanso
     return ult.s + Math.max(0, dur - ult.g) * RITMO_VIDEO + 300 + it.g * RITMO_VIDEO;
   }
-  const guardaSync = () => { try { localStorage.setItem('mp-sync-' + SY.idp, JSON.stringify({ yt: SY.yt, canal: SY.canal, m: Object.fromEntries(SY.items.filter(x => x.s != null).map(x => [x.id, x.s])) })); } catch (e) { /* sin almacenamiento: no pasa nada */ } };
+  const guardaSync = () => { try { localStorage.setItem('mp-sync-' + SY.idp, JSON.stringify({ yt: SY.yt, canal: SY.canal, m: Object.fromEntries(SY.items.filter(x => x.s != null).map(x => [x.id, x.s])),
+    d: Object.fromEntries(SY.items.filter(x => x.xy || x.pista).map(x => [x.id, { xy: x.xy || null, pista: x.pista || null }])) })); } catch (e) { /* sin almacenamiento: no pasa nada */ } };
   function codigoSync() {
     const ev = {}, partes = {};
     SY.items.forEach(x => { if (x.s == null) return; if (x.ancla) partes[x.p] = Math.round(x.s);
       else if (x.pen) ev[x.id] = { s: Math.round(x.s), tipo: 'PENALTI', p: 3, t: null, lado: x.pen.lado, q: x.q, m: x.pen.gol ? 'gol' : 'fallo', ronda: x.pen.ronda };
-      else ev[x.id] = { s: Math.round(x.s), tipo: x.tipo, p: x.p, t: x.e.t, lado: x.e.lado, q: x.q, m: x.e.marcador || null }; });
+      else ev[x.id] = Object.assign({ s: Math.round(x.s), tipo: x.tipo, p: x.p, t: x.e.t, lado: x.e.lado, q: x.q, m: x.e.marcador || null },
+        x.xy ? { xy: x.xy.map(v => Math.round(v * 1000) / 1000) } : {}, x.pista && (x.pista.L.length || x.pista.V.length) ? { pista: x.pista } : {}); });
     return JSON.stringify({ [SY.idp]: { yt: SY.yt, canal: SY.canal || null, partes, ev } });
   }
   function pintarSync() {
@@ -3195,9 +3275,36 @@
       : '<b>¡Listo! Copia el código de abajo y pásamelo.</b>';
     lista.innerHTML = SY.items.map((x, k) => `<button type="button" class="sy-it${k === SY.i ? ' on' : ''}${x.s != null ? ' ok' : ''}${x.ancla ? ' ancla' : ''}" data-sy="ir" data-k="${k}"><span class="s">${x.s != null ? mmssV(x.s) : '—'}</span><span>${esc(x.txt)}</span></button>`).join('');
     const hechas = SY.items.filter(x => x.s != null && !x.ancla).length;
+    pintarGolSync();
     cod.value = hechas ? codigoSync() : '';
     $('#sy-n').textContent = hechas + ' de ' + SY.items.filter(x => !x.ancla).length + ' jugadas marcadas';
   }
+  // dibujo de media pista (la zona de ataque, con la portería arriba) y los jugadores de cada equipo nuestro
+  const PISTA_W = 300, PISTA_H = 270;
+  const mediaPista = (puntos, attrs = '') => `<svg viewBox="0 0 ${PISTA_W} ${PISTA_H}" ${attrs}>
+      <path d="M2,${PISTA_H - 3} L2,36 Q2,2 36,2 L${PISTA_W - 36},2 Q${PISTA_W - 2},2 ${PISTA_W - 2},36 L${PISTA_W - 2},${PISTA_H - 3} Z" fill="#1E1E22" stroke="#55555B" stroke-width="2"/>
+      <line x1="2" x2="${PISTA_W - 2}" y1="${PISTA_H - 3}" y2="${PISTA_H - 3}" stroke="#D3202A" stroke-width="3"/>
+      <line x1="20" x2="${PISTA_W - 20}" y1="34" y2="34" stroke="#55555B" stroke-width="1.5"/>
+      <path d="M${PISTA_W / 2 - 36},34 A36,36 0 0 0 ${PISTA_W / 2 + 36},34" fill="rgba(111,183,255,.12)" stroke="#6FB7FF" stroke-width="1.5"/>
+      <rect x="${PISTA_W / 2 - 17}" y="22" width="34" height="12" fill="none" stroke="#F4F4F5" stroke-width="2"/>
+      <circle cx="${PISTA_W / 2}" cy="${PISTA_H - 3}" r="42" fill="none" stroke="#55555B" stroke-width="1.5"/>${puntos}</svg>`;
+  function pintarGolSync() {
+    const box = $('#sy-gol'); if (!box) return;
+    const it = SY.items[SY.i];
+    if (!it || it.tipo !== 'GOL') { box.innerHTML = ''; return; }
+    const ctx = ctxDirecto(SY.S), lados = ['L', 'V'].filter(l => ctx.mp[l]);
+    const punto = it.xy ? `<circle cx="${it.xy[0] * PISTA_W}" cy="${it.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>` : '';
+    const chips = l => ((SY.S.plantillas || {})[l] || []).slice().sort((a, b) => (+a.dorsal) - (+b.dorsal)).map(j => { const on = it.pista && it.pista[l].includes(String(j.dorsal));
+      return `<button type="button" class="an-tog" aria-pressed="${on ? 'true' : 'false'}" data-sy="pj" data-l="${l}" data-d="${esc(j.dorsal)}">#${esc(j.dorsal)} ${esc(j.jugador_corto || j.jugador || '')}</button>`; }).join('');
+    const hay = SY.items.slice(0, SY.i).some(x => x.pista);
+    box.innerHTML = `<div class="sy-gol-cols"><div><div class="lab">DESDE DÓNDE SE TIRÓ</div><div class="an-nota" style="margin-top:2px">Mirando a la portería en la que entró. Toca en el dibujo.</div>
+        ${mediaPista(punto, 'class="sy-pista" data-sy-pista width="100%" role="img" aria-label="Media pista: toca desde dónde se tiró"')}${it.xy ? '<button type="button" class="an-tog" data-sy="xy-borra">Borrar el punto</button>' : ''}</div>
+      <div><div class="lab">QUIÉN ESTABA EN PISTA</div><div class="an-nota" style="margin-top:2px">Los ${lados.length > 1 ? 'de cada equipo' : 'nuestros'}, con el portero. ${hay ? '<button type="button" class="an-tog" data-sy="pj-igual">Igual que en el gol anterior</button>' : ''}</div>
+        ${lados.map(l => `<div class="an-sub">${esc(ctx.abr[l])} · ${it.pista ? it.pista[l].length : 0} marcados</div><div class="an-togs">${chips(l)}</div>`).join('')}</div></div>
+      <div class="an-nota">Cuando acabes con este gol, pulsa «Saltar ▶» para ir a la siguiente jugada.</div>`;
+  }
+  document.addEventListener('click', e => { const sv = e.target.closest && e.target.closest('[data-sy-pista]'); if (!sv) return; const it = SY.items[SY.i]; if (!it || it.tipo !== 'GOL') return;
+    const r = sv.getBoundingClientRect(); it.xy = [Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), Math.max(0, Math.min(1, (e.clientY - r.top) / r.height))]; guardaSync(); pintarSync(); });
   function irSync(k, buscar = true) {
     SY.i = Math.max(0, Math.min(SY.items.length, k));
     const it = SY.items[SY.i];
@@ -3211,8 +3318,8 @@
     let previo = null;
     try { previo = JSON.parse(localStorage.getItem('mp-sync-' + idp) || 'null'); } catch (e) { previo = null; }
     const v = (VID && VID[idp]) || null;
-    if (previo) { SY.yt = previo.yt; SY.canal = previo.canal || ''; SY.items.forEach(x => { if (previo.m[x.id] != null) x.s = previo.m[x.id]; }); }
-    else if (v) { SY.yt = v.yt; SY.canal = v.canal || ''; SY.items.forEach(x => { const y = x.ancla ? (v.partes || {})[x.p] : (v.ev[x.id] || {}).s; if (y != null) x.s = y; }); }
+    if (previo) { SY.yt = previo.yt; SY.canal = previo.canal || ''; SY.items.forEach(x => { if (previo.m[x.id] != null) x.s = previo.m[x.id]; const d = (previo.d || {})[x.id]; if (d) { x.xy = d.xy; x.pista = d.pista; } }); }
+    else if (v) { SY.yt = v.yt; SY.canal = v.canal || ''; SY.items.forEach(x => { const y = x.ancla ? (v.partes || {})[x.p] : (v.ev[x.id] || {}).s; if (y != null) x.s = y; const e2 = v.ev[x.id]; if (e2) { if (e2.xy) x.xy = e2.xy; if (e2.pista) x.pista = e2.pista; } }); }
     SY.i = Math.max(0, SY.items.findIndex(x => x.s == null));
     if (SY.i < 0) SY.i = SY.items.length;
     $('#sy-url').value = SY.yt ? 'https://youtu.be/' + SY.yt : '';
@@ -3240,10 +3347,11 @@
     SY.S = S;
     cargarVideos().then(() => setTimeout(() => arrancarSync(idp), 0));
     return `<div class="sy"><div class="lab" style="color:#FF6B63">SINCRONIZAR VÍDEO</div><h1>${esc(S.local)} <span>${S.gl ?? ''}–${S.gv ?? ''}</span> ${esc(S.visitante)}</h1>
-      <p class="sy-ayuda">1. Pega el enlace de YouTube y pulsa «Cargar». 2. Para cada jugada el vídeo salta a unos segundos antes de cuando debería ser: dale al play y pulsa <b>¡Ahora!</b> justo cuando pasa (el gol entra, el árbitro pita la expulsión…). Si no se ve, «Saltar». 3. Al final copia el código y pásamelo.</p>
+      <p class="sy-ayuda">1. Pega el enlace de YouTube y pulsa «Cargar». 2. Para cada jugada el vídeo salta a unos segundos antes de cuando debería ser: dale al play y pulsa <b>¡Ahora!</b> justo cuando pasa (el gol entra, el árbitro pita la expulsión…). Si no se ve, «Saltar». En los goles, si se ve bien, toca en el dibujo desde dónde se tiró y marca quién de los nuestros estaba en pista (es opcional). 3. Al final copia el código y pásamelo.</p>
       <div class="sy-form"><input id="sy-url" type="url" placeholder="Enlace de YouTube (https://youtu.be/…)" aria-label="Enlace de YouTube"><input id="sy-canal" type="text" placeholder="Canal (opcional)" aria-label="Canal de YouTube"><button type="button" class="dv-alin" data-sy="cargar">Cargar</button></div>
       <div class="sy-cols"><div><div class="sy-marco"><div id="sy-player"></div></div>
         <div class="sy-actual" id="sy-actual"></div>
+        <div class="sy-gol" id="sy-gol"></div>
         <div class="sy-botones"><button type="button" data-sy="atras">◀ Atrás</button><button type="button" data-sy="estima">Ir a la estimación</button><button type="button" class="ahora" data-sy="ahora">¡Ahora!</button><button type="button" data-sy="menos">−2 s</button><button type="button" data-sy="mas">+2 s</button><button type="button" data-sy="saltar">Saltar ▶</button></div></div>
         <div class="sy-lado"><div class="sy-n" id="sy-n"></div><div class="sy-lista" id="sy-lista"></div></div></div>
       <div class="sy-cod"><div class="lab">CÓDIGO PARA LA WEB</div><textarea id="sy-codigo" readonly rows="4" aria-label="Código para la web"></textarea><button type="button" class="dv-alin" data-sy="copiar">Copiar el código</button></div></div>`;
@@ -3253,7 +3361,10 @@
     if (!b) return;
     const a = b.dataset.sy, it = SY.items[SY.i], now = () => (SY.player && SY.player.getCurrentTime ? SY.player.getCurrentTime() : null);
     if (a === 'cargar') { const id = ytId($('#sy-url').value); SY.canal = $('#sy-canal').value.trim(); if (!id) { $('#sy-url').focus(); return; } SY.yt = id; guardaSync(); cargarPlayer(); pintarSync(); }
-    else if (a === 'ahora' && it) { const t = now(); if (t == null) return; it.s = t; guardaSync(); irSync(SY.i + 1); }
+    else if (a === 'ahora' && it) { const t = now(); if (t == null) return; it.s = t; guardaSync(); if (it.tipo === 'GOL') pintarSync(); else irSync(SY.i + 1); }
+    else if (a === 'pj' && it) { const l = b.dataset.l, d = b.dataset.d; it.pista = it.pista || { L: [], V: [] }; const xs = it.pista[l]; const i2 = xs.indexOf(d); if (i2 >= 0) xs.splice(i2, 1); else xs.push(d); guardaSync(); pintarSync(); }
+    else if (a === 'pj-igual' && it) { const ant = SY.items.slice(0, SY.i).reverse().find(x => x.pista); if (ant) { it.pista = { L: ant.pista.L.slice(), V: ant.pista.V.slice() }; guardaSync(); pintarSync(); } }
+    else if (a === 'xy-borra' && it) { it.xy = null; guardaSync(); pintarSync(); }
     else if (a === 'menos' && it && it.s != null) { it.s = Math.max(0, it.s - 2); guardaSync(); irSync(SY.i); }
     else if (a === 'mas' && it && it.s != null) { it.s += 2; guardaSync(); irSync(SY.i); }
     else if (a === 'saltar') irSync(SY.i + 1);
@@ -3955,7 +4066,7 @@
     if (modo === 'resumen') RSM.saltado = false;
     const verRes = modo === 'resumen' ? '<button type="button" class="dv-alin" data-ver-resumen>▶ Resumen final</button>'
       : sn.estado === 'final' ? `<a class="dv-alin" href="#/directo/${encodeURIComponent(idp)}/resumen">▶ Ver resumen</a>` : '';
-    const arriba = verRes + alinBtn(sn) + pistaChip(sn);
+    const arriba = verRes + alinBtn(sn) + pistaChip(sn) + `<button type="button" class="dv-alin" data-wa="${esc(idp)}" title="Manda el marcador y el enlace del directo por WhatsApp">WhatsApp</button>`;
     return `${arriba ? `<div class="dv-arriba">${arriba}</div>` : ''}${resumenHtml}<div class="dv">
       <div class="dv-izq">
         <div class="dv-caja" data-dv="caja">

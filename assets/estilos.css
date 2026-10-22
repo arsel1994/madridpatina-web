@@ -1317,3 +1317,11 @@ a.an-par.blk, .an-par { display: grid; grid-template-columns: minmax(58px, auto)
 .tj-img img { display: block; max-width: min(100%, 480px); max-height: 72vh; height: auto; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
 .tj-bot { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 .tj-bot .dv-alin { font-size: 14px; padding: 9px 14px; color: #FFFFFF; text-decoration: none; }
+
+.sy-gol:empty { display: none; }
+.sy-gol { margin-top: 12px; padding: 14px 16px; background: #18181B; border-radius: 12px; }
+.sy-gol-cols { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 640px) { .sy-gol-cols { grid-template-columns: minmax(0, 1fr); } }
+.sy-pista { display: block; max-width: 260px; margin-top: 8px; cursor: crosshair; }
+.sy-gol .an-togs .an-tog { font-size: 13px; padding: 6px 10px; }
+.sy-gol .an-tog { background: #26262A; }
