@@ -935,7 +935,7 @@
         ${info.length ? `<div style="display:flex;gap:12px 32px;flex-wrap:wrap">${info.map(([k, v]) => `<div><div style="font-size:13px;font-weight:700;color:#A6A6AD">${k}</div><div style="font-weight:600;font-size:16px">${esc(v)}</div></div>`).join('')}</div>` : ''}
         ${(() => { const gs = (p.ev || []).filter(e => golVid(e) && golVid(e).xy); if (!gs.length) return '';
           const [cL, cV] = coloresLados(p.local, p.visitante);
-          const pts = gs.map((e, i) => { const g = golVid(e); return `<g><title>${esc(e.marcador || '')} · ${quienTxt(e.jugador)}</title><circle cx="${g.xy[0] * PISTA_W}" cy="${g.xy[1] * PISTA_H}" r="11" fill="${e.lado === 'local' ? cL : cV}" stroke="#0D0D0E" stroke-width="2"/><text x="${g.xy[0] * PISTA_W}" y="${g.xy[1] * PISTA_H + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="${tinta(e.lado === 'local' ? cL : cV)}">${i + 1}</text></g>`; }).join('');
+          const pts = gs.map((e, i) => { const g = golVid(e); return `<g><title>${esc(e.marcador || '')} · ${quienTxt(e.jugador)} · a unos ${distM(g.xy)} m</title><circle cx="${g.xy[0] * PISTA_W}" cy="${g.xy[1] * PISTA_H}" r="11" fill="${e.lado === 'local' ? cL : cV}" stroke="#0D0D0E" stroke-width="2"/><text x="${g.xy[0] * PISTA_W}" y="${g.xy[1] * PISTA_H + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="${tinta(e.lado === 'local' ? cL : cV)}">${i + 1}</text></g>`; }).join('');
           return `<div style="margin-top:${info.length ? 20 : 0}px">${lab('DESDE DÓNDE FUERON LOS GOLES')}<div style="font-size:13px;color:#A6A6AD;margin-top:4px">Marcados en el vídeo, mirando a la portería en la que entró cada gol. El número es el orden del gol.</div>
             <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:8px"><div style="width:min(100%,300px)">${mediaPista(pts, 'width="100%" role="img" aria-label="Media pista con el sitio desde el que se marcó cada gol"')}</div>
             <div style="font-size:13px;color:#A6A6AD"><div><span style="color:${cL}">●</span> ${esc(mpAbr(p.local))}</div><div><span style="color:${cV}">●</span> ${esc(mpAbr(p.visitante))}</div><div style="margin-top:6px">${gs.length} de ${(p.gl || 0) + (p.gv || 0)} goles marcados</div></div></div></div>`; })()}
@@ -1669,7 +1669,7 @@
       Object.values(v.ev || {}).forEach(e => { if (e.tipo === 'GOL' && e.xy && e.lado === lado && (e.q || '').startsWith('#' + dors + ' ')) mios.push(e); }); });
     const pm = pjV ? `<div style="margin-top:12px">${lab('EN PISTA EN LOS GOLES', 'margin-bottom:2px')}<div class="an-nota" style="margin-top:0">En ${pjV === 1 ? 'el partido' : 'los ' + pjV + ' partidos'} en los que se apuntó quién estaba en pista (en el vídeo o desde el banquillo): goles de su equipo y en contra mientras jugaba.</div>
       <div class="an-ks" style="max-width:480px;grid-template-columns:repeat(3,minmax(0,1fr))">${anK('A favor', '+' + mas, '', '#3DD27E')}${anK('En contra', '−' + menos, '', menos ? '#FF6B63' : '')}${anK('Balance', (mas - menos > 0 ? '+' : '') + (mas - menos))}</div></div>` : '';
-    const mapa = mios.length ? `<div style="margin-top:12px">${lab('DESDE DÓNDE MARCA', 'margin-bottom:6px')}<div style="width:min(100%,260px)">${mediaPista(mios.map(e => `<circle cx="${e.xy[0] * PISTA_W}" cy="${e.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>`).join(''), 'width="100%" role="img" aria-label="Media pista con el sitio de sus goles marcados en vídeo"')}</div></div>` : '';
+    const ds = mios.map(e => distM(e.xy)), mapa = mios.length ? `<div style="margin-top:12px">${lab('DESDE DÓNDE MARCA', 'margin-bottom:2px')}<div class="an-nota" style="margin:0 0 6px">${mios.length} ${mios.length === 1 ? 'gol marcado' : 'goles marcados'} en vídeo · a unos ${Math.round(ds.reduce((a, b) => a + b, 0) / ds.length)} m de media · el más lejano, a ${Math.max(...ds)} m</div><div style="width:min(100%,260px)">${mediaPista(mios.map(e => `<circle cx="${e.xy[0] * PISTA_W}" cy="${e.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>`).join(''), 'width="100%" role="img" aria-label="Media pista con el sitio de sus goles marcados en vídeo"')}</div></div>` : '';
     if (!yo.length) return pm;
     return `${lab('SUS GOLES EN VÍDEO', 'margin-bottom:6px')}<div style="display:flex;gap:8px;flex-wrap:wrap">${yo.map(g => `<a class="dv-alin" href="#/video/${encodeURIComponent(g.idp)}/${Math.max(0, Math.round(g.s - ANTES_JUGADA))}">▶ ${esc(g.m ? g.m.replace('-', '–') : 'Gol')} · ${g.p}ª parte ${esc(g.t)} · vs ${esc(abr(g.rival))}</a>`).join('')}</div>${mapa}${pm}`;
   }
@@ -1849,7 +1849,7 @@
   function rellenarTirosPartido() {
     const el = view.querySelector('[data-tiros-partido]'); if (!el) return;
     const pon = () => { const p = A.partidos[el.dataset.tirosPartido]; const h = p && TIR ? graficoTiros(p) : ''; if (h) { el.innerHTML = h; return; }
-      if (!p || !p.idp) { el.remove(); return; }
+      if (!p || !p.idp || (p.fecha || '') < VIGIA_DESDE) { el.remove(); return; }   // antes del vigía no hay nada que pedir
       tirosApi(p.idp).then(d => { if (!d) { el.remove(); return; } TIR = TIR || {}; TIR[p.idp] = d; const h2 = graficoTiros(p); if (h2) el.innerHTML = h2; else el.remove(); }); };
     if (TIR) pon(); else Promise.all([cargarTiros(), ANA ? ANA : cargarAnalisis()]).then(pon);
   }
@@ -1888,13 +1888,14 @@
     const r = REAC.datos.reacciones;
     return `<div class="an-reac"><span class="lab">LA GRADA</span><div class="b">${EMO.map(([k, e, t]) => `<button type="button" data-reac="${k}" aria-label="${t}: ${r[k] || 0}"><span aria-hidden="true">${e}</span><b>${r[k] || 0}</b></button>`).join('')}</div></div>`;
   }
-  const pintarReac = () => { const c = $('[data-dv="reac"]'); if (c) c.innerHTML = reacHtml(DV.idp); };
+  const pintarReac = () => { if (!REAC.idp) return; view.querySelectorAll(`[data-reac-caja="${REAC.idp}"]`).forEach(c => { c.innerHTML = reacHtml(REAC.idp); }); };
   function cargarReac(idp, ya) {
     if (!idp || (!ya && REAC.idp === idp && Date.now() - REAC.t < 20000)) return;
     REAC.t = Date.now();
     apiGet('reaccion?idp=' + encodeURIComponent(idp)).then(d => { if (d && d.reacciones) { REAC.idp = idp; REAC.datos = d; pintarReac(); } });
   }
-  document.addEventListener('mp-directo', () => { if (DV.idp && /^#\/directo\//.test(location.hash)) cargarReac(DV.idp); });
+  document.addEventListener('mp-directo', () => { const m = /^#\/(?:directo|video)\/([^/]+)/.exec(location.hash); if (!m) return; const idp = decodeURIComponent(m[1]); cargarReac(idp);
+    const sn = LIVE.snaps[idp]; if (sn && sn.estado === 'final') pintarVotoDirecto(idp, true); });
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-reac]'); if (!b || !REAC.datos) return;
     const k = b.dataset.reac; REAC.datos.reacciones[k] = (REAC.datos.reacciones[k] || 0) + 1; pintarReac();
     if (MOV) { const f = document.createElement('span'); f.className = 'an-flota'; f.textContent = (EMO.find(x => x[0] === k) || [])[1] || ''; const r = b.getBoundingClientRect();
@@ -1918,20 +1919,34 @@
     return `${lab('EL MEJOR DEL PARTIDO, SEGÚN LA AFICIÓN', 'margin-bottom:2px')}<div class="an-nota" style="margin-top:0">${tot} ${tot === 1 ? 'voto' : 'votos'}${mio === 'ya' ? ' · desde este móvil ya se había votado' : mio && cand.find(x => x.k === mio) ? ' · el tuyo: ' + esc(corto(cand.find(x => x.k === mio))) : ''}${abierta ? ' · se puede votar hasta 7 días después del partido' : ''}</div>
       ${orden.slice(0, 6).map(([x, n]) => `<div class="an-voto"><span>#${esc(x.dorsal)} ${esc(corto(x))}</span><div class="bar"><i style="width:${(n / mx * 100).toFixed(1)}%"></i></div><b>${Math.round(n / tot * 100)} %</b></div>`).join('')}`;
   }
+  // en el directo y en el resumen del acta: el partido de app.json si ya está; si no, la plantilla del acta (con su clave de la web)
+  function partidoVoto(idp) {
+    const p = Object.values(A.partidos).find(x => x.idp === idp); if (p) return p;
+    const sn = LIVE.snaps[idp] || (RSM.final && RSM.final.idp === idp && RSM.final); if (!sn || !sn.plantillas) return null;
+    const ctx = ctxDirecto(sn), lista = l => (ctx.mp[l] ? (sn.plantillas[l] || []).map(j => { const q = jugadorDe(ctx, l, j.id_player, j.dorsal); return q ? Object.assign({}, q, { dorsal: j.dorsal }) : null; }).filter(Boolean) : []);
+    return { idp, fecha: hoyISO(), local: ctx.nombre.L, visitante: ctx.nombre.V, alin_l: lista('L'), alin_v: lista('V'), por_l: [], por_v: [] };
+  }
+  function pintarVotoDirecto(idp, final) {
+    const el = view.querySelector(`[data-voto-directo="${idp}"]`); if (!el || !final || el.dataset.hecho) return;
+    const p = partidoVoto(idp); if (!p) return;
+    el.dataset.hecho = '1';
+    apiGet('voto?idp=' + encodeURIComponent(idp)).then(d => { if (!d) return; const h = votoHtml(p, d); if (h) { el.dataset.voto = '_' + idp; VOTO_P['_' + idp] = p; el.innerHTML = `<div class="card an-c" style="margin-top:12px">${h}</div>`; } });
+  }
+  const VOTO_P = {};   // partidos que aún no están en app.json (directo de hoy): los usa el voto
   function rellenarVoto() {
     const el = view.querySelector('[data-voto]'); if (!el) return;
     const p = A.partidos[el.dataset.voto]; if (!p || !p.idp) { el.remove(); return; }
     apiGet('voto?idp=' + encodeURIComponent(p.idp)).then(d => { if (!d) { el.remove(); return; } const h = votoHtml(p, d); if (h) el.innerHTML = `<div class="card an-c" style="margin-top:12px">${h}</div>`; else el.remove(); });
   }
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-votar]'); if (!b) return;
-    const el = b.closest('[data-voto]'), p = el && A.partidos[el.dataset.voto]; if (!p) return;
+    const el = b.closest('[data-voto]'), p = el && (A.partidos[el.dataset.voto] || VOTO_P[el.dataset.voto]); if (!p) return;
     el.querySelectorAll('[data-votar]').forEach(x => { x.disabled = true; });
     apiPost('voto', { idp: p.idp, k: b.dataset.votar, d: DISP }).then(d => {
       if (d && (d._st === 200 || d._st === 409 || d._st === 429)) { ponLS('mp-voto-' + p.idp, d._st === 200 ? b.dataset.votar : 'ya'); el.innerHTML = `<div class="card an-c" style="margin-top:12px">${votoHtml(p, d)}</div>`; }
       else { el.querySelectorAll('[data-votar]').forEach(x => { x.disabled = false; }); } }); });
 
   // ── tiros grabados por el vigía (antes de que el proceso semanal los publique en data/tiros.json) ──
-  const TIR_VIVO = {};
+  const TIR_VIVO = {}, VIGIA_DESDE = '2026-10-23';   // el vigía en internet graba desde ese día
   const tirosApi = idp => (idp in TIR_VIVO ? Promise.resolve(TIR_VIVO[idp]) : apiGet('tiros?idp=' + encodeURIComponent(idp)).then(d => (TIR_VIVO[idp] = d && d.s ? d : null)));
 
   /* ── Banquillo (#/banquillo/{idp}): el delegado apunta quién está en pista en cada gol, con líneas preparadas para ir rápido.
@@ -3250,7 +3265,9 @@
           <button type="button" class="tv-full" data-tv="full" title="Pantalla completa" aria-label="Pantalla completa">${ICO_FULL}${ICO_SALIR}</button>
           ${modo === 'resumen' ? `<div class="tv-ctrl"><button type="button" data-tv="prev" aria-label="Atrasar evento" title="Atrasar evento">${ICO_ANT}</button><button type="button" data-tv="next" aria-label="Adelantar evento" title="Adelantar evento">${ICO_SIG}</button></div>
           <button type="button" class="tv-empieza" id="tv-empieza" data-tv="empieza"><b aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg></b><span>Ver el resumen</span><small>En el móvil se verá a pantalla completa y en horizontal</small></button>` : ''}
-        </div></div></div></div>`;
+        </div></div></div></div>
+      ${(() => { const pm = Object.values(A.partidos).find(x => x.idp === idp); setTimeout(() => cargarReac(idp, true), 0);
+        return `<div class="an-grid dos tv-aficion" style="margin-top:12px"><div data-reac-caja="${esc(idp)}"></div>${pm && pm.nuestro ? `<div data-voto="${esc(pm.mid)}"></div>` : ''}</div>`; })()}`;
   }
   /* Música de fondo del resumen: «Energetic Sport» de MondaMusic (Pixabay, licencia de contenido de Pixabay: uso libre y
      sin citar), en assets/audio/musica-resumen.mp3 a 128 kbps y con el volumen nivelado. Suena baja y en bucle, y se para
@@ -3440,6 +3457,8 @@
   }
   // dibujo de media pista (la zona de ataque, con la portería arriba) y los jugadores de cada equipo nuestro
   const PISTA_W = 300, PISTA_H = 270;
+  // distancia aproximada a la portería: el dibujo es media pista de 20 m de ancho (pista de unos 40 × 20 m); la portería, en (150, 28)
+  const distM = xy => Math.round(Math.hypot((xy[0] - 0.5) * PISTA_W, xy[1] * PISTA_H - 28) * 20 / PISTA_W);
   const mediaPista = (puntos, attrs = '') => `<svg viewBox="0 0 ${PISTA_W} ${PISTA_H}" ${attrs}>
       <path d="M2,${PISTA_H - 3} L2,36 Q2,2 36,2 L${PISTA_W - 36},2 Q${PISTA_W - 2},2 ${PISTA_W - 2},36 L${PISTA_W - 2},${PISTA_H - 3} Z" fill="#1E1E22" stroke="#55555B" stroke-width="2"/>
       <line x1="2" x2="${PISTA_W - 2}" y1="${PISTA_H - 3}" y2="${PISTA_H - 3}" stroke="#D3202A" stroke-width="3"/>
@@ -3457,7 +3476,7 @@
       return `<button type="button" class="an-tog" aria-pressed="${on ? 'true' : 'false'}" data-sy="pj" data-l="${l}" data-d="${esc(j.dorsal)}">#${esc(j.dorsal)} ${esc(j.jugador_corto || j.jugador || '')}</button>`; }).join('');
     const hay = SY.items.slice(0, SY.i).some(x => x.pista);
     box.innerHTML = `<div class="sy-gol-cols"><div><div class="lab">DESDE DÓNDE SE TIRÓ</div><div class="an-nota" style="margin-top:2px">Mirando a la portería en la que entró. Toca en el dibujo.</div>
-        ${mediaPista(punto, 'class="sy-pista" data-sy-pista width="100%" role="img" aria-label="Media pista: toca desde dónde se tiró"')}${it.xy ? '<button type="button" class="an-tog" data-sy="xy-borra">Borrar el punto</button>' : ''}</div>
+        ${mediaPista(punto, 'class="sy-pista" data-sy-pista width="100%" role="img" aria-label="Media pista: toca desde dónde se tiró"')}${it.xy ? `<div class="an-frase" style="margin:6px 0">A unos ${distM(it.xy)} m de la portería</div><button type="button" class="an-tog" data-sy="xy-borra">Borrar el punto</button>` : ''}</div>
       <div><div class="lab">QUIÉN ESTABA EN PISTA</div><div class="an-nota" style="margin-top:2px">Los ${lados.length > 1 ? 'de cada equipo' : 'nuestros'}, con el portero. ${hay ? '<button type="button" class="an-tog" data-sy="pj-igual">Igual que en el gol anterior</button>' : ''}</div>
         ${lados.map(l => `<div class="an-sub">${esc(ctx.abr[l])} · ${it.pista ? it.pista[l].length : 0} marcados</div><div class="an-togs">${chips(l)}</div>`).join('')}</div></div>
       <div class="an-nota">Cuando acabes con este gol, pulsa «Saltar ▶» para ir a la siguiente jugada.</div>`;
@@ -4226,6 +4245,7 @@
     const verRes = modo === 'resumen' ? '<button type="button" class="dv-alin" data-ver-resumen>▶ Resumen final</button>'
       : sn.estado === 'final' ? `<a class="dv-alin" href="#/directo/${encodeURIComponent(idp)}/resumen">▶ Ver resumen</a>` : '';
     cargarReac(idp, true);
+    setTimeout(() => pintarVotoDirecto(idp, modo === 'resumen' || sn.estado === 'final'), 0);
     const arriba = verRes + alinBtn(sn) + pistaChip(sn) + `<button type="button" class="dv-alin" data-wa="${esc(idp)}" title="Manda el marcador y el enlace del directo por WhatsApp">WhatsApp</button>`
       + (ctx.mp.L || ctx.mp.V ? `<a class="dv-alin" href="#/banquillo/${encodeURIComponent(idp)}" title="Para el delegado: quién está en pista en cada gol">Banquillo</a>` : '');
     return `${arriba ? `<div class="dv-arriba">${arriba}</div>` : ''}${resumenHtml}<div class="dv">
@@ -4243,7 +4263,7 @@
         <div class="dv-lista"><div class="dv-lcab"><span>MINUTO A MINUTO <a class="dv-como" href="#/metodo/directo">¿qué significa cada aviso?</a></span><span data-dv="lcab">${cabLista(sn).replace(/^<span[^>]*>|<\/span>$/g, '')}</span></div>
           <div class="dv-filas" data-dv="filas">${filasHtml(ctx)}</div></div>
       </div>
-      <div class="dv-der" data-dv="der">${juegoHtml(ctx)}<div data-dv="reac">${reacHtml(idp)}</div><div data-dv="ficha">${fichaHtml(ctx)}</div><div style="display:flex;flex-direction:column;gap:8px" data-dv="hoy">${hoyHtml()}</div></div>
+      <div class="dv-der" data-dv="der">${juegoHtml(ctx)}<div data-dv="reac" data-reac-caja="${esc(idp)}">${reacHtml(idp)}</div><div data-voto-directo="${esc(idp)}"></div><div data-dv="ficha">${fichaHtml(ctx)}</div><div style="display:flex;flex-direction:column;gap:8px" data-dv="hoy">${hoyHtml()}</div></div>
     </div>`;
   }
   function pintarMarcador() {
