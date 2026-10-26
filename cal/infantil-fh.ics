@@ -1,0 +1,383 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//MADRIDPATINA//Agenda//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:MADRIDPATINA Infantil
+X-WR-TIMEZONE:Europe/Madrid
+REFRESH-INTERVAL;VALUE=DURATION:PT6H
+X-PUBLISHED-TTL:PT6H
+BEGIN:VTIMEZONE
+TZID:Europe/Madrid
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:IN-4814-j3-RAPTORS@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261018T171500
+DTEND;TZID=Europe/Madrid:20261018T183500
+SUMMARY:MADRIDPATINA Infantil 0–4 RAPTORS
+DESCRIPTION:Infantil 2 · jornada 3 · en casa\nCómo llegar: https://www.g
+ oogle.com/maps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel199
+ 4.github.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j1-PINGUINOSB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261024T150000
+DTEND;TZID=Europe/Madrid:20261024T162000
+SUMMARY:PINGÜINOS B 12–0 MADRIDPATINA Infantil
+DESCRIPTION:Infantil 2 · jornada 1\nCómo llegar: https://www.google.com/m
+ aps/dir/?api=1&destination=40.5092751\,-3.6772509\nhttps://arsel1994.githu
+ b.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Instalación Deportiva Municipal Las Tablas
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j4-LOBOSCASTILLA@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261107T171500
+DTEND;TZID=Europe/Madrid:20261107T183500
+SUMMARY:LOBOS CASTILLA – MADRIDPATINA Infantil
+DESCRIPTION:Infantil 2 · jornada 4\nPista habitual del local (la FMP aún 
+ no la ha puesto): Colegio Castilla\nCómo llegar: https://www.google.com/m
+ aps/dir/?api=1&destination=40.3986782\,-3.6334001\nhttps://arsel1994.githu
+ b.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Colegio Castilla
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j5-CPLMB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261115T161500
+DTEND;TZID=Europe/Madrid:20261115T173500
+SUMMARY:MADRIDPATINA Infantil – CPLM B
+DESCRIPTION:Infantil 2 · jornada 5 · en casa\nPista habitual del local (l
+ a FMP aún no la ha puesto): Polideportivo Municipal José Caballero · Pi
+ sta 4\nCómo llegar: https://www.google.com/maps/dir/?api=1&destination=40
+ .53682\,-3.61948\nhttps://arsel1994.github.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j6-ROLLYBEARS@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261121T100000
+DTEND;TZID=Europe/Madrid:20261121T112000
+SUMMARY:ROLLYBEARS – MADRIDPATINA Infantil
+DESCRIPTION:Infantil 2 · jornada 6\nPista habitual del local (la FMP aún 
+ no la ha puesto): Parque Deportivo Puerta de Hierro\nCómo llegar: https:/
+ /www.google.com/maps/dir/?api=1&destination=40.4642717\,-3.7503093\nhttps:
+ //arsel1994.github.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Parque Deportivo Puerta de Hierro
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j7-MAMUTSB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261129T151500
+DTEND;TZID=Europe/Madrid:20261129T163500
+SUMMARY:MADRIDPATINA Infantil – MAMUTS B
+DESCRIPTION:Infantil 2 · jornada 7 · en casa\nPista habitual del local (l
+ a FMP aún no la ha puesto): Polideportivo Municipal José Caballero · Pi
+ sta 4\nCómo llegar: https://www.google.com/maps/dir/?api=1&destination=40
+ .53682\,-3.61948\nhttps://arsel1994.github.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j8-KAMIKAZESB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261212
+DTEND;VALUE=DATE:20261213
+TRANSP:TRANSPARENT
+SUMMARY:KAMIKAZES B – MADRIDPATINA Infantil (hora por fijar)
+DESCRIPTION:Infantil 2 · jornada 8\nPista habitual del local (la FMP aún 
+ no la ha puesto): Centro Deportivo Laura Oter\nCómo llegar: https://www.g
+ oogle.com/maps/dir/?api=1&destination=40.601759\,-3.7003615\nhttps://arsel
+ 1994.github.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Centro Deportivo Laura Oter
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j9-RENOSMOSTOLES@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270109
+DTEND;VALUE=DATE:20270110
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA Infantil – RENOS MÓSTOLES (hora por fijar)
+DESCRIPTION:Infantil 2 · jornada 9 · en casa\nPista habitual del local (l
+ a FMP aún no la ha puesto): Polideportivo Municipal José Caballero · Pi
+ sta 4\nCómo llegar: https://www.google.com/maps/dir/?api=1&destination=40
+ .53682\,-3.61948\nhttps://arsel1994.github.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j10-PINGUINOSB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270116
+DTEND;VALUE=DATE:20270117
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA Infantil – PINGÜINOS B (hora por fijar)
+DESCRIPTION:Infantil 2 · jornada 10 · en casa\nPista habitual del local (
+ la FMP aún no la ha puesto): Polideportivo Municipal José Caballero · P
+ ista 4\nCómo llegar: https://www.google.com/maps/dir/?api=1&destination=4
+ 0.53682\,-3.61948\nhttps://arsel1994.github.io/madridpatina-web/#/equipo/I
+ N
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j12-RAPTORS@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270130
+DTEND;VALUE=DATE:20270131
+TRANSP:TRANSPARENT
+SUMMARY:RAPTORS – MADRIDPATINA Infantil (hora por fijar)
+DESCRIPTION:Infantil 2 · jornada 12\nPista habitual del local (la FMP aún
+  no la ha puesto): Parque Deportivo Puerta de Hierro\nCómo llegar: https:
+ //www.google.com/maps/dir/?api=1&destination=40.4642717\,-3.7503093\nhttps
+ ://arsel1994.github.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Parque Deportivo Puerta de Hierro
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j13-LOBOSCASTILLA@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270206
+DTEND;VALUE=DATE:20270207
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA Infantil – LOBOS CASTILLA (hora por fijar)
+DESCRIPTION:Infantil 2 · jornada 13 · en casa\nPista habitual del local (
+ la FMP aún no la ha puesto): Polideportivo Municipal José Caballero · P
+ ista 4\nCómo llegar: https://www.google.com/maps/dir/?api=1&destination=4
+ 0.53682\,-3.61948\nhttps://arsel1994.github.io/madridpatina-web/#/equipo/I
+ N
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j14-CPLMB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270220
+DTEND;VALUE=DATE:20270221
+TRANSP:TRANSPARENT
+SUMMARY:CPLM B – MADRIDPATINA Infantil (hora por fijar)
+DESCRIPTION:Infantil 2 · jornada 14\nPista habitual del local (la FMP aún
+  no la ha puesto): Centro Deportivo Municipal Francisco Fernández Ochoa\n
+ Cómo llegar: https://www.google.com/maps/dir/?api=1&destination=40.36539\
+ ,-3.74028\nhttps://arsel1994.github.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Centro Deportivo Municipal Francisco Fernández Ochoa
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j15-ROLLYBEARS@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270306
+DTEND;VALUE=DATE:20270307
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA Infantil – ROLLYBEARS (hora por fijar)
+DESCRIPTION:Infantil 2 · jornada 15 · en casa\nPista habitual del local (
+ la FMP aún no la ha puesto): Polideportivo Municipal José Caballero · P
+ ista 4\nCómo llegar: https://www.google.com/maps/dir/?api=1&destination=4
+ 0.53682\,-3.61948\nhttps://arsel1994.github.io/madridpatina-web/#/equipo/I
+ N
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j16-MAMUTSB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270313
+DTEND;VALUE=DATE:20270314
+TRANSP:TRANSPARENT
+SUMMARY:MAMUTS B – MADRIDPATINA Infantil (hora por fijar)
+DESCRIPTION:Infantil 2 · jornada 16\nPista habitual del local (la FMP aún
+  no la ha puesto): Instalación Deportiva Municipal Básica Los Rosales\nC
+ ómo llegar: https://www.google.com/maps/search/?api=1&query=Instalación+
+ Deportiva+Municipal+Básica+Los+Rosales+Madrid\nhttps://arsel1994.github.i
+ o/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Instalación Deportiva Municipal Básica Los Rosales
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j17-KAMIKAZESB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270403
+DTEND;VALUE=DATE:20270404
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA Infantil – KAMIKAZES B (hora por fijar)
+DESCRIPTION:Infantil 2 · jornada 17 · en casa\nPista habitual del local (
+ la FMP aún no la ha puesto): Polideportivo Municipal José Caballero · P
+ ista 4\nCómo llegar: https://www.google.com/maps/dir/?api=1&destination=4
+ 0.53682\,-3.61948\nhttps://arsel1994.github.io/madridpatina-web/#/equipo/I
+ N
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:IN-4814-j18-RENOSMOSTOLES@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270410
+DTEND;VALUE=DATE:20270411
+TRANSP:TRANSPARENT
+SUMMARY:RENOS MÓSTOLES – MADRIDPATINA Infantil (hora por fijar)
+DESCRIPTION:Infantil 2 · jornada 18\nPista habitual del local (la FMP aún
+  no la ha puesto): Polideportivo Andrés Torrejón (El Soto)\nCómo llegar
+ : https://www.google.com/maps/dir/?api=1&destination=40.32748\,-3.88923\nh
+ ttps://arsel1994.github.io/madridpatina-web/#/equipo/IN
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/IN
+LOCATION:Polideportivo Andrés Torrejón (El Soto)
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2026-10-12@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261012
+DTEND;VALUE=DATE:20261013
+TRANSP:TRANSPARENT
+SUMMARY:Fiesta Nacional de España
+DESCRIPTION:Festivo nacional
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2026-11-02@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261102
+DTEND;VALUE=DATE:20261103
+TRANSP:TRANSPARENT
+SUMMARY:Todos los Santos (trasladado)
+DESCRIPTION:Festivo en la Comunidad de Madrid
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2026-11-09@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261109
+DTEND;VALUE=DATE:20261110
+TRANSP:TRANSPARENT
+SUMMARY:Nuestra Señora de la Almudena
+DESCRIPTION:Festivo local · Madrid
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2026-12-07@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261207
+DTEND;VALUE=DATE:20261208
+TRANSP:TRANSPARENT
+SUMMARY:Día de la Constitución (trasladado)
+DESCRIPTION:Festivo en la Comunidad de Madrid
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2026-12-08@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261208
+DTEND;VALUE=DATE:20261209
+TRANSP:TRANSPARENT
+SUMMARY:Inmaculada Concepción
+DESCRIPTION:Festivo nacional
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2026-12-25@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261225
+DTEND;VALUE=DATE:20261226
+TRANSP:TRANSPARENT
+SUMMARY:Navidad
+DESCRIPTION:Festivo nacional
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2027-01-01@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270101
+DTEND;VALUE=DATE:20270102
+TRANSP:TRANSPARENT
+SUMMARY:Año Nuevo
+DESCRIPTION:Festivo nacional
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2027-01-06@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270106
+DTEND;VALUE=DATE:20270107
+TRANSP:TRANSPARENT
+SUMMARY:Reyes
+DESCRIPTION:Festivo nacional
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2027-03-19@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270319
+DTEND;VALUE=DATE:20270320
+TRANSP:TRANSPARENT
+SUMMARY:San José
+DESCRIPTION:Festivo en la Comunidad de Madrid
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2027-03-25@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270325
+DTEND;VALUE=DATE:20270326
+TRANSP:TRANSPARENT
+SUMMARY:Jueves Santo
+DESCRIPTION:Festivo en la Comunidad de Madrid
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2027-03-26@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270326
+DTEND;VALUE=DATE:20270327
+TRANSP:TRANSPARENT
+SUMMARY:Viernes Santo
+DESCRIPTION:Festivo nacional
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2027-05-01@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270501
+DTEND;VALUE=DATE:20270502
+TRANSP:TRANSPARENT
+SUMMARY:Fiesta del Trabajo
+DESCRIPTION:Festivo nacional
+END:VEVENT
+BEGIN:VEVENT
+UID:fest-2027-05-15@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270515
+DTEND;VALUE=DATE:20270516
+TRANSP:TRANSPARENT
+SUMMARY:San Isidro
+DESCRIPTION:Festivo local · Madrid
+END:VEVENT
+BEGIN:VEVENT
+UID:hora-2026-10-25@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261025
+DTEND;VALUE=DATE:20261026
+TRANSP:TRANSPARENT
+SUMMARY:Cambio de hora
+DESCRIPTION:Cambio al horario de invierno: a las 3:00 serán las 2:00
+END:VEVENT
+BEGIN:VEVENT
+UID:hora-2027-03-28@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270328
+DTEND;VALUE=DATE:20270329
+TRANSP:TRANSPARENT
+SUMMARY:Cambio de hora
+DESCRIPTION:Cambio al horario de verano: a las 2:00 serán las 3:00
+END:VEVENT
+END:VCALENDAR

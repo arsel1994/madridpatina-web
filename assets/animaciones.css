@@ -4,6 +4,8 @@
 @property --mpA{syntax:'<angle>';inherits:false;initial-value:0deg}
 @property --mpP{syntax:'<number>';inherits:false;initial-value:0}
 @keyframes mpUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+/* entrada de página del rediseño: sube 8 px en 240 ms, sin cascada */
+@keyframes mpEntra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes mpFade{from{opacity:0}to{opacity:1}}
 @keyframes mpL{from{opacity:0;transform:translateX(-60%) rotate(-12deg)}to{opacity:1;transform:none}}
 @keyframes mpR{from{opacity:0;transform:translateX(60%) rotate(12deg)}to{opacity:1;transform:none}}

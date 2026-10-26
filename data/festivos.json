@@ -1,0 +1,23 @@
+{
+  "nota": "Escrito a mano. Nacionales y de la Comunidad de Madrid (BOCM). Locales: los dos de cada ayuntamiento donde jugamos; se añaden cuando cada ayuntamiento los publica.",
+  "temporada": "2026/27",
+  "dias": [
+    { "fecha": "2026-10-12", "t": "Fiesta Nacional de España", "ambito": "nacional" },
+    { "fecha": "2026-11-02", "t": "Todos los Santos (trasladado)", "ambito": "madrid" },
+    { "fecha": "2026-11-09", "t": "Nuestra Señora de la Almudena", "ambito": "local", "municipio": "Madrid" },
+    { "fecha": "2026-12-07", "t": "Día de la Constitución (trasladado)", "ambito": "madrid" },
+    { "fecha": "2026-12-08", "t": "Inmaculada Concepción", "ambito": "nacional" },
+    { "fecha": "2026-12-25", "t": "Navidad", "ambito": "nacional" },
+    { "fecha": "2027-01-01", "t": "Año Nuevo", "ambito": "nacional" },
+    { "fecha": "2027-01-06", "t": "Reyes", "ambito": "nacional" },
+    { "fecha": "2027-03-19", "t": "San José", "ambito": "madrid" },
+    { "fecha": "2027-03-25", "t": "Jueves Santo", "ambito": "madrid" },
+    { "fecha": "2027-03-26", "t": "Viernes Santo", "ambito": "nacional" },
+    { "fecha": "2027-05-01", "t": "Fiesta del Trabajo", "ambito": "nacional" },
+    { "fecha": "2027-05-15", "t": "San Isidro", "ambito": "local", "municipio": "Madrid" }
+  ],
+  "cambio_hora": [
+    { "fecha": "2026-10-25", "t": "Cambio al horario de invierno: a las 3:00 serán las 2:00" },
+    { "fecha": "2027-03-28", "t": "Cambio al horario de verano: a las 2:00 serán las 3:00" }
+  ]
+}

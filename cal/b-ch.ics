@@ -1,0 +1,381 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//MADRIDPATINA//Agenda//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:MADRIDPATINA B
+X-WR-TIMEZONE:Europe/Madrid
+REFRESH-INTERVAL;VALUE=DURATION:PT6H
+X-PUBLISHED-TTL:PT6H
+BEGIN:VTIMEZONE
+TZID:Europe/Madrid
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:B-4818-j1-LOBOSCASTILLAC@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261004T153000
+DTEND;TZID=Europe/Madrid:20261004T170500
+SUMMARY:MADRIDPATINA B 0–9 LOBOS CASTILLA C
+DESCRIPTION:Senior 4 · jornada 1 · en casa\nCómo llegar: https://www.goo
+ gle.com/maps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994.
+ github.io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j2-VIKINGSB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261017T133000
+DTEND;TZID=Europe/Madrid:20261017T150500
+SUMMARY:VIKINGS B 5–5 MADRIDPATINA B
+DESCRIPTION:Senior 4 · jornada 2\nCómo llegar: https://www.google.com/map
+ s/dir/?api=1&destination=40.5816923\,-4.0097366\nhttps://arsel1994.github.
+ io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal Galapagar
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j3-MAMUTSE@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261025T170000
+DTEND;TZID=Europe/Madrid:20261025T183500
+SUMMARY:MADRIDPATINA B 5–0 MAMUTS E
+DESCRIPTION:Senior 4 · jornada 3 · en casa\nCómo llegar: https://www.goo
+ gle.com/maps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994.
+ github.io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j4-KAMIKAZESD@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261108T171500
+DTEND;TZID=Europe/Madrid:20261108T185000
+SUMMARY:KAMIKAZES D – MADRIDPATINA B
+DESCRIPTION:Senior 4 · jornada 4\nCómo llegar: https://www.google.com/map
+ s/dir/?api=1&destination=40.601759\,-3.7003615\nhttps://arsel1994.github.i
+ o/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Centro Deportivo Laura Oter
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j5-MADRIDPATINAD@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261122T173000
+DTEND;TZID=Europe/Madrid:20261122T190500
+SUMMARY:MADRIDPATINA B – MADRIDPATINA D
+DESCRIPTION:Senior 4 · jornada 5 · en casa\nCómo llegar: https://www.goo
+ gle.com/maps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994.
+ github.io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j6-MADRIDPATINAC@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;TZID=Europe/Madrid:20261129T194500
+DTEND;TZID=Europe/Madrid:20261129T212000
+SUMMARY:MADRIDPATINA C – MADRIDPATINA B
+DESCRIPTION:Senior 4 · jornada 6\nCómo llegar: https://www.google.com/map
+ s/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994.github.io/m
+ adridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j7-PINGUINOSD@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261212
+DTEND;VALUE=DATE:20261213
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA B – PINGÜINOS D (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 7 · en casa\nCómo llegar: https://www.goo
+ gle.com/maps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994.
+ github.io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j8-CORSARIOS@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261219
+DTEND;VALUE=DATE:20261220
+TRANSP:TRANSPARENT
+SUMMARY:CORSARIOS – MADRIDPATINA B (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 8\nCómo llegar: https://www.google.com/map
+ s/dir/?api=1&destination=40.3500351\,-3.71939\nhttps://arsel1994.github.io
+ /madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Plata y Castañar
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j9-RAPTORSB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270109
+DTEND;VALUE=DATE:20270110
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA B – RAPTORS B (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 9 · en casa\nCómo llegar: https://www.goo
+ gle.com/maps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994.
+ github.io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j10-LOBOSCASTILLAC@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270123
+DTEND;VALUE=DATE:20270124
+TRANSP:TRANSPARENT
+SUMMARY:LOBOS CASTILLA C – MADRIDPATINA B (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 10\nCómo llegar: https://www.google.com/ma
+ ps/dir/?api=1&destination=40.3986782\,-3.6334001\nhttps://arsel1994.github
+ .io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Colegio Castilla
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j11-VIKINGSB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270206
+DTEND;VALUE=DATE:20270207
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA B – VIKINGS B (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 11 · en casa\nCómo llegar: https://www.go
+ ogle.com/maps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994
+ .github.io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j12-MAMUTSE@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270220
+DTEND;VALUE=DATE:20270221
+TRANSP:TRANSPARENT
+SUMMARY:MAMUTS E – MADRIDPATINA B (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 12\nCómo llegar: https://www.google.com/ma
+ ps/search/?api=1&query=Instalación+Deportiva+Municipal+Básica+Los+Rosale
+ s+Madrid\nhttps://arsel1994.github.io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Instalación Deportiva Municipal Básica Los Rosales
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j13-KAMIKAZESD@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270227
+DTEND;VALUE=DATE:20270228
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA B – KAMIKAZES D (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 13 · en casa\nCómo llegar: https://www.go
+ ogle.com/maps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994
+ .github.io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j14-MADRIDPATINAD@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270313
+DTEND;VALUE=DATE:20270314
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA D – MADRIDPATINA B (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 14\nCómo llegar: https://www.google.com/ma
+ ps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994.github.io/
+ madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j15-MADRIDPATINAC@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270403
+DTEND;VALUE=DATE:20270404
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA B – MADRIDPATINA C (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 15 · en casa\nCómo llegar: https://www.go
+ ogle.com/maps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994
+ .github.io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j16-PINGUINOSD@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270417
+DTEND;VALUE=DATE:20270418
+TRANSP:TRANSPARENT
+SUMMARY:PINGÜINOS D – MADRIDPATINA B (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 16\nCómo llegar: https://www.google.com/ma
+ ps/dir/?api=1&destination=40.5092751\,-3.6772509\nhttps://arsel1994.github
+ .io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Instalación Deportiva Municipal Las Tablas
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j17-CORSARIOS@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270508
+DTEND;VALUE=DATE:20270509
+TRANSP:TRANSPARENT
+SUMMARY:MADRIDPATINA B – CORSARIOS (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 17 · en casa\nCómo llegar: https://www.go
+ ogle.com/maps/dir/?api=1&destination=40.53682\,-3.61948\nhttps://arsel1994
+ .github.io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Polideportivo Municipal José Caballero · Pista 4
+END:VEVENT
+BEGIN:VEVENT
+UID:B-4818-j18-RAPTORSB@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270515
+DTEND;VALUE=DATE:20270516
+TRANSP:TRANSPARENT
+SUMMARY:RAPTORS B – MADRIDPATINA B (hora por fijar)
+DESCRIPTION:Senior 4 · jornada 18\nCómo llegar: https://www.google.com/ma
+ ps/dir/?api=1&destination=40.4642717\,-3.7503093\nhttps://arsel1994.github
+ .io/madridpatina-web/#/equipo/B
+URL:https://arsel1994.github.io/madridpatina-web/#/equipo/B
+LOCATION:Parque Deportivo Puerta de Hierro
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-daniel-dudak-arribas@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270319
+DTEND;VALUE=DATE:20270320
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Daniel Dudak
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-fernando-dorado-perez@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270330
+DTEND;VALUE=DATE:20270331
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Fernando Dorado
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-juan-carlos-zazo-calahorra@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261111
+DTEND;VALUE=DATE:20261112
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Juan Zazo
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-jhon-jairo-arias-ballen@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270429
+DTEND;VALUE=DATE:20270430
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Jhon Arias
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-francisco-javier-perez-escriva@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270425
+DTEND;VALUE=DATE:20270426
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Francisco Pérez
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-javier-martinez-lucas@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261108
+DTEND;VALUE=DATE:20261109
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Javier Martínez
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-esther-pascual-diez@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270404
+DTEND;VALUE=DATE:20270405
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Esther Pascual
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-pedro-orgaz-cruz@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270123
+DTEND;VALUE=DATE:20270124
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Pedro Orgaz
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-araceli-jaqueti-fuster@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261123
+DTEND;VALUE=DATE:20261124
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Araceli Jaqueti
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-brian-nathael-canales-reina@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270503
+DTEND;VALUE=DATE:20270504
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Brian Canales
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-alfredo-blanco-martin@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261004
+DTEND;VALUE=DATE:20261005
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Alfredo Blanco
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:cumple-alejandro-vega-gomez@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20260830
+DTEND;VALUE=DATE:20260831
+TRANSP:TRANSPARENT
+SUMMARY:Cumple Alejandro Vega
+DESCRIPTION:MADRIDPATINA
+END:VEVENT
+BEGIN:VEVENT
+UID:hora-2026-10-25@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20261025
+DTEND;VALUE=DATE:20261026
+TRANSP:TRANSPARENT
+SUMMARY:Cambio de hora
+DESCRIPTION:Cambio al horario de invierno: a las 3:00 serán las 2:00
+END:VEVENT
+BEGIN:VEVENT
+UID:hora-2027-03-28@madridpatina
+DTSTAMP:20261026T083801Z
+DTSTART;VALUE=DATE:20270328
+DTEND;VALUE=DATE:20270329
+TRANSP:TRANSPARENT
+SUMMARY:Cambio de hora
+DESCRIPTION:Cambio al horario de verano: a las 2:00 serán las 3:00
+END:VEVENT
+END:VCALENDAR

@@ -42,12 +42,12 @@
     const t = Math.min(m * 60 + s + extra, (snap.duracion_periodo || 1200));
     return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(Math.floor(t % 60)).padStart(2, '0');
   }
-  // Cola de goles: una cortina cada vez (2,8 s) + 1,2 s para el rodillo.
+  // Cola de goles: una banda cada vez (1,6 s) + 0,9 s para que ruede el marcador.
   function colaGoles(mostrar) {
     const q = []; let busy = false;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     function next() { if (busy || !q.length) return; busy = true; const e = q.shift();
-      mostrar(e, reduce ? 0 : 2800).then(() => setTimeout(() => { busy = false; next(); }, reduce ? 0 : 1200)); }
+      mostrar(e, reduce ? 0 : 1600).then(() => setTimeout(() => { busy = false; next(); }, reduce ? 0 : 900)); }
     return e => { q.push(e); next(); };
   }
   g.MPDirecto = { start, relojLocal, colaGoles };
