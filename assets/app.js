@@ -278,7 +278,7 @@
         <div class="hero-ca"><span class="etq">${m.hora ? 'Empieza en' : 'Faltan · hora por fijar'}</span>${cuentaHtml(m, 'grande')}</div>
       </div>
       ${P ? `<div class="hero-pron">${barraPron(P)}<div class="hero-pron-t">Ganamos el ${P.g} % de las veces · penaltis ${P.e} %</div></div>` : ''}
-      <div class="hero-pie"><span>${esc(fd(m.fecha))} · ${esc(m.hora || 'hora por fijar')}${m.pista ? ' · ' + esc(m.pista) + (m.habitual ? ' (la habitual)' : '') : ''}</span><span class="ir">Previa</span></div>
+      <div class="hero-pie"><span>${esc(fd(m.fecha))} · ${esc(m.hora || 'hora por fijar')}${m.pista ? ' · ' + esc(m.pista) : ''}</span><span class="ir">Previa</span></div>
     </a>`;
   }
   function filaFinde(m) {
@@ -353,7 +353,7 @@
       const luego = ns.slice(1).map((x, i) => i ? `a las ${x.hora}, ${x.quien}` : `a las ${x.hora} ${x.derbi ? 'juegan' : 'juega'} ${x.quien}`);
       const frase = ns.length > 1 ? `Ven a las ${ns[0].hora} y quédate: ${luego.length > 1 ? luego.slice(0, -1).join(', ') + ' y ' + luego[luego.length - 1] : luego[0]}.` : `Ven a vernos a las ${(ns[0] || filas[0]).hora}.`;
       return `<section class="vernos">
-        <div class="casa-cab"><span class="etq">En casa · ven a vernos</span><div class="casa-tit"><span class="h2">${esc(fdLarga(d.fecha).toUpperCase())}</span><span class="casa-pista">${esc(d.pista || '')}${d.habitual ? ' (la habitual)' : ''}</span></div></div>
+        <div class="casa-cab"><span class="etq">En casa · ven a vernos</span><div class="casa-tit"><span class="h2">${esc(fdLarga(d.fecha).toUpperCase())}</span><span class="casa-pista">${esc(d.pista || '')}</span></div></div>
         <div class="casa-linea" style="--n:${filas.length}">${filas.map(t => `<div class="casa-t${t.nuestro ? ' mp' : ''}">
           <span class="casa-h">${esc(t.hora)}</span><span class="casa-estr">${ESTRELLA}</span>
           <span class="casa-us">${esc(t.us)}</span><span class="casa-vs"><span class="${t.derbi ? 'chip derbi' : 'vs'}">${t.derbi ? 'DERBI' : 'vs'}</span><span>${esc(t.them)}</span></span><span class="casa-liga">${esc(t.liga)}</span></div>`).join('')}</div>
@@ -541,7 +541,7 @@
     const cab = `<div class="pv-chips">${chips}</div>
       <div class="pv-cab">${lado(c.local)}<div class="pv-c">${pasado && conRes ? `<span class="pv-hora cifra">${c.gl}–${c.gv}</span>` : `<span class="pv-hora cifra">${esc(c.hora || '—')}</span>`}<span class="pv-dia">${esc(c.fecha ? fd(c.fecha) : 'Fecha por fijar')}</span>
         ${c.fecha && !pasado ? `<div class="pv-ca"><span class="etq">${c.hora ? 'Empieza en' : 'Faltan · hora por fijar'}</span>${cuentaHtml(x, 'peque')}</div>` : ''}</div>${lado(c.visitante)}</div>
-      <div class="pv-pista">${esc(ag.pista || 'Pista por confirmar')}${ag.habitual ? ' · la habitual del local' : ''}</div>
+      <div class="pv-pista">${esc(ag.pista || '')}</div>
       ${pasado ? casoHtml('Partido', conRes ? 'Acta pendiente de la FMP' : 'Sin resultado todavía', conRes ? 'El partido ya se jugó, pero la federación no ha subido el acta. El resultado y los datos saldrán solos esta noche.' : 'La FMP todavía no ha publicado el resultado. Si se ha aplazado, lo avisamos en Telegram en cuanto haya fecha nueva.', 'PENDIENTE', 'ambar') : avisos ? `<div class="aviso">${esc(avisos)}</div>` : ''}`;
     // nosotros frente a ellos (por partido, esta temporada), con barras: lo mejor de cada fila en blanco
     const eU = eqDeLiga(us, lid) || {}, U = ANA && ANA.equipos[eU.id] && ANA.equipos[eU.id].temp;
@@ -1939,7 +1939,7 @@
   function diaHtml(d) {
     const ms = d.nuestros.map(i => AGE.partidos[i]);
     return `<div class="an-dia"><div class="an-dia-cab"><span>${diaLargo(d.fecha)}</span>${d.mapa ? `<a href="${esc(d.mapa)}" target="_blank" rel="noopener">Cómo llegar →</a>` : ''}</div>
-      <div class="an-pista">${esc(d.pista || 'Pista por confirmar')}${d.habitual ? ' <span>(la habitual; la FMP aún no la ha puesto)</span>' : ''}</div>
+      <div class="an-pista">${esc(d.pista || '')}</div>
       ${ms.map(m => `<a class="an-par blk" href="${hEq(m.eq)}"><b>${esc(m.hora || 'Por fijar')}</b><span><span style="color:#FF6B63;font-weight:700">${esc(eqAge(m))}</span> ${m.casa ? 'contra' : 'en casa de'} ${esc(m.rival)}</span><span class="l">${esc(m.liga)}</span></a>`).join('')}
       ${d.otros.length ? `<div class="an-otros">Ese día en la misma pista también: ${d.otros.map(o => `${esc(o.hora || 'hora por fijar')} ${esc(o.local)} – ${esc(o.visitante)} <span>(${esc(o.liga)})</span>`).join(' · ')}</div>` : ''}</div>`;
   }
@@ -1960,7 +1960,7 @@
         const e = A.equipos.find(x => x.id === eq.dataset.agendaEq);
         const prox = AGE.partidos.filter(m => m.eq === e.id && m.fecha && m.fecha >= hoy);
         const sig = prox[0], sigCasa = prox.find(m => m.casa);
-        const linea = (t, m) => m ? `<div class="an-fila" style="align-items:flex-start"><span><span class="an-sub" style="display:block;margin:0">${t}</span>${esc(fd(m.fecha))} · ${esc(m.hora || 'hora por fijar')} · ${m.casa ? 'contra' : 'en casa de'} ${esc(m.rival)}<br><span style="color:#A6A6AD">${esc(m.pista || 'Pista por confirmar')}${m.habitual ? ' (la habitual)' : ''}</span></span>${m.mapa ? `<a href="${esc(m.mapa)}" target="_blank" rel="noopener" style="white-space:nowrap">Cómo llegar →</a>` : ''}</div>` : '';
+        const linea = (t, m) => m ? `<div class="an-fila" style="align-items:flex-start"><span><span class="an-sub" style="display:block;margin:0">${t}</span>${esc(fd(m.fecha))} · ${esc(m.hora || 'hora por fijar')} · ${m.casa ? 'contra' : 'en casa de'} ${esc(m.rival)}<br><span style="color:#A6A6AD">${esc(m.pista || '')}</span></span>${m.mapa ? `<a href="${esc(m.mapa)}" target="_blank" rel="noopener" style="white-space:nowrap">Cómo llegar →</a>` : ''}</div>` : '';
         eq.innerHTML = `<div class="an-grid dos" style="margin-top:12px"><div class="card an-c">${linea('PRÓXIMO PARTIDO', sig)}${sigCasa && sigCasa !== sig ? linea('PRÓXIMO EN CASA', sigCasa) : ''}${!sig ? '<div class="an-nota">No quedan partidos en el calendario.</div>' : ''}</div>
           <div class="card an-c">${lab('SUS PARTIDOS, EN TU CALENDARIO')}<div data-cal-caja>${calHtml(e.id, true)}</div></div></div>`;
       }
@@ -2001,7 +2001,7 @@
     (AGE && AGE.cumples || []).forEach(x => { const j = A.jugadores[x.k]; if (!j || j.menor || !equiposDe(j).length) return;
       const eqs = equiposDe(j).map(e => e.id); if (CAL.filtro !== 'club' && !eqs.includes(CAL.filtro)) return;
       const [m] = x.dia.split('-').map(Number);
-      out.push({ fecha: (m >= 8 ? y0 : y0 + 1) + '-' + x.dia, tipo: 'cumple', t: 'Cumple ' + nomCorto(j), sub: equiposDe(j).map(e => 'MP ' + letraOf(e)).join(' · ') + (j.dorsal ? ' · #' + j.dorsal : ''), k: x.k }); });
+      out.push({ fecha: (m >= 8 ? y0 : y0 + 1) + '-' + x.dia, tipo: 'cumple', t: 'Cumple ' + corto(j), sub: equiposDe(j).map(e => 'MP ' + letraOf(e)).join(' · ') + (j.dorsal ? ' · #' + j.dorsal : ''), k: x.k }); });
     return out.sort((a, b) => a.fecha.localeCompare(b.fecha));
   }
   const ICO_EV = { fest: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>', cumple: '<path d="M4 21h16M5 21v-7h14v7M8 14v-3M12 14v-3M16 14v-3M8 8.5a1 1 0 0 0 0-2M12 8.5a1 1 0 0 0 0-2M16 8.5a1 1 0 0 0 0-2"/>', reloj: '<path d="M12 7v5l3 2M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18z"/>' };
@@ -2013,12 +2013,12 @@
     const us = derbi ? nomEq(p.local, p.eq) + ' · ' + nomEq(p.visitante, p.eq) : p.eq.length === 1 ? 'MADRIDPATINA ' + p.eq : nomEq('MADRIDPATINA', p.eq);
     const usL = ours(p.local), nos = usL ? p.gl : p.gv, ell = usL ? p.gv : p.gl;
     const chips = [];
-    if (p.fechaAnt) chips.push(`<span class="chip ambar fuerte">CAMBIO DE FECHA · ANTES ${esc(fd(p.fechaAnt))}</span>`);
-    else if (p.horaAnt) chips.push('<span class="chip ambar fuerte">CAMBIO DE HORA</span>');
+    const yaJugado = jugado || pend || (p.fecha && p.fecha < hoyISO());   // en un partido pasado no hay avisos de hora, fecha ni pista
+    if (!yaJugado && p.fechaAnt) chips.push(`<span class="chip ambar fuerte">CAMBIO DE FECHA · ANTES ${esc(fd(p.fechaAnt))}</span>`);
+    else if (!yaJugado && p.horaAnt) chips.push('<span class="chip ambar fuerte">CAMBIO DE HORA</span>');
     if (derbi) chips.push('<span class="chip derbi">DERBI</span>');
     if (p.casa) chips.push('<span class="chip casa">EN CASA</span>');
     if (pend) chips.push('<span class="chip ambar">ACTA PENDIENTE</span>');
-    if (p.habitual) chips.push('<span class="chip ambar">PISTA POR CONFIRMAR</span>');
     let der = '';
     if (jugado) {
       const ganaPen = p.pen ? ours(p.pen) && (!derbi) : null, r = derbi ? '' : nos > ell || (nos === ell && ganaPen) ? 'V' : 'D';
@@ -2030,7 +2030,7 @@
     }
     const href = p.lid ? hPar(p.lid, p.j, p.local, p.visitante) : null;
     return `<${href ? `a href="${href}"` : 'div'} class="cal-p${p.casa ? ' casa' : ''}${jugado ? ' jugado' : ''}">
-      <div class="cal-h${p.hora ? '' : ' fijar'}${p.horaAnt ? ' cambio' : ''}">${p.horaAnt ? `<s>${esc(p.horaAnt)}</s>` : ''}<span class="cifra">${esc(p.hora || 'Por fijar')}</span></div>
+      <div class="cal-h${p.hora ? '' : ' fijar'}${p.horaAnt && !yaJugado ? ' cambio' : ''}">${p.horaAnt && !yaJugado ? `<s>${esc(p.horaAnt)}</s>` : ''}<span class="cifra">${esc(p.hora || 'Por fijar')}</span></div>
       <div class="cal-t"><div class="cal-eqs"><span class="cal-us">${esc(us)}</span>${derbi ? escudo('MADRIDPATINA', 26) : `<span class="cal-vs">${p.casa ? 'vs' : 'en'}</span>${escudo(p.rival, 26)}<span class="cal-them">${esc(p.rival)}</span>`}</div>
         <div class="cal-sub">${chips.join('')}<span>${esc(p.liga)}${p.pista ? ' · ' + esc(pistaCal(p.pista)) : ''}</span></div></div>
       <div class="cal-d">${der}</div></${href ? 'a' : 'div'}>`;
@@ -2074,7 +2074,8 @@
     const yaPaso = k => masDias(k, 1) < hoy, i0 = keys.findIndex(k => !yaPaso(k)), iP = i0 < 0 ? keys.length : i0;
     const lun = new Date(dia0(hoy)); lun.setDate(lun.getDate() - (lun.getDay() + 6) % 7);
     const proxTit = prox && dia0(prox) - lun.getTime() < 7 * 864e5 ? 'Este fin de semana' : 'El próximo fin de semana';
-    const ver = CAL.todo ? keys : keys.slice(Math.max(0, iP - 3), iP + 6);
+    // de esta semana en adelante (lo ya jugado confunde): los seis fines de semana que vienen; el resto, con «Ver toda la temporada»
+    const ver = CAL.todo ? keys : keys.slice(iP, iP + 6);
     const html = ver.map(k => {
       const g = grupos[k], pasado = yaPaso(k), abierto = CAL.abiertos[k] != null ? CAL.abiertos[k] : !pasado, nC = g.ps.filter(p => p.casa).length;
       const sub = (g.ps.length ? g.ps.length + (g.ps.length === 1 ? ' partido' : ' partidos') : 'Sin partidos') + (nC ? ' · ' + nC + ' en casa' : '');
@@ -2761,7 +2762,7 @@
       ${H('Cómo juega cada equipo')}
       ${lista(['<b>Cuándo marca y cuándo encaja</b>: los goles de cada tramo de 5 minutos, con el minuto del acta. Si al acta le falta el minuto de algún gol, ese partido no entra.', '<b>Ventajas y remontadas</b>: partidos en los que fue por delante y no ganó en el tiempo de juego (un empate que se gana en los penaltis cuenta como no ganado), los que ganó yendo por detrás y cómo acaba cuando marca o encaja primero.', '<b>Tiros a puerta</b>: los que recibe cada portero, que es lo único que apunta el acta. Así sabemos los tiros de cada equipo, pero no quién tira. Acierto = goles ÷ tiros.', '<b>Con uno más y con uno menos</b>: los goles marcados con superioridad o inferioridad, contados como en el directo.', '<b>Quién asiste a quién</b>: las parejas que han hecho goles juntas (uno asiste y otro marca). Desde 2025/26 el acta solo da el dorsal de quien asiste; se busca en la alineación de ese partido.', '<b>Próximo rival</b>: los mismos números de los dos equipos, de esta temporada si los dos llevan 4 partidos o más; si no, de la temporada pasada.'])}
       ${H('Hitos a la vista y agenda')}
-      ${lista(['<b>Hitos a la vista</b>: a quién le faltan como mucho 3 goles o 3 asistencias, 2 partidos o 40 paradas para una cifra redonda (10, 25, 50, 75, 100, 150…) con el club, contando todas sus temporadas.', '<b>Pista de cada partido</b>: la del calendario de la FMP. Si la FMP no la pone (el calendario de Infantil 2 no la publica), la pista habitual del equipo local, y se avisa.', '<b>Calendarios para el móvil</b>: los mismos partidos, en un enlace que Google Calendar, el iPhone u Outlook vuelven a leer cada pocas horas.'])}
+      ${lista(['<b>Hitos a la vista</b>: a quién le faltan como mucho 3 goles o 3 asistencias, 2 partidos o 40 paradas para una cifra redonda (10, 25, 50, 75, 100, 150…) con el club, contando todas sus temporadas.', '<b>Pista de cada partido</b>: la del calendario de la FMP. Si la FMP no la pone (el calendario de Infantil 2 no la publica), la pista habitual del equipo local.', '<b>Calendarios para el móvil</b>: los mismos partidos, en un enlace que Google Calendar, el iPhone u Outlook vuelven a leer cada pocas horas.'])}
       <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['Son frecuencias del pasado, no una predicción de lo que va a pasar', 'No sabe de bajas, lesiones ni fichajes', 'Con pocos partidos jugados, los números de cada equipo se mueven mucho'], '!')}</div>`);
 
     const indice = [['datos', '01', 'Los datos', 'De dónde sale cada número'], ['fmpe', '02', 'FMPe', 'Los puntos de cada liga, en la misma escala'],
