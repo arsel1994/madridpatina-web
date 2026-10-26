@@ -2677,9 +2677,6 @@ a.pre-l:hover { color: #FFFFFF; background: #18181B; }
 .intro button { font: inherit; color: inherit; cursor: pointer; }
 .intro .iv { position: relative; height: 100%; display: flex; flex-direction: column; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
 .intro .iv-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.intro .iv-marca { display: flex; align-items: center; gap: 10px; }
-.intro .iv-marca .esc { width: 34px; height: 34px; }
-.intro .iv-marca b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; letter-spacing: .04em; }
 .intro .iv-x { width: 44px; height: 44px; flex: none; border-radius: 50%; border: 1px solid #3A3A40; background: rgba(13,13,14,.6); font-size: 18px; display: grid; place-items: center; }
 .intro .iv-x:hover { border-color: #8A8A8F; }
 .intro .iv-centro { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 18px; }
@@ -2731,7 +2728,6 @@ a.pre-l:hover { color: #FFFFFF; background: #18181B; }
 .intro .iv-d { display: none; }
 @media (min-width: 721px) {
   .intro .iv { padding: 24px 32px 32px; }
-  .intro .iv-marca .esc { width: 40px; height: 40px; } .intro .iv-marca b { font-size: 26px; }
   .intro .caja { max-width: 600px; }
   .intro .fila { padding: 12px; }
   .intro .fila.con-derbi { grid-template-columns: 22px minmax(0, 1fr) auto; }
@@ -2786,3 +2782,20 @@ a.pre-l:hover { color: #FFFFFF; background: #18181B; }
 .pa-m.nos b:not(.cifra) { color: #FF6B63; }
 .pa-m > b.cifra { font-size: 20px; }
 @keyframes mpDesdeIzq { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+
+/* ── Ficha · temporadas en otros clubes (actas de la FMP): en gris, debajo de las nuestras ── */
+.fi-fuera { display: flex; flex-direction: column; gap: 8px; margin-top: 28px; }
+.fi-tf.fuera { grid-template-columns: 84px minmax(0, 1fr) auto; }
+.fi-tf.fuera > b.cifra { color: #8A8A8F; }
+.fi-tf.fuera > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fi-tf.fuera > div b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 17px; line-height: 1.05; color: #C9C9CE; }
+.fi-tf.fuera > div span { font-size: 12px; color: #8A8A8F; }
+.fi-tf.fuera .fi-tv { color: #A6A6AD; }
+@media (min-width: 721px) { .fi-tf.fuera { grid-template-columns: 120px minmax(0, 1fr) 220px; } }
+
+/* ── Jornadas: las flechas, a la altura de «JORNADA X» (no del bloque con las fechas) y del mismo alto que el título ── */
+.lg-j-nav { align-items: flex-start; }
+.lg-j-fl, .lg-j-fl svg { width: 18px; height: 34px; }
+.lg-j-fl svg { display: block; }
+.lg-j-fl::after { inset: -5px -13px; }
+@media (min-width: 721px) { .lg-j-fl, .lg-j-fl svg { width: 24px; height: 48px; } }

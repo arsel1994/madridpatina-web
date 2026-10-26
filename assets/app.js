@@ -344,7 +344,9 @@
       d.otros.filter(o => o.visitante !== 'DESCANSO').forEach(o => filas.push({ hora: o.hora || '—', liga: o.liga, nuestro: false, us: o.local, them: o.visitante }));
       filas.sort((a, b) => a.hora.localeCompare(b.hora));
       const ns = filas.filter(x => x.nuestro);
-      const frase = ns.length > 1 ? `Ven a las ${ns[0].hora} y quédate: a las ${ns[1].hora} juega ${ns[1].quien}.` : `Ven a vernos a las ${(ns[0] || filas[0]).hora}.`;
+      // todos los nuestros del día en esa pista: «Ven a las 16:15 y quédate: a las 17:45 juega MP C y a las 19:15, MP D.»
+      const luego = ns.slice(1).map((x, i) => i ? `a las ${x.hora}, ${x.quien}` : `a las ${x.hora} ${x.derbi ? 'juegan' : 'juega'} ${x.quien}`);
+      const frase = ns.length > 1 ? `Ven a las ${ns[0].hora} y quédate: ${luego.length > 1 ? luego.slice(0, -1).join(', ') + ' y ' + luego[luego.length - 1] : luego[0]}.` : `Ven a vernos a las ${(ns[0] || filas[0]).hora}.`;
       return `<section class="vernos">
         <div class="casa-cab"><span class="etq">En casa · ven a vernos</span><div class="casa-tit"><span class="h2">${esc(fdLarga(d.fecha).toUpperCase())}</span><span class="casa-pista">${esc(d.pista || '')}${d.habitual ? ' (la habitual)' : ''}</span></div></div>
         <div class="casa-linea" style="--n:${filas.length}">${filas.map(t => `<div class="casa-t${t.nuestro ? ' mp' : ''}">
@@ -530,7 +532,7 @@
     const lado = n => `<div class="pv-eq">${escudo(n, 0, 'pv')}<span class="pv-n${ours(n) ? ' mp' : ''}">${esc(etqEq(n, lid))}</span><span class="pv-pos">${esc(pos(n))}</span></div>`;
     const pasado = c.fecha && c.fecha < hoyISO(), conRes = c.gl != null;
     const chips = (pasado ? `<span class="chip ambar pv-chip">${conRes ? 'ACTA PENDIENTE' : 'SIN RESULTADO'}</span>` : '<span class="chip neutro pv-chip">PREVIA</span>') + (derbi ? '<span class="chip derbi pv-chip">DERBI</span>' : ours(c.local) ? '<span class="chip casa pv-chip">EN CASA</span>' : '<span class="chip neutro pv-chip">FUERA</span>');
-    const avisos = pasado ? '' : [!c.hora && c.fecha ? 'La FMP aún no ha puesto la hora. La cuenta atrás cuenta solo los días hasta entonces.' : '', ag.habitual ? 'La FMP no publica la pista de este partido: ponemos la que usa siempre el equipo de casa. Confírmalo antes de ir.' : ''].filter(Boolean).join(' ');
+    const avisos = pasado ? '' : [!c.hora && c.fecha ? 'La FMP aún no ha puesto la hora. La cuenta atrás cuenta solo los días hasta entonces.' : ''].filter(Boolean).join(' ');
     const cab = `<div class="pv-chips">${chips}</div>
       <div class="pv-cab">${lado(c.local)}<div class="pv-c">${pasado && conRes ? `<span class="pv-hora cifra">${c.gl}–${c.gv}</span>` : `<span class="pv-hora cifra">${esc(c.hora || '—')}</span>`}<span class="pv-dia">${esc(c.fecha ? fd(c.fecha) : 'Fecha por fijar')}</span>
         ${c.fecha && !pasado ? `<div class="pv-ca"><span class="etq">${c.hora ? 'Empieza en' : 'Faltan · hora por fijar'}</span>${cuentaHtml(x, 'peque')}</div>` : ''}</div>${lado(c.visitante)}</div>
@@ -651,11 +653,18 @@
         <div class="eq-prox-r">${escudo(prox.rival, 48)}<div><span class="eq-prox-vs">${prox.casa ? 'EN CASA CONTRA' : 'FUERA, EN CASA DE'} · J${prox.j}</span><b>${esc(rivalT)}</b></div></div>
         <div class="eq-prox-p"><div><b class="cifra">${esc(fd(prox.fecha))} · ${esc(prox.hora || 'hora por fijar')}</b><span>${prox.hora ? 'Empieza en <span data-falta="' + x.ts + '">' + fa + '</span>' : 'La FMP aún no ha fijado la hora'}</span></div><span class="ir">Previa</span></div></a>`; }
     const ult = res.slice(-5).map(x => `<a class="eq-ult ${x.r.toLowerCase()}" href="${hM(x.c.mid)}" title="${esc(x.c.rival + ' · J' + x.c.j + ' · ' + fd(x.c.fecha))}">${escudo(x.c.rival, 0, 'eq-ult-e')}<b class="cifra">${x.nos}${x.pen && x.r === 'V' ? '<span class="b-pen">B</span>' : ''}–${x.ell}${x.pen && x.r === 'D' ? '<span class="b-pen">B</span>' : ''}</b><span>J${x.c.j} · ${x.c.casa ? 'CASA' : 'FUERA'}</span></a>`).join('');
-    const clave = (e.clave || []).slice(0, 4).map(k => A.jugadores[k]).filter(Boolean).map(j => { const a = arqDe(j.k, e.ligaId), t = (j.temporadas || {})[A.temporada] || {}, ok = fotoOK(j);
+    // jugadores clave: los 4 de la plantilla con más puntos (goles + asistencias) con este equipo esta temporada, sin porteros;
+    // empate: más goles y luego menos partidos. Se recalcula con cada acta. Antes de que nadie marque, los de la temporada pasada
+    const midsE = new Set(e.cal.map(c => c.mid).filter(Boolean)), tPrev = (+A.temporada.slice(0, 4) - 1) + '/' + A.temporada.slice(2, 4);
+    const conEq = j => (j.partidos || []).filter(x => midsE.has(x.mid)).reduce((o, x) => ({ pj: o.pj + 1, g: o.g + (x.g || 0), a: o.a + (x.a || 0) }), { pj: 0, g: 0, a: 0 });
+    const candidatos = plantillaDe(e).filter(j => !j.portero), orden = (x, y) => (y.g + y.a) - (x.g + x.a) || y.g - x.g || x.pj - y.pj;
+    let tClave = A.temporada, top = candidatos.map(j => Object.assign({ j }, conEq(j))).filter(x => x.g + x.a > 0).sort(orden);
+    if (!top.length) { tClave = tPrev; top = candidatos.map(j => { const t = (j.temporadas || {})[tPrev] || {}; return { j, pj: t.pj || 0, g: t.goles || 0, a: t.asistencias || 0 }; }).filter(x => x.g + x.a > 0).sort(orden); }
+    const clave = top.slice(0, 4).map(({ j, g, a: as }) => { const a = arqDe(j.k, e.ligaId), ok = fotoOK(j);
       return `<a class="eq-clave" href="${hP(j.k)}"><span class="eq-clave-f">${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : `<span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>`}<span class="eq-clave-d">${esc(j.dorsal || '')}</span></span>
-        <span class="eq-clave-t"><b>${esc(nomCorto(j))}</b>${a ? `<span class="arq" style="color:${colArq(a.c)}">${esc(a.n.toUpperCase())}</span>` : j.portero ? '<span class="arq">PORTERO</span>' : ''}<span>${j.portero ? (t.pj || 0) + ' partidos esta temporada' : (t.goles || 0) + ' g · ' + (t.asistencias || 0) + ' a esta temporada'}</span></span></a>`; }).join('');
+        <span class="eq-clave-t"><b>${esc(nomCorto(j))}</b>${a ? `<span class="arq" style="color:${colArq(a.c)}">${esc(a.n.toUpperCase())}</span>` : ''}<span>${g} g · ${as} a ${tClave === A.temporada ? 'esta temporada' : 'en ' + tClave}</span></span></a>`; }).join('');
     const resumen = `<div class="eq-res"><div class="eq-col">${proxH}${ult ? `<div><div class="etq">Últimos resultados</div><div class="eq-ults" style="--n:${res.slice(-5).length}">${ult}</div></div>` : ''}</div>
-      ${clave ? `<div><div class="etq">Jugadores clave</div><div class="eq-claves">${clave}</div></div>` : ''}</div>`;
+      ${clave ? `<div><div class="etq">Jugadores clave · ${esc(tClave)}</div><div class="eq-claves">${clave}</div></div>` : ''}</div>`;
 
     // Partidos: una baldosa por jornada (descansos incluidos)
     const tiles = e.cal.map(c => { if (c.descanso) return `<div class="eq-t desc"><span class="eq-t-j">J${c.j}</span><span class="eq-t-desc">DESCANSA</span></div>`;
@@ -870,6 +879,13 @@
         <div class="fi-bar"><i class="g" style="width:${((esPor ? x.pj : x.g) / mx * 100).toFixed(1)}%"></i>${esPor ? '' : `<i class="a" style="width:${(x.a / mx * 100).toFixed(1)}%"></i>`}</div>
         <span class="fi-tv">${esPor ? x.pj + ' PJ' + (x.tiros ? ' · ' + dec(((x.tiros - x.gc) / x.tiros * 100).toFixed(1)) + ' %' : '') : x.pj + ' PJ · ' + x.g + ' G · ' + x.a + ' A'}</span></div>`).join('')}</div>
       <div class="cal-ley"><span class="l-por">${esPor ? 'Partidos' : 'Goles'}</span>${esPor ? '' : '<span class="l-d">Asistencias</span>'}</div>` : '<div class="pv-nota">Aún no tiene partidos con nosotros.</div>';
+    // en otros clubes (historico.json → fuera): equipo, competición y cifras de las actas de la FMP, la más reciente arriba
+    const fz = (H && H.fuera && H.fuera[H.tok(j.nombre + ' ' + j.apellidos)]) || [];
+    const ligaF = l => titulo(l).replace(/ Y /g, ' y ').replace(/ De /g, ' de ');
+    const fueraH = fz.length ? `<div class="fi-fuera"><div class="etq">${!lst.length || fz.every(x => x.t < lst[lst.length - 1].t) ? 'Antes de MADRIDPATINA' : 'En otros clubes'}</div>
+      <div class="fi-temps">${fz.slice().reverse().map(x => `<div class="fi-tf fuera"><b class="cifra">${esc(x.t)}</b><div><b>${esc(x.equipo)}</b><span>${esc(x.ligas.map(ligaF).join(' · '))}</span></div>
+        <span class="fi-tv">${x.por ? x.pj + ' PJ' + (x.tiros ? ' · ' + dec(((x.tiros - x.gc) / x.tiros * 100).toFixed(1)) + ' %' : '') : x.pj + ' PJ · ' + x.g + ' G · ' + x.a + ' A'}</span></div>`).join('')}</div>
+      <div class="pv-nota">Según las actas de la Federación Madrileña de Patinaje.</div></div>` : '';
     // Logros, agrupados por tipo
     const eqS = n => n.replace('MADRIDPATINA ', 'MP '), ligaS = l => l.replace(/^LIGA /, '').toLowerCase().replace(/(^|\s)\S/g, m => m.toUpperCase());
     const tsH = []; ts.forEach(t => { const y = tsH.find(z => z.temporada === t.temporada && z.equipo === t.equipo); if (!y) { tsH.push(Object.assign({}, t)); return; } ['pj', 'g', 'a', 'pim', 'tiros', 'gc', 'hattricks'].forEach(f => { y[f] = (y[f] || 0) + (t[f] || 0); }); });
@@ -918,7 +934,7 @@
       return `<a class="fi-p ${Rr.r.toLowerCase()}" href="${hM(x.mid)}">${escudo(x.rival, 40)}<div><span>J${p.jornada} · ${esc(fd(p.fecha))}</span><b>${esc(x.rival)}</b><span class="fi-p-r">${Rr.r === 'V' ? 'Ganado' : 'Perdido'} ${Rr.nos}–${Rr.ell}${Rr.pen ? ' (penaltis)' : ''}</span></div><span class="cifra">${esPor && x.pct != null ? dec(Math.round(x.pct)) + ' %' : (x.g || 0) + 'G ' + (x.a || 0) + 'A'}</span></a>`; }).join('');
     const partidos = (j.partidos || []).length ? `${svgTemporada(j)}<div class="fi-ps">${partidosF}</div><div data-goles-video="${esc(j.k)}"></div>` : '<div class="pv-nota">Aún no ha jugado esta temporada.</div>';
     const TB = pestanas('ficha', [['temp', 'Temporadas'], ['log', 'Logros'], ['eq', 'En el equipo'], ['comp', 'Comparar'], ['part', 'Partidos']], 'temp');
-    return `<div class="ficha2">${cab}${TB.nav}${TB.panel('temp', temporadas)}${TB.panel('log', logros)}${TB.panel('eq', `<div class="ee">${enEq}</div>`)}${TB.panel('comp', comparar)}${TB.panel('part', partidos)}</div>`;
+    return `<div class="ficha2">${cab}${TB.nav}${TB.panel('temp', temporadas + fueraH)}${TB.panel('log', logros)}${TB.panel('eq', `<div class="ee">${enEq}</div>`)}${TB.panel('comp', comparar)}${TB.panel('part', partidos)}</div>`;
   }
 
   /* ── Liga (#/liga/<id>[/evolucion|/mapa|/acertamos|/j/N] · rediseño, fase 5): cabecera con nuestro puesto y la barra
@@ -3116,7 +3132,7 @@
     const el = introEl = document.createElement('div');
     el.className = 'intro'; el.tabIndex = -1;
     el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Partidos de este fin de semana');
-    el.innerHTML = `<div class="iv"><div class="iv-cab"><div class="iv-marca"><span class="esc" style="background-image:url('escudos/badge/madridpatina.webp')"></span><b>MADRIDPATINA</b></div>
+    el.innerHTML = `<div class="iv"><div class="iv-cab"><span class="marca iv-marca" aria-label="LAMHL / MP"><span>LAMHL</span><span class="bar" aria-hidden="true">/</span><span class="mp"><span>MP</span></span></span>
         <button class="iv-x" type="button" aria-label="Cerrar" data-cierra>✕</button></div>
       <div class="iv-centro"><div class="iv-tit">${titIntro(ps)}</div><div class="caja">${ps.map(filaIntro).join('')}</div></div>
       <div class="iv-pie"><button class="btn p iv-entrar" type="button" data-cierra>Entrar</button><span class="iv-m">o desliza hacia arriba</span><span class="iv-d">o pulsa Esc</span></div></div>`;
