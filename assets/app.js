@@ -27,6 +27,10 @@
   const SES = (() => { try { return JSON.parse(sessionStorage.getItem('mp-visto') || '{}'); } catch (e) { return {}; } })();
   const vistoSes = k => !!SES[k];
   const marcarSes = k => { if (SES[k]) return; SES[k] = 1; try { sessionStorage.setItem('mp-visto', JSON.stringify(SES)); } catch (e) { /* sin almacenamiento */ } };
+  // apodos aprobados en el buzón (k → apodo; se guardan para la próxima visita) y cómo se ve cada uno: si dos jugadores
+  // tienen el mismo, con la inicial del primer apellido («Toro G.») y, si aun así coinciden, con el apellido entero
+  let APODO = (() => { try { return JSON.parse(localStorage.getItem('mp-apodos') || '{}') || {}; } catch (e) { return {}; } })(), APODO_V = {}, SRV = {};
+  const apodoDe = p => { if (!p) return ''; const k = p.k || (p.nombre ? kOf(p.nombre, p.apellidos || '') : ''); return (k && APODO_V[k]) || ''; };
   const grupos = new Map();   // disparador → { els, espera }
   const obsAnim = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(en => {
     const visto = en.intersectionRatio >= 0.25 || en.intersectionRect.height >= innerHeight * 0.25;
@@ -124,7 +128,8 @@
   const kOf = (n, a) => (n + ' ' + a).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]+/g, '-');
   // Nombre + primer apellido, con sus partículas («Andrés Del Valle», «Rodrigo Del Horno»)
   const PART = new Set(['de', 'del', 'la', 'las', 'los', 'san', 'santa', 'y', 'el']);
-  const corto = p => { const w = (p.apellidos || '').split(' ').filter(Boolean), o = [];
+  // con apodo aprobado, el apodo; real = true, siempre el nombre (plantilla, ficha, pretemporada)
+  const corto = (p, real) => { if (!real) { const ap = apodoDe(p); if (ap) return ap; } const w = (p.apellidos || '').split(' ').filter(Boolean), o = [];
     for (const x of w) { o.push(x); if (!PART.has(x.toLowerCase()) || o.length === w.length) break; }
     return (p.nombre + ' ' + o.join(' ')).trim(); };
 
@@ -165,7 +170,7 @@
   let PRON = null, pronP = null;
   const cargarPron = () => pronP || (pronP = fetch('data/pronosticos.json?v=' + verDatos()).then(r => r.json()).then(d => (PRON = d)).catch(() => { pronP = null; return null; }));
   // nombre y primer apellido, con un solo nombre de pila («Rafael Silva», «Andrés Del Valle»)
-  const nomCorto = p => { if (!p) return ''; const w = (p.apellidos || '').split(' ').filter(Boolean), o = [];
+  const nomCorto = (p, real) => { if (!p) return ''; if (!real) { const ap = apodoDe(p); if (ap) return ap; } const w = (p.apellidos || '').split(' ').filter(Boolean), o = [];
     for (const x of w) { o.push(x); if (!PART.has(x.toLowerCase()) || o.length === w.length) break; }
     return ((p.nombre || '').split(' ')[0] + ' ' + o.join(' ')).trim(); };
   const fotoOK = j => !!(j && j.foto && !j.menor);
@@ -496,7 +501,7 @@
       out.push(`<section class="directo-ini"><div class="finde-cab"><div class="dir-t"><i class="punto"></i><h1 class="h1">En directo</h1></div>${tgHtml}</div>
         <div class="vivos">${vivos.map(vivoHtml).join('')}</div></section>`);
       out.push(findeHtml(F, 'Lo que queda del fin de semana', false, false));
-      return `<div class="inicio">${out.join('')}</div>`;
+      return `<div class="inicio">${apodoCta()}${out.join('')}</div>`;
     }
     const fin = F.momento === 'fin', ultSem = F.semanaJugada.reduce((a, m) => (m.fecha > a ? m.fecha : a), '0');
     const semFresca = fin && A.semanas[0] && A.semanas[0].hasta >= ultSem;
@@ -508,7 +513,7 @@
     out.push(casaHtml(F));
     if (!semFresca) { out.push(semanaHtml(wi)); out.push(mejorHtml(wi)); }
     out.push(hitosCarrusel());
-    return `<div class="inicio">${out.join('')}</div>`;
+    return `<div class="inicio">${apodoCta()}${out.join('')}</div>`;
   }
 
   /* ── Partido · previa (antes de jugarse; la misma dirección lleva luego al acta) ───────────────────────────────────── */
@@ -1034,21 +1039,22 @@
         <div class="lg-ms">${cs.map(tarjetaJ).join('')}</div>${desc.length ? `<div class="lg-desc">Descansa: ${desc.map(e => esc(mpCortoN(e, L.id))).join(', ')}</div>` : ''}</div>`; }).join('');
     const pJor = `<div class="lg-js">${paneles || '<div class="pv-nota">Sin partidos en el calendario.</div>'}</div>`;
 
-    // Evolución: el puesto de cada equipo jornada a jornada (nosotros en rojo, con el puesto en cada punto)
+    // Evolución: el puesto de cada equipo jornada a jornada (nosotros en rojo, con el puesto en cada punto). Con varios equipos
+    // nuestros en la liga (Senior 4), cada uno con su trazo y su letra en cada punto, y la leyenda encima
     let pEvo;
     if (ult >= 1) {
       const eqs = L.clasif.map(c => c.equipo), pos = {};
       for (let j = 1; j <= ult; j++) (j === ult ? L.clasif.map(c => [c.equipo, c.puesto]) : puestosHasta(L, j)).forEach(([n, p]) => { (pos[n] = pos[n] || [])[j - 1] = p; });
       const X = j => ult === 1 ? 50 : 3 + j / (ult - 1) * 94, Y = p => (p - 1) / Math.max(1, nE - 1) * 100;
       const path = n => 'M' + (pos[n] || []).map((p, j) => X(j).toFixed(2) + ' ' + Y(p).toFixed(2)).join(' L');
-      const us = eqs.filter(ours), fin = n => (pos[n] || [])[ult - 1] || nE;
-      const frase = us.map(n => `<b>${esc(mpCortoN(n, L.id))}</b>: ${(pos[n] || []).map(p => p + 'º').join(' → ')}`).join(' · ');
-      pEvo = `<div class="dest">${frase || 'Así va cada equipo jornada a jornada.'}</div>
-        <div class="tarjeta lg-evo" data-dib><div class="lg-evo-g" role="img" aria-label="Puesto de cada equipo jornada a jornada">
+      const letra = n => (eqDeLiga(n, L.id) || {}).id || '', us = eqs.filter(ours).sort((a, b) => letra(a).localeCompare(letra(b))), fin = n => (pos[n] || [])[ult - 1] || nE;
+      const varios = us.length > 1, TRAZO = ['', '8 5', '2 5'];
+      const ley = varios ? `<div class="lg-evo-ley">${us.map((n, i) => `<span><svg viewBox="0 0 30 10" aria-hidden="true"><line x1="1" y1="5" x2="29" y2="5" stroke-dasharray="${TRAZO[i % 3]}"/></svg><i class="lg-evo-lp">${esc(letra(n))}</i>${esc(mpCortoN(n, L.id))}</span>`).join('')}</div>` : '';
+      pEvo = `<div class="tarjeta lg-evo" data-dib>${ley}<div class="lg-evo-g" role="img" aria-label="Puesto de cada equipo jornada a jornada">
           <div class="lg-evo-y">${eqs.map((_, i) => `<span style="top:${Y(i + 1).toFixed(2)}%">${i + 1}º</span>`).join('')}</div>
           <div class="lg-evo-p">${eqs.map((_, i) => `<i style="top:${Y(i + 1).toFixed(2)}%"></i>`).join('')}
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none">${eqs.filter(n => !ours(n)).map(n => `<path d="${path(n)}" class="otro"/>`).join('')}${us.map(n => `<path d="${path(n)}" class="nos"/>`).join('')}</svg>
-            ${us.flatMap(n => (pos[n] || []).map((p, i) => `<span class="lg-evo-pt" style="left:${X(i).toFixed(2)}%;top:${Y(p).toFixed(2)}%">${p}</span>`)).join('')}</div>
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none">${eqs.filter(n => !ours(n)).map(n => `<path d="${path(n)}" class="otro"/>`).join('')}${us.map((n, k) => `<path d="${path(n)}" class="nos"${varios && TRAZO[k % 3] ? ` stroke-dasharray="${TRAZO[k % 3]}"` : ''}/>`).join('')}</svg>
+            ${us.flatMap(n => (pos[n] || []).map((p, i) => `<span class="lg-evo-pt" style="left:${X(i).toFixed(2)}%;top:${Y(p).toFixed(2)}%" title="${esc(mpCortoN(n, L.id) + ' · J' + (i + 1) + ' · ' + p + 'º')}">${varios ? esc(letra(n)) : p}</span>`)).join('')}</div>
           <div class="lg-evo-fin">${eqs.map(n => `<span class="${ours(n) ? 'nos' : ''}" style="top:${Y(fin(n)).toFixed(2)}%">${esc(mpCortoN(n, L.id))}</span>`).join('')}</div>
           <div></div><div class="lg-evo-x">${Array.from({ length: ult }, (_, i) => `<span style="left:${X(i).toFixed(2)}%">J${i + 1}</span>`).join('')}</div><div></div></div>
           <div class="lg-evo-l">${eqs.slice().sort((a, b) => fin(a) - fin(b)).map(n => `<span class="${ours(n) ? 'nos' : ''}"><b>${fin(n)}º</b>${esc(mpCortoN(n, L.id))}</span>`).join('')}</div></div>`;
@@ -1168,7 +1174,7 @@
     const mpN = n => ours(n) ? (A.equipos.find(x => x.nombre === n) ? mpCortoN(n, (A.equipos.find(x => x.nombre === n) || {}).ligaId) : n).toUpperCase() : n.toUpperCase();
     const cromo = (j, rol, cls, nota, apag) => { const ok = fotoOK(j), h = j.k && A.jugadores[j.k] ? hP(j.k) : null;
       return `<${h ? `a href="${h}"` : 'div'} class="pc${apag ? ' apag' : ''}"><span class="pc-f">${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : `<span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>`}<b class="cifra pc-d">${esc(j.dorsal || '')}</b></span>
-        <span class="pc-t"><b>${esc(nomCorto(j))}</b><span class="pc-rol ${cls}"><span>${esc(rol)}</span></span><span class="pc-nota">${esc(nota || '')}</span></span></${h ? 'a' : 'div'}>`; };
+        <span class="pc-t"><b>${esc(nomCorto(j, true))}</b><span class="pc-rol ${cls}"><span>${esc(rol)}</span></span><span class="pc-nota">${esc(nota || '')}</span></span></${h ? 'a' : 'div'}>`; };
     const nuestros = eqs.filter(e => e.nuestro).map(e => {
       const altas = altasPre(e, L).map(x => { const j = Object.assign({}, A.jugadores[x.k] || {}, x), vuelve = /^Vuelve/.test(x.nota || ''), interno = x.desde && ours(x.desde);
         return cromo(j, x.desde ? (interno ? 'VIENE DE ' : 'LLEGA DE ') + mpN(x.desde) : vuelve ? 'VUELVE' : 'NUEVO', interno ? 'int' : 'v',
@@ -1396,7 +1402,7 @@
     const vacio = k => `<div class="jg-vacio" data-vacio="${k}" hidden></div>`;
     return `<div class="jug2"><h1 class="h1">Jugadores</h1>
       <label class="jq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" id="jq" value="${esc(JQ)}" placeholder="Busca por nombre o dorsal" aria-label="Buscar jugador" autocomplete="off"><button type="button" class="jq-x" aria-label="Borrar"${JQ ? '' : ' hidden'}>✕</button></label>
-      ${T.nav}${T.panel('plant', vacio('plant') + pPlant)}${T.panel('mov', vacio('mov') + pMov)}${T.panel('ex', vacio('ex') + pEx)}</div>`;
+      ${apodoCta()}${T.nav}${T.panel('plant', vacio('plant') + pPlant)}${T.panel('mov', vacio('mov') + pMov)}${T.panel('ex', vacio('ex') + pEx)}</div>`;
   }
   function filtrarJug() {
     const root = view.querySelector('.jug2'); if (!root) return;
@@ -2479,9 +2485,9 @@
   // ¿tiene almacén el servicio? Lo comprueba cada noche el proceso semanal (data/servicio.json); si no, ni se le pregunta
   let srvP = null;
   // y qué direcciones tiene ya publicadas (p. ej. «video» llega con una versión nueva del servicio)
-  const servicioListo = () => srvP || (srvP = API.includes('localhost') ? Promise.resolve({ almacen: true, video: true })
+  const servicioListo = () => srvP || (srvP = API.includes('localhost') ? Promise.resolve({ almacen: true, video: true, apodo: true })
     : fetch('data/servicio.json?v=' + verDatos()).then(r => (r.ok ? r.json() : {})).catch(() => ({})));
-  const puede = (s, q) => !!(s && s.almacen) && (!q.startsWith('video') || !!s.video);
+  const puede = (s, q) => !!(s && s.almacen) && (!q.startsWith('video') || !!s.video) && (!q.startsWith('apodo') || !!s.apodo);
   const apiGet = q => servicioListo().then(s => (puede(s, q) ? fetch(API + q, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).catch(() => null) : null));
   const apiPost = (q, cuerpo) => servicioListo().then(s => (puede(s, q) ? fetch(API + q, { method: 'POST', body: JSON.stringify(cuerpo) }).then(r => r.json().then(j => Object.assign(j, { _st: r.status }))).catch(() => null) : null));
   const leeLS = (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } };
@@ -2836,8 +2842,8 @@
     jugadores: '<path d="M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M17.2 6.4a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2zM16.5 14.1c2.8.3 5 2.3 5 5.9"/>',
   };
   // a qué sección del menú pertenece cada página (Pretemporada vive en Ligas; el directo y los resúmenes, en Inicio)
-  const TOP = { inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', sincronizar: 'inicio', video: 'inicio' };
-  const TITLES = { inicio: 'Inicio', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido' };
+  const TOP = { inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', buzon: 'inicio' };
+  const TITLES = { inicio: 'Inicio', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
   // migas: el título de sección se toca para subir un nivel («EQUIPOS / MP A»); la última es la página en la que se está
   const migasHtml = xs => `<nav class="migas" aria-label="Estás en">${xs.map(([t, h], i) => (i ? '<i aria-hidden="true">/</i>' : '') + (h && i < xs.length - 1 ? `<a href="${h}">${esc(t)}</a>` : `<span class="act" aria-current="page">${esc(t)}</span>`)).join('')}</nav>`;
   const mpCorto = e => e.cantera ? (e.id === 'AL' ? 'MP Alevín' : 'MP Infantil') : 'MP ' + e.id;
@@ -2854,11 +2860,12 @@
     if (v === 'partido') { const m = A.partidos[parts[1]], lm = m && ligaM(m.liga), e = m && (A.equipos.find(x => x.nombre === m.local && x.ligaId === m.liga) || A.equipos.find(x => x.nombre === m.visitante && x.ligaId === m.liga));
       return e ? [['Equipos', hEq(e.id)], [mpCorto(e), hEq(e.id)], ['Jornada ' + m.jornada]] : lm ? [['Ligas', hLg(m.liga)], lm, ['Jornada ' + m.jornada]] : [['Ligas', hLg(S.lg || A.ligas[0].id)], ['Partido']]; }
     if (v === 'pretemporada') return [['Ligas', hLg(S.lg || A.ligas[0].id)], ['Pretemporada']];
-    if (v === 'jugador') { const j = A.jugadores[parts[1]], e = j && equiposDe(j)[0]; return [['Jugadores', '#/jugadores']].concat(e ? [[mpCorto(e), '#/jugadores/' + e.id]] : []).concat(j ? [[corto(j)]] : []); }
+    if (v === 'jugador') { const j = A.jugadores[parts[1]], e = j && equiposDe(j)[0]; return [['Jugadores', '#/jugadores']].concat(e ? [[mpCorto(e), '#/jugadores/' + e.id]] : []).concat(j ? [[corto(j, true)]] : []); }
     if (v === 'jugadores' && parts[1]) { const e = A.equipos.find(x => x.id === parts[1]); return e ? [['Jugadores', '#/jugadores'], [mpCorto(e)]] : null; }
     if (v === 'directo') return [['Inicio', '#/'], ['En directo']];
     if (v === 'video') return [['Inicio', '#/'], ['Resumen en vídeo']];
     if (v === 'metodo') return [['Inicio', '#/'], ['Cómo lo calculamos']];
+    if (v === 'apodo') return [['Inicio', '#/'], ['Tu apodo']];
     return null;
   }
   let prevRoute = null, navReset = false, goingBack = false;
@@ -2918,6 +2925,8 @@
     else if (v === 'banquillo') html = parts[1] ? vBanquillo(parts[1]) : '<div class="sy"><div class="lab" style="color:#FF6B63">BANQUILLO</div><p class="sy-ayuda">Entra desde el directo del partido (botón «Banquillo»).</p></div>';
     else if (v === 'video') html = vVideo(parts[1], parts[2]);
     else if (v === 'calendario') html = vCalendario();
+    else if (v === 'apodo') html = vApodo();
+    else if (v === 'buzon') html = vBuzon();
     else html = vInicio(parts[0] === 'jornada' || parts[0] === 'inicio' ? parts[1] : null);
     const mg = migasDe(v, parts), back = mg ? migasHtml(mg) : '';
     const pie = `<footer class="pie"><span>MADRIDPATINA · Temporada ${esc(A.temporada)}</span><span><a href="${TELEGRAM}" target="_blank" rel="noopener">Avisos en Telegram</a> · <a href="#/metodo">Cómo lo calculamos</a> · Datos: Federación Madrileña de Patinaje · actualizado ${fdc(A.actualizado).toLowerCase()}</span></footer>`;
@@ -2950,7 +2959,7 @@
     if (introEl) animarAlCerrar = true; else animar(view);
     // el título de la pestaña dice qué página es (el jugador, el partido, el equipo o la liga)
     const pp = v === 'partido' && A.partidos[parts[1]], jj = v === 'jugador' && A.jugadores[parts[1]], ee = v === 'equipo' && A.equipos.find(x => x.id === parts[1]), ll = v === 'liga' && lgOf(parts[1]);
-    const det = jj ? corto(jj) : pp ? abr(pp.local) + ' ' + (pp.gl != null ? pp.gl + '–' + pp.gv : 'vs') + ' ' + abr(pp.visitante) : rp ? 'Previa · ' + etqEq(rp.c.local, rp.L.id, true) + ' – ' + etqEq(rp.c.visitante, rp.L.id, true) : ee ? tituloOf(ee) : ll ? ll.nombre : '';
+    const det = jj ? corto(jj, true) : pp ? abr(pp.local) + ' ' + (pp.gl != null ? pp.gl + '–' + pp.gv : 'vs') + ' ' + abr(pp.visitante) : rp ? 'Previa · ' + etqEq(rp.c.local, rp.L.id, true) + ' – ' + etqEq(rp.c.visitante, rp.L.id, true) : ee ? tituloOf(ee) : ll ? ll.nombre : '';
     document.title = 'MADRIDPATINA · ' + (det || TITLES[v]);
     save({ route: location.hash, eq: S.eq, lg: S.lg });
     try { sessionStorage.setItem(HKEY, JSON.stringify(S.hist.slice(-10))); } catch (e) { /* sin almacenamiento */ }
@@ -3298,7 +3307,7 @@
   const iniApe = p => { const o = []; for (const w of (p.apellidos || '').split(' ')) { o.push(w); if (!PART.has(w.toLowerCase())) break; } return ((p.nombre || '')[0] ? p.nombre[0] + '. ' : '') + o.join(' '); };
   function quienD(ctx, lado, dorsal, corto, largo) {
     const p = jugadorMP(ctx, lado, dorsal);
-    return ((dorsal ? '#' + dorsal + ' ' : '') + (p ? iniApe(p) : corto || largo || '')).trim();
+    return ((dorsal ? '#' + dorsal + ' ' : '') + (p ? apodoDe(p) || iniApe(p) : corto || largo || '')).trim();
   }
   // gol en superioridad (el rival con una expulsión en curso) o a portería vacía (el que encaja había sacado al portero)
   // Superioridad o inferioridad al marcar, contando jugadores en pista: dejan al equipo con uno menos las expulsiones de
@@ -5165,35 +5174,119 @@
   }, 1000);
 
   /* ── Versión nueva ──────────────────────────────────────── */
-  // GitHub Pages deja la página en la caché del navegador hasta 10 minutos, y con ella la versión anterior de la web. Al abrirla
-  // se mira la página real: si ya es otra versión, se recarga con la nueva. Si llega mientras se usa (al volver a la pestaña),
-  // se avisa en vez de recargar de golpe (podría estar viendo un directo).
+  // GitHub Pages deja la página en la caché del navegador hasta 10 minutos, y con ella la versión anterior de la web. Si hay otra
+  // versión, la web se actualiza sola, sin preguntar: al abrirla, al volver a la pestaña o, si se estaba usando (cada 10 minutos
+  // se mira), en cuanto se cambia de página. Nunca a mitad de un directo o de un vídeo: espera a que se salga de ahí.
   const VERSION = (((document.querySelector('script[src*="assets/app.js"]') || {}).src || '').split('v=')[1] || '').split('&')[0];
   const conVersion = v => location.pathname + '?v=' + encodeURIComponent(v) + location.hash;
-  function versionNueva(alAbrir) {
+  const enVivo = () => /^#\/(directo|video|sincronizar|banquillo)\//.test(location.hash);
+  let vPendiente = null;
+  function versionNueva(momento) {   // 'abrir' · 'volver' (a la pestaña) · 'mirar' (cada 10 minutos)
     if (!VERSION) return;
     fetch('index.html?_=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(t => {
       const v = (/assets\/app\.js\?v=([\w-]+)/.exec(t) || [])[1];
-      if (!v || v === VERSION) return;
-      if (alAbrir && location.search.indexOf('v=' + v) < 0) { location.replace(conVersion(v)); return; }
-      if ($('#aviso-version')) return;
-      const el = document.createElement('div'); el.id = 'aviso-version'; el.className = 'aviso-version'; el.setAttribute('role', 'status');
-      el.innerHTML = 'Hay una versión nueva de la web <button type="button">Actualizar</button>';
-      el.querySelector('button').addEventListener('click', () => location.replace(conVersion(v)));
-      document.body.appendChild(el);
+      if (!v || v === VERSION || location.search.indexOf('v=' + v) >= 0) return;   // misma versión, o ya pedida (sin bucles)
+      if (momento === 'mirar' || enVivo()) { vPendiente = v; return; }   // se está usando: al cambiar de página
+      location.replace(conVersion(v));
     }).catch(() => { /* sin conexión: ya se mirará */ });
   }
-  versionNueva(true);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) versionNueva(false); });
+  versionNueva('abrir');
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) versionNueva('volver'); });
+  setInterval(() => { if (!document.hidden) versionNueva('mirar'); }, 10 * 60000);
+  window.addEventListener('hashchange', () => { if (vPendiente && !enVivo()) location.replace(conVersion(vPendiente)); });
 
   /* ── Carga ──────────────────────────────────────────────── */
   // historico.json se pide a la vez que app.json y la web se pinta cuando están los dos (si el histórico falla, sin él):
   // así no se vuelve a pintar a mitad de las animaciones. Mientras, el esqueleto de carga (7l).
+  /* ── Apodos: «¿Eres jugador?» (#/apodo) y el buzón del club (#/buzon, sin enlace en ninguna página) ── */
+  function prepApodos() {
+    APODO_V = {}; const grupos = {}, nrm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    Object.entries(APODO || {}).forEach(([k, ap]) => { if (ap) (grupos[nrm(ap)] = grupos[nrm(ap)] || []).push(k); });
+    const ape = k => { const j = A && A.jugadores[k], w = ((j && j.apellidos) || '').split(' ').filter(Boolean), o = [];
+      for (const x of w) { o.push(x); if (!PART.has(x.toLowerCase()) || o.length === w.length) break; } return o.join(' '); };
+    Object.values(grupos).forEach(ks => {
+      if (ks.length === 1) { APODO_V[ks[0]] = APODO[ks[0]]; return; }
+      const inis = ks.map(k => (ape(k).match(/\p{L}/u) || [''])[0].toUpperCase());
+      ks.forEach((k, i) => { const a = ape(k); APODO_V[k] = APODO[k] + (a ? ' ' + (inis.filter(x => x === inis[i]).length > 1 ? a : inis[i] + '.') : ''); });
+    });
+  }
+  function cargarApodos() {
+    apiGet('apodo').then(d => { if (!d || !d.apodos || JSON.stringify(d.apodos) === JSON.stringify(APODO)) return;
+      APODO = d.apodos; try { localStorage.setItem('mp-apodos', JSON.stringify(APODO)); } catch (e) { /* sin almacenamiento */ }
+      prepApodos(); render(); });
+  }
+  const apodoCta = () => (SRV.apodo ? '<a class="ap-cta" href="#/apodo"><span><b>¿Eres jugador?</b> Propón tu apodo</span><span class="ir">Proponer</span></a>' : '');
+  const AP = { q: '', k: null, msg: '', ok: false };
+  const apLista = () => { const q = nq(AP.q); if (!q) return '<div class="pv-nota">Escribe tu nombre o tu dorsal.</div>';
+    const ORD = ['A', 'B', 'C', 'D', 'AL', 'IN'], eqO = j => Math.min(99, ...equiposDe(j).map(e => ORD.indexOf(e.id)).filter(x => x >= 0));
+    const js = Object.values(A.jugadores).filter(j => nq(j.nombre + ' ' + j.apellidos).includes(q) || String(j.dorsal || '') === q).sort((a, b) => eqO(a) - eqO(b) || (a.nombre + a.apellidos).localeCompare(b.nombre + b.apellidos, 'es')).slice(0, 12);
+    return js.length ? js.map(j => `<button type="button" class="ap-j" data-ap-k="${esc(j.k)}"><b>${esc(j.nombre + ' ' + j.apellidos)}</b><span>${esc([equiposDe(j).map(mpCorto).join(' · '), j.dorsal ? '#' + j.dorsal : '', APODO[j.k] ? 'ahora: «' + APODO[j.k] + '»' : ''].filter(Boolean).join(' · '))}</span></button>`).join('')
+      : `<div class="pv-nota">No encontramos a nadie con «${esc(AP.q)}».</div>`; };
+  function vApodo() {
+    if (!SRV.apodo) return casoHtml('Jugadores', 'Todavía no está disponible', 'Muy pronto podrás proponer aquí tu apodo.');
+    const j = AP.k && A.jugadores[AP.k];
+    const cab = `<div class="cab-pag"><div><h1 class="h1">¿Eres jugador?</h1><div class="sub">Búscate y propón tu apodo. Lo revisamos antes de publicarlo; después saldrá en la web en lugar de tu nombre. En la plantilla y en tu ficha seguirá tu nombre completo.</div></div></div>`;
+    if (!j) return `<div class="apodo2">${cab}<label class="jq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" id="ap-q" value="${esc(AP.q)}" placeholder="Tu nombre o tu dorsal" aria-label="Buscarte" autocomplete="off"></label><div class="ap-lista" data-ap-lista>${apLista()}</div></div>`;
+    return `<div class="apodo2">${cab}<div class="tarjeta ap-sel"><div><b>${esc(j.nombre + ' ' + j.apellidos)}</b><span>${esc([equiposDe(j).map(mpCorto).join(' · '), j.dorsal ? '#' + j.dorsal : ''].filter(Boolean).join(' · '))}${APODO[j.k] ? ' · ahora: «' + esc(APODO[j.k]) + '»' : ''}</span></div><button type="button" class="btn s" data-ap-otro>No soy yo</button></div>
+      ${AP.ok ? `<div class="aviso ap-ok">${esc(AP.msg)}</div>` : `<form class="ap-form" data-ap-form novalidate><label class="etq" for="ap-apodo">Tu apodo</label><div class="ap-fila"><input id="ap-apodo" maxlength="20" autocomplete="off" placeholder="Hasta 20 letras o números" required><button class="btn p" type="submit">Enviar</button></div>
+        <div class="pv-nota" data-ap-msg>${esc(AP.msg)}</div></form>`}</div>`;
+  }
+  document.addEventListener('input', e => { if (e.target && e.target.id === 'ap-q') { AP.q = e.target.value; const l = view.querySelector('[data-ap-lista]'); if (l) l.innerHTML = apLista(); } });
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-ap-k], [data-ap-otro]'); if (!b || !view.contains(b)) return;
+    AP.k = b.dataset.apK || null; AP.msg = ''; AP.ok = false; render(); const i = view.querySelector(AP.k ? '#ap-apodo' : '#ap-q'); if (i) i.focus();
+  });
+  document.addEventListener('submit', e => {
+    const f = e.target.closest && e.target.closest('[data-ap-form]'); if (!f) return; e.preventDefault();
+    const v = (f.querySelector('#ap-apodo').value || '').replace(/\s+/g, ' ').trim(), msg = f.querySelector('[data-ap-msg]');
+    if (!/^[\p{L}\p{N}][\p{L}\p{N} .'’-]{0,19}$/u.test(v)) { msg.textContent = 'Hasta 20 caracteres: letras, números, espacios, punto, guion o apóstrofo.'; return; }
+    msg.textContent = 'Enviando…';
+    apiPost('apodo', { k: AP.k, apodo: v, d: DISP }).then(d => {
+      if (d && d._st === 200) { AP.ok = true; AP.msg = `Recibido: «${v}». Lo revisamos y, si lo aprobamos, saldrá en la web.`; render(); }
+      else msg.textContent = (d && d.error) || 'No se ha podido enviar. Prueba más tarde.';
+    });
+  });
+  // buzón: con el PIN del club (el mismo de las herramientas), aprobar, rechazar o quitar
+  const BZ = { d: null, msg: 'Pon el PIN del club para ver las propuestas.' };
+  const nomK = k => { const j = A.jugadores[k]; return j ? j.nombre + ' ' + j.apellidos + ' · ' + (equiposDe(j).map(mpCorto).join(' · ') || j.equipo || '') : k; };
+  const buzonHtml = () => { if (!BZ.d) return `<div class="pv-nota">${esc(BZ.msg)}</div>`;
+    const pend = BZ.d.pendientes || [], ok = Object.entries(BZ.d.apodos || {});
+    return `${BZ.msg ? `<div class="pv-nota">${esc(BZ.msg)}</div>` : ''}<h2 class="h2">Pendientes · ${pend.length}</h2>
+      ${pend.length ? pend.map(p => `<div class="bz-f"><div><b>«${esc(p.apodo)}»</b><span>${esc(nomK(p.k))} · ${esc(fdc(p.ts.slice(0, 10)))}</span></div><div class="bz-b"><button type="button" class="btn p" data-bz="aprobar" data-id="${esc(p.id)}">Aprobar</button><button type="button" class="btn s" data-bz="rechazar" data-id="${esc(p.id)}">Rechazar</button></div></div>`).join('') : '<div class="pv-nota">No hay propuestas pendientes.</div>'}
+      <h2 class="h2">Aprobados · ${ok.length}</h2>
+      ${ok.length ? ok.sort((a, b) => nomK(a[0]).localeCompare(nomK(b[0]), 'es')).map(([k, ap]) => `<div class="bz-f"><div><b>«${esc(APODO_V[k] || ap)}»</b><span>${esc(nomK(k))}</span></div><div class="bz-b"><button type="button" class="btn s" data-bz="quitar" data-k="${esc(k)}">Quitar</button></div></div>`).join('') : '<div class="pv-nota">Todavía no hay apodos aprobados.</div>'}`; };
+  function buzon(cuerpo) {
+    const pin = leeLS('mp-pin', ''); if (!pin) { BZ.msg = 'Pon el PIN del club.'; const c = view.querySelector('[data-bz-caja]'); if (c) c.innerHTML = buzonHtml(); return; }
+    apiPost('apodo', Object.assign({ pin }, cuerpo || {})).then(d => {
+      if (!d) { BZ.msg = 'Sin conexión con el servicio.'; }
+      else if (d._st !== 200 && !d.pendientes) { BZ.d = null; BZ.msg = d.error || 'No se ha podido abrir el buzón.'; }
+      else { BZ.d = d; BZ.msg = d._st !== 200 ? d.error : ''; APODO = d.apodos || {}; try { localStorage.setItem('mp-apodos', JSON.stringify(APODO)); } catch (e) { /* sin almacenamiento */ } prepApodos(); }
+      const c = view.querySelector('[data-bz-caja]'); if (c) c.innerHTML = buzonHtml();
+    });
+  }
+  function vBuzon() {
+    if (!BZ.d && leeLS('mp-pin', '')) setTimeout(() => buzon(), 0);
+    return `<div class="sy buzon"><div class="cab-pag"><h1 class="h1">Buzón de apodos</h1></div>
+      <div class="bq-pin"><label for="bz-pin">PIN del club</label><input id="bz-pin" type="password" inputmode="numeric" autocomplete="off" value="${esc(leeLS('mp-pin', ''))}"><button type="button" class="btn s" data-bz="ver">Ver</button></div>
+      <div class="bz-caja" data-bz-caja>${buzonHtml()}</div></div>`;
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-bz]'); if (!b || !view.contains(b)) return;
+    const k = b.dataset.bz;
+    if (k === 'ver') { ponLS('mp-pin', (view.querySelector('#bz-pin') || {}).value || ''); buzon(); return; }
+    b.disabled = true; buzon(k === 'quitar' ? { accion: k, k: b.dataset.k } : { accion: k, id: b.dataset.id });
+  });
+
   const pHist = fetch('data/historico.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null);
-  fetch('data/app.json', { cache: 'no-cache' }).then(r => r.json()).then(app => pHist.then(h => {
+  // qué tiene el servicio (data/servicio.json): se pide a la vez que app.json, así «¿Eres jugador?» sale ya en la primera pantalla
+  const pSrv = srvP = (API.includes('localhost') ? Promise.resolve({ almacen: true, video: true, apodo: true })
+    : fetch('data/servicio.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : {}))).catch(() => ({}));
+  fetch('data/app.json', { cache: 'no-cache' }).then(r => r.json()).then(app => Promise.all([pHist, pSrv]).then(([h, srv]) => {
     A = app;
+    SRV = srv || {};
     hCargando = false;
     if (h) H = prepH(h);
+    prepApodos();
     if (!location.hash && S.route) history.replaceState(null, '', S.route);
     prevRoute = location.hash;
     let introVista = false;
@@ -5203,5 +5296,6 @@
     render();
     arrancarDirecto();
     cargarSemana();
+    cargarApodos();
   })).catch(() => { view.innerHTML = '<div class="loading">No se ha podido cargar la web. Prueba a recargar la página.</div>'; });
 })();
