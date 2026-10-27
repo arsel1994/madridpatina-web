@@ -668,7 +668,18 @@
     const clave = top.slice(0, 4).map(({ j, g, a: as }) => { const a = arqDe(j.k, e.ligaId), ok = fotoOK(j);
       return `<a class="eq-clave" href="${hP(j.k)}"><span class="eq-clave-f">${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : `<span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>`}<span class="eq-clave-d">${esc(j.dorsal || '')}</span></span>
         <span class="eq-clave-t"><b>${esc(nomCorto(j))}</b>${a ? `<span class="arq" style="color:${colArq(a.c)}">${esc(a.n.toUpperCase())}</span>` : ''}<span>${g} g · ${as} a ${tClave === A.temporada ? 'esta temporada' : 'en ' + tClave}</span></span></a>`; }).join('');
-    const resumen = `<div class="eq-res"><div class="eq-col">${proxH}${ult ? `<div><div class="etq">Últimos resultados</div><div class="eq-ults" style="--n:${res.slice(-5).length}">${ult}</div></div>` : ''}</div>
+    // cuerpo técnico: quien firma el acta en nuestro banquillo esta temporada, con su balance con este equipo y su historial en el club
+    const ct = {};
+    res.forEach(x => ((x.p.local === e.nombre ? x.p.staff_l : x.p.staff_v) || []).forEach(n => { const o = ct[n] || (ct[n] = { n, pj: 0, v: 0, d: 0 }); o.pj++; if (x.r === 'V') o.v++; else if (x.r === 'D') o.d++; }));
+    const cts = Object.values(ct).sort((a, b) => b.pj - a.pj || a.n.localeCompare(b.n));
+    const ctIni = n => { const w = n.split(' ').filter(x => !PART.has(x.toLowerCase())); return (w[0] || '')[0] + ((w[1] || '')[0] || ''); };
+    const ctCard = o => { const h = (A.staff || {})[o.n] || {};
+      return `<div class="ct"><span class="ct-i">${esc(ctIni(o.n))}</span><div class="ct-t"><span class="arq">${esc((h.cargo || 'Cuerpo técnico').toUpperCase())}</span><b>${esc(o.n)}</b>
+        <span class="ct-n"><b class="cifra">${o.pj}</b> ${o.pj === 1 ? 'partido' : 'partidos'} esta temporada · ${o.v} ${o.v === 1 ? 'ganado' : 'ganados'} · ${o.d} ${o.d === 1 ? 'perdido' : 'perdidos'}</span>
+        ${h.desde ? `<span class="ct-h">${h.desde === A.temporada ? 'Su primera temporada en nuestro banquillo' : `En nuestro banquillo desde ${esc(h.desde)} · ${h.partidos} partidos con el club`}</span>` : ''}</div></div>`; };
+    const cuerpo = cts.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">Cuerpo técnico</span><span>${cts.length} ${cts.length === 1 ? 'persona' : 'personas'} · según las actas</span></div><div class="cts">${cts.map(ctCard).join('')}</div></div>` : '';
+    const banquillo = cts.length ? `<div><div class="etq">En el banquillo</div><div class="tarjeta eq-banq">${cts.map(o => `<span><b>${esc(o.n)}</b>${esc(((A.staff || {})[o.n] || {}).cargo ? ' · ' + A.staff[o.n].cargo : '')}</span>`).join('')}</div></div>` : '';
+    const resumen = `<div class="eq-res"><div class="eq-col">${proxH}${ult ? `<div><div class="etq">Últimos resultados</div><div class="eq-ults" style="--n:${res.slice(-5).length}">${ult}</div></div>` : ''}${banquillo}</div>
       ${clave ? `<div><div class="etq">Jugadores clave · ${esc(tClave)}</div><div class="eq-claves">${clave}</div></div>` : ''}</div>`;
 
     // Partidos: una baldosa por jornada (descansos incluidos)
@@ -724,7 +735,7 @@
     const grupo = (t, js) => js.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">${t}</span><span>${js.length} ${js.length === 1 ? 'jugador' : 'jugadores'}</span></div><div class="cromos2">${js.map(cromo).join('')}</div></div>` : '';
     const movs = (e.altas || []).map(x => { const j = A.jugadores[x.k] || {}; return `<div class="mov"><span class="chip v">LLEGA</span><b>${esc(j.nombre ? j.nombre + ' ' + j.apellidos : x.k)}</b><span>${esc(x.desde ? 'Desde ' + (ours(x.desde) ? etqEq(x.desde, e.ligaId) || x.desde : x.desde) + (x.nota ? ' · ' + x.nota : '') : (x.nota || ''))}</span></div>`; })
       .concat((e.bajas || []).map(x => `<div class="mov"><span class="chip d">SE VA</span><b>${esc(x.nombre + ' ' + x.apellidos)}</b><span>${esc(x.destino ? 'A ' + x.destino + (x.destinoLiga ? ' (' + x.destinoLiga + ')' : '') : '')}</span></div>`));
-    const plantilla = grupo('Porteros', pl.filter(j => j.portero)) + grupo('Jugadores', pl.filter(j => !j.portero))
+    const plantilla = cuerpo + grupo('Porteros', pl.filter(j => j.portero)) + grupo('Jugadores', pl.filter(j => !j.portero))
       + (movs.length ? `<details class="movs"><summary><span class="h2">Altas y bajas · ${movs.length}</span></summary>${movs.join('')}</details>` : '');
 
     // Historial: cara a cara con cada rival, todas las temporadas (los empates de antes cuentan como no ganados)
@@ -1393,7 +1404,7 @@
       const ex = H.jugadores.filter(j => !cur.has(j.tok) && ((j.ahora && j.ahora.length) || (j.temporadas.some(t => !cant(t)) && j.adulto !== false)))
         .map(j => { const ts = [...new Set(j.temporadas.map(t => t.temporada))].sort(), po = j.temporadas.some(t => t.rol === 'GOALIE'), parts = j.nombre.split(' '), k1 = parts.length >= 4 ? 2 : 1;
           const ult = j.temporadas.filter(t => t.temporada === ts[ts.length - 1]).pop() || {};
-          return { pj: j.carrera.pj, h: cromoJ({ nombre: parts.slice(0, k1).join(' '), apellidos: parts.slice(k1).join(' '), dorsal: ult.dorsal || '' },
+          return { pj: j.carrera.pj, h: cromoJ({ nombre: parts.slice(0, k1).join(' '), apellidos: parts.slice(k1).join(' '), dorsal: ult.dorsal || '', foto: j.adulto === true ? j.foto : null },
             { sub: ts[0] === ts[ts.length - 1] ? ts[0] : ts[0].slice(0, 4) + '–' + ts[ts.length - 1].slice(5), cifra: po ? j.carrera.pj + ' PJ' : j.carrera.g + ' G · ' + j.carrera.a + ' A' }) }; })
         .sort((a, b) => b.pj - a.pj);
       pEx = ex.length ? `<div class="pl-g" data-exg><div class="pl-t"><span class="h2">Han jugado con nosotros</span><span>${ex.length} exjugadores · por partidos</span></div><div class="cromos2">${ex.map((x, i) => x.h.replace('class="cromo"', `class="cromo" data-top="${i}"`)).join('')}</div></div>` : '<div class="pv-nota">Sin exjugadores.</div>';
@@ -2788,9 +2799,9 @@
     Hx.jugadores.forEach(j => {
       const k = tok(j.nombre); j.temporadas.forEach(t => { t.temporada = st(t.temporada); });
       const m = Hx.byTok[k];
-      if (m) { m.temporadas = m.temporadas.concat(j.temporadas); m.ahora = (m.ahora || []).concat(j.ahora || []);
+      if (m) { m.temporadas = m.temporadas.concat(j.temporadas); m.ahora = (m.ahora || []).concat(j.ahora || []); m.foto = m.foto || j.foto;
         m.adulto = m.adulto === true || j.adulto === true ? true : m.adulto === false && j.adulto === false ? false : (m.adulto ?? j.adulto); const acc = x => (x.match(/[áéíóúÁÉÍÓÚ]/g) || []).length; if (acc(j.nombre) > acc(m.nombreRaw)) { m.nombreRaw = j.nombre; m.nombre = tc(j.nombre); } }
-      else Hx.byTok[k] = { tok: k, nombreRaw: j.nombre, nombre: tc(j.nombre), temporadas: j.temporadas.slice(), adulto: j.adulto, ahora: (j.ahora || []).slice() };
+      else Hx.byTok[k] = { tok: k, nombreRaw: j.nombre, nombre: tc(j.nombre), temporadas: j.temporadas.slice(), adulto: j.adulto, ahora: (j.ahora || []).slice(), foto: j.foto };
     });
     Hx.jugadores = Object.values(Hx.byTok).map(j => Object.assign(j, { carrera: { pj: j.temporadas.reduce((s, t) => s + t.pj, 0), g: j.temporadas.reduce((s, t) => s + t.g, 0), a: j.temporadas.reduce((s, t) => s + t.a, 0), pim: j.temporadas.reduce((s, t) => s + (t.pim || 0), 0), hattricks: j.temporadas.reduce((s, t) => s + (t.hattricks || 0), 0), temporadas: new Set(j.temporadas.map(t => t.temporada)).size } }))
       .sort((a, b) => b.carrera.g - a.carrera.g || b.carrera.a - a.carrera.a);

@@ -2073,6 +2073,19 @@ a.eq-t:hover { color: #FFFFFF; filter: brightness(1.15); }
 .cromo-t { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 3px; }
 .cromo-t b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 19px; line-height: 1.02; }
 .cromo-c { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 16px; letter-spacing: .06em; }
+/* cuerpo técnico (ficha del equipo): entrenadores y delegados, sin foto */
+.cts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@media (min-width: 721px) { .cts { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ct { background: #18181B; border-radius: 10px; padding: 14px; display: flex; gap: 14px; align-items: flex-start; color: #F4F4F5; border-left: 3px solid #D3202A; }
+.ct-i { flex: none; width: 52px; height: 52px; border-radius: 50%; background: #26262A; display: grid; place-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; color: #A6A6AD; }
+.ct-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ct-t .arq { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: #FF6B63; }
+.ct-t > b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 21px; line-height: 1.05; }
+.ct-n { font-size: 14px; color: #C9C9CE; }
+.ct-n .cifra { font-size: 17px; color: #F4F4F5; }
+.ct-h { font-size: 13px; color: #8A8A8F; }
+.eq-banq { display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.eq-banq b { font-weight: 700; }
 @media (min-width: 721px) { .cromo-d { font-size: 88px; } }
 .movs { border-top: 1px solid #26262A; padding-top: 12px; }
 .movs summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; min-height: 44px; }
