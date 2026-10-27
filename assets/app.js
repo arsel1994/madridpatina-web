@@ -3082,11 +3082,15 @@
       <div class="eq"><div class="vs-t">${escI(x.local)}<b${x.mpL ? ' class="mp"' : ''}>${esc(x.la)}</b><i>vs</i><b${x.mpV ? ' class="mp"' : ''}>${esc(x.va)}</b>${escI(x.vis)}</div>${cuando}</div>
       <div class="cifras" data-i="${i}">${cifras}</div></div>`;
   }
-  // título de la ventana: «Hoy jugamos» si hoy juega uno de los nuestros; si no, «Este fin de semana»; encima, los días
+  // título de la ventana: «Hoy jugamos» si hoy juega uno de los nuestros; si no, «Este fin de semana»; encima, los días.
+  // Si esta semana no jugamos y los partidos son de otra, se dice: «Este fin de semana no jugamos» y «El próximo fin de semana» (o «Próximos partidos»)
   function titIntro(ps) {
     const d = new Date(), hoy = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), dias = ps.map(x => x.dia), f = t => { const x = new Date(t); return DIA[x.getDay()] + ' ' + x.getDate() + ' ' + MES[x.getMonth()]; };
     const a = Math.min(...dias), b = Math.max(...dias);
-    return `<span class="etq">${esc(f(a) + (b !== a ? ' – ' + f(b) : ''))}</span><b class="h1">${ps.some(x => x.dia === hoy) ? 'Hoy jugamos' : 'Este fin de semana'}</b>`;
+    const lunes = t => { const x = new Date(t); return new Date(x.getFullYear(), x.getMonth(), x.getDate() - (x.getDay() + 6) % 7).getTime(); };
+    const semanas = Math.round((lunes(a) - lunes(hoy)) / (7 * 864e5));
+    const tit = ps.some(x => x.dia === hoy) ? 'Hoy jugamos' : semanas <= 0 ? 'Este fin de semana' : semanas === 1 ? 'El próximo fin de semana' : 'Próximos partidos';
+    return `${semanas > 0 ? '<span class="iv-aviso">Este fin de semana no jugamos</span>' : ''}<span class="etq">${esc(f(a) + (b !== a ? ' – ' + f(b) : ''))}</span><b class="h1">${tit}</b>`;
   }
   // gol en la intro: el bloque del que marca se pone rojo (gris si es el rival), la fila recibe la franja y el rodillo sube
   function pintarRodIntro(idp) {
@@ -3141,7 +3145,7 @@
     try { sessionStorage.setItem(INTRO, '1'); } catch (e) { /* sin almacenamiento: saldrá en cada visita */ }
     const el = introEl = document.createElement('div');
     el.className = 'intro'; el.tabIndex = -1;
-    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Partidos de este fin de semana');
+    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Próximos partidos');
     el.innerHTML = `<div class="iv"><div class="iv-cab"><span class="marca iv-marca" aria-label="LAMHL / MP"><span>LAMHL</span><span class="bar" aria-hidden="true">/</span><span class="mp"><span>MP</span></span></span>
         <button class="iv-x" type="button" aria-label="Cerrar" data-cierra>✕</button></div>
       <div class="iv-centro"><div class="iv-tit">${titIntro(ps)}</div><div class="caja">${ps.map(filaIntro).join('')}</div></div>

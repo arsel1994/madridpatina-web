@@ -2683,6 +2683,7 @@ a.pre-l:hover { color: #FFFFFF; background: #18181B; }
 .intro .iv-tit { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
 .intro .iv-tit .etq { font-size: 14px; color: #C9C9CE; }
 .intro .iv-tit .h1 { display: block; }
+.intro .iv-tit .iv-aviso { margin-bottom: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid #3A3A40; font-size: 13px; font-weight: 700; color: #FFFFFF; text-transform: uppercase; letter-spacing: .04em; }
 .intro .caja { width: 100%; max-width: 343px; background: rgba(24,24,27,.94); border: 1px solid #26262A; border-radius: 12px; overflow: hidden; }
 .intro .fila { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 12px; border-top: 1px solid #26262A; }
 .intro .fila:first-child { border-top: 0; }
