@@ -283,7 +283,8 @@
   }
   function filaFinde(m) {
     const fin = m.st === 'fin' || m.st === 'pendiente', P = m.derbi || fin ? null : pronDe(m.ligaId, m.j, m.local, m.vis);
-    const chips = m.st === 'pendiente' ? '<span class="chip ambar">ACTA PENDIENTE</span>' : fin ? '<span class="chip neutro">FINAL</span>' : m.derbi ? '<span class="chip derbi">DERBI</span>' : m.casa ? '<span class="chip casa">EN CASA</span>' : '';
+    // rediseño final: sin «EN CASA» ni fondo rojo en la lista (lo de casa ya va en «En casa · ven a vernos»)
+    const chips = m.st === 'pendiente' ? '<span class="chip ambar">ACTA PENDIENTE</span>' : fin ? '<span class="chip neutro">FINAL</span>' : m.derbi ? '<span class="chip derbi">DERBI</span>' : '';
     const lado = n => `${escudo(n, 28)}<span class="ff-n${ours(n) && !fin ? ' mp' : ''}">${esc(etqEq(n, m.ligaId, true))}</span>`;
     let der;
     if (m.st === 'fin') {
@@ -292,45 +293,36 @@
       der = `<span class="ff-res">${gl}–${gv}</span><span class="ff-l">${href ? '▶ Ver resumen' : 'Ver partido'}</span>`;
     } else if (m.st === 'pendiente') der = `<span class="ff-res">—</span><span class="ff-l">sin resultado aún</span>`;
     else if (m.st === 'ya') der = `<span class="ff-falta">Ha empezado</span><span class="ff-l">aún sin datos del acta</span>`;
-    else { const [a, b] = faltaTxt(m); der = `<span class="ff-falta"${m.hora ? ` data-falta="${m.ts}"` : ''}>${a}</span><span class="ff-l">${b}</span>`; }
+    else { const [a, b] = faltaTxt(m); der = `<span class="ff-falta"${m.hora ? ` data-falta="${m.ts}"` : ''}>${a}</span><span class="ff-l">${b}</span><span class="ff-previa">PREVIA</span>`; }
     const href = m.mid && A.partidos[m.mid] ? hM(m.mid) : hPar(m.ligaId, m.j, m.local, m.vis);
-    return `<a class="ff${m.casa && !fin ? ' casa' : ''}${fin ? ' fin' : ''}" href="${href}">
-      <div class="ff-t"><div class="ff-cuando"><span>${esc(fd(m.fecha))} · ${esc(m.hora || 'hora por fijar')}</span>${chips}</div><div class="ff-eqs">${lado(m.local)}<span class="ff-g">–</span>${lado(m.vis)}</div></div>
+    return `<a class="ff${fin ? ' fin' : ''}" href="${href}">
+      <div class="ff-t"><div class="ff-cuando"><span>${esc(fd(m.fecha))} · ${esc(m.hora || 'hora por fijar')}</span>${chips}</div><div class="ff-eqs">${lado(m.local)}<span class="ff-g">vs</span>${lado(m.vis)}</div></div>
       <div class="ff-p">${P ? `<span class="ff-pct">${P.g}%</span><span class="ff-l">ganar</span>` : ''}</div>
       <div class="ff-f">${der}</div></a>`;
   }
-  // ── en directo: marcador, último gol o sanción, línea de tiempo y opciones de ganar ahora ──
+  // ── en directo (rediseño final): tarjeta compacta que lleva al directo; parte y reloj, los dos equipos con sus goles,
+  // barra de lo jugado y el último gol o sanción. En el escritorio, dos en paralelo ──
   function vivoHtml(m) {
     const sn = m.sn, ctx = ctxDirecto(sn), dur = ctx.dur || (m.L && m.L.cantera ? 1200 : 1500), tot = 2 * dur;
     const abs = e => (e.periodo - 1) * dur + (segs(e.t) || 0);
     const evs = (sn.eventos || []).filter(e => e.periodo && e.t != null).sort((a, b) => abs(a) - abs(b));
-    const gl = sn.gl || 0, gv = sn.gv || 0, nos = ctx.mp.L && !ctx.mp.V ? 'L' : ctx.mp.V && !ctx.mp.L ? 'V' : null;
-    const t = Math.min(tot, Math.max(sn.estado === 'descanso' ? dur : 0, ...evs.map(abs)));
+    const gl = sn.gl || 0, gv = sn.gv || 0, desc = sn.estado === 'descanso';
+    const t = Math.min(tot, Math.max(desc ? dur : 0, ...evs.map(abs)));
     const nombreDe = (e, lado) => { const p = jugadorMP(ctx, lado, e.dorsal); return p ? nomCorto(p) : e.jugador_corto || e.jugador || (e.dorsal ? '#' + e.dorsal : ''); };
-    const ult = evs.filter(e => e.tipo === 'GOL' || (e.tipo === 'FALTA' && e.min_sancion)).filter(e => abs(e) > t - 240).pop();
-    let ann;
-    if (sn.estado === 'descanso') ann = `<div class="vv-calma"><span class="desc">DESCANSO</span><span>Vuelven en unos minutos</span></div>`;
-    else if (ult) { const gol = ult.tipo === 'GOL', esNos = ult.lado === nos;
-      ann = `<div class="vv-ann"><div><span class="vv-tipo ${gol ? (esNos ? 'nos' : 'ellos') : 'sanc'}">${gol ? 'GOL' : 'SANCIÓN'}</span><div class="vv-quien">${esc(nombreDe(ult, ult.lado))}</div>
-        <div class="vv-det">${gol ? (ult.asist_jugador ? 'Asistencia de ' + esc(ult.asist_corto || ult.asist_jugador) + ' · ' : '') + esc(ctx.abr.L + ' ' + (ult.marcador || '').replace('-', '–') + ' ' + ctx.abr.V) : esc(minFuera(ult.min_sancion || 2) + ' · ' + motivoFalta(ult) + ' · ' + ctx.abr[ult.lado])}</div></div>
-        <span class="vv-min ${gol ? (esNos ? 'nos' : '') : 'sanc'}">${Math.max(1, Math.ceil(abs(ult) / 60))}'</span></div>`; }
-    else ann = `<div class="vv-calma"><span>SE JUEGA</span></div>`;
-    const puntos = evs.filter(e => e.tipo === 'GOL' || (e.tipo === 'FALTA' && e.min_sancion)).map(e => { const gol = e.tipo === 'GOL', x = (abs(e) / tot * 100).toFixed(2);
-      const txt = 'Min ' + Math.max(1, Math.ceil(abs(e) / 60)) + ' · ' + (gol ? 'Gol de ' + nombreDe(e, e.lado) + ' · ' + (e.marcador || '').replace('-', '–') : minFuera(e.min_sancion || 2) + ' de sanción a ' + nombreDe(e, e.lado) + ' (' + ctx.abr[e.lado] + ')');
-      return `<span class="vv-ev ${gol ? (e.lado === nos ? 'nos' : 'gol') : 'sanc'}" style="left:${x}%" title="${esc(txt)}"><i></i><span class="sr-only">${esc(txt)}</span></span>`; }).join('');
-    const pd = probDirecto(ctx), pr = pd && pd.pr, g3 = pr ? Math.round((nos === 'V' ? pr[2] : pr[0]) * 100) : null, e3 = pr ? Math.round(pr[1] * 100) : null;
-    const lado = (L, n, g, o) => `<div class="vv-eq">${escudo(n, 0, 'vv')}<span class="vv-n${ours(n) ? ' mp' : ''}"><span class="nm-largo">${esc(largoEq(n, m.ligaId))}</span><span class="nm-corto">${esc(ctx.abr[L])}</span></span></div>`;
-    const caja = (L, g, o) => `<div class="vv-g${g > o && ctx.mp[L] && !(ctx.mp.L && ctx.mp.V) ? ' gana' : ''}" data-vv-g="${esc(sn.idp)}-${L}"><span>${g}</span></div>`;
-    const reloj = sn.estado === 'descanso' ? `<span class="vv-reloj desc">DESCANSO</span>` : `<span class="vv-reloj">${esc(relojDe(sn) || '')}</span><span class="vv-parte">${esc(ordinal(sn.periodo || 1).toUpperCase())} PARTE</span>`;
-    return `<div class="vivo tarjeta" data-vivo-card="${esc(sn.idp)}">
-      <div class="vv-cab"><span class="vv-letra">${esc(m.derbi ? etqEq(m.local, m.ligaId, true) + ' · ' + etqEq(m.vis, m.ligaId, true) : etqEq(m.e.nombre, m.ligaId, true))}</span><span class="vv-liga">${esc((m.L && m.L.corto) || '')}</span><span class="vv-centro">${reloj}</span></div>
-      <div class="vv-marc">${lado('L', m.local)}<div class="vv-cajas">${caja('L', gl, gv)}<span class="vv-guion">–</span>${caja('V', gv, gl)}</div>${lado('V', m.vis)}</div>
-      ${ann}
-      <div class="vv-linea"><div class="vv-base"></div><div class="vv-prog" style="width:${(t / tot * 100).toFixed(1)}%"></div><div class="vv-desc"></div><div class="vv-ahora" style="left:${(t / tot * 100).toFixed(1)}%"></div>${puntos}</div>
-      <div class="vv-ejes"><span>0'</span><span>Descanso</span><span>${tot / 60}'</span></div>
-      ${pr && nos ? `<div class="hero-pron">${barraPron({ g: g3, e: e3, pe: Math.max(0, 100 - g3 - e3) })}<div class="hero-pron-t">Opciones de ganar ahora: ${g3} % · penaltis ${e3} %</div></div>` : ''}
-      <a class="btn p vv-ver" href="#/directo/${encodeURIComponent(sn.idp)}">Ver el directo</a>
-    </div>`;
+    const ult = evs.filter(e => e.tipo === 'GOL' || (e.tipo === 'FALTA' && e.min_sancion)).pop();
+    let pie;
+    if (!ult) pie = '<b>SE JUEGA</b> · Todavía sin goles';
+    else { const gol = ult.tipo === 'GOL', quien = nombreDe(ult, ult.lado);
+      pie = `<b class="${gol ? (ctx.mp[ult.lado] ? 'nos' : 'gol') : 'sanc'}">${gol ? 'GOL' : 'SANCIÓN'} ${Math.max(1, Math.ceil(abs(ult) / 60))}'</b> · ${esc((quien ? quien + ' · ' : '') + ctx.abr[ult.lado])}`; }
+    const fila = (L, n, g, o) => `<div class="vc-eq">${escudo(n, 32)}<span class="vc-n${ours(n) ? ' mp' : ''}"><span class="nm-largo">${esc(largoEq(n, m.ligaId))}</span><span class="nm-corto">${esc(ctx.abr[L])}</span></span>
+      <span class="vc-g${g > o && ctx.mp[L] && !(ctx.mp.L && ctx.mp.V) ? ' gana' : ''}" data-vv-g="${esc(sn.idp)}-${L}"><span>${g}</span></span></div>`;
+    return `<a class="vc tarjeta" href="#/directo/${encodeURIComponent(sn.idp)}" data-vivo-card="${esc(sn.idp)}">
+      <div class="vc-cab"><div class="vc-est"><i class="punto"></i><span class="vc-parte${desc ? ' desc' : ''}">${desc ? 'DESCANSO' : esc(ordinal(sn.periodo || 1).replace('ª', '.ª').toUpperCase()) + ' PARTE'}</span><span class="vc-liga">${esc((m.L && m.L.corto) || '')}</span></div>
+        <span class="vc-reloj${desc ? ' desc' : ''}">${desc ? dur / 60 + ':00' : esc(relojDe(sn) || '')}</span></div>
+      <div class="vc-eqs">${fila('L', m.local, gl, gv)}${fila('V', m.vis, gv, gl)}</div>
+      <div class="vc-prog"><i style="width:${(t / tot * 100).toFixed(1)}%"></i></div>
+      <div class="vc-pie"><span class="vc-ult">${pie}</span><span class="vc-seguir">Seguir<span class="nm-largo"> el directo</span> ›</span></div>
+    </a>`;
   }
   const tgHtml = `<a class="tg-pil" href="${TELEGRAM}" target="_blank" rel="noopener"><span class="tg-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21.5 3.6 2.9 10.8c-1.3.5-1.3 1.2-.2 1.5l4.8 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.4l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.3-.5-1.8-1.4-1.5zM9.6 14.4l-.4 4-1.4-4.6 9.6-6.1-7.8 6.7z"/></svg></span><span>Canal de Telegram de eventos en directo</span></a>`;
   // estrella de 12 puntas de «en casa» (gira despacio; quieta con «reducir movimiento»)
@@ -499,7 +491,7 @@
     if (F.momento === 'directo') {
       const vivos = F.lista.filter(m => m.st === 'vivo');
       out.push(`<section class="directo-ini"><div class="finde-cab"><div class="dir-t"><i class="punto"></i><h1 class="h1">En directo</h1></div>${tgHtml}</div>
-        <div class="vivos">${vivos.map(vivoHtml).join('')}</div></section>`);
+        <div class="vivos${vivos.length > 1 ? ' dos' : ''}">${vivos.map(vivoHtml).join('')}</div></section>`);
       out.push(findeHtml(F, 'Lo que queda del fin de semana', false, false));
       return `<div class="inicio">${apodoCta()}${out.join('')}</div>`;
     }
@@ -2530,7 +2522,7 @@
     REAC.t = Date.now();
     apiGet('reaccion?idp=' + encodeURIComponent(idp)).then(d => { if (d && d.reacciones) { REAC.idp = idp; REAC.datos = d; pintarReac(); } });
   }
-  document.addEventListener('mp-directo', () => { const m = /^#\/(?:directo|video)\/([^/]+)/.exec(location.hash); if (!m) return; const idp = decodeURIComponent(m[1]); cargarReac(idp);
+  document.addEventListener('mp-directo', () => { const m = /^#\/video\/([^/]+)/.exec(location.hash); if (!m) return; const idp = decodeURIComponent(m[1]); cargarReac(idp);
     const sn = LIVE.snaps[idp]; if (sn && sn.estado === 'final') pintarVotoDirecto(idp, true); });
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-reac]'); if (!b || !REAC.datos) return;
     const k = b.dataset.reac; REAC.datos.reacciones[k] = (REAC.datos.reacciones[k] || 0) + 1; pintarReac();
@@ -2872,6 +2864,9 @@
     if (v === 'partido') { const m = A.partidos[parts[1]], lm = m && ligaM(m.liga), e = m && (A.equipos.find(x => x.nombre === m.local && x.ligaId === m.liga) || A.equipos.find(x => x.nombre === m.visitante && x.ligaId === m.liga));
       return e ? [['Equipos', hEq(e.id)], [mpCorto(e), hEq(e.id)], ['Jornada ' + m.jornada]] : lm ? [['Ligas', hLg(m.liga)], lm, ['Jornada ' + m.jornada]] : [['Ligas', hLg(S.lg || A.ligas[0].id)], ['Partido']]; }
     if (v === 'pretemporada') return [['Ligas', hLg(S.lg || A.ligas[0].id)], ['Pretemporada']];
+    // así fue el partido: «PARTIDO / SENIOR 2 · J3» (Partido sube a la página del partido)
+    if (v === 'directo' && RS.m && RS.m.idp === parts[1]) { const m = RS.m, L = lgOf(m.liga), t = ((L ? L.nombre : m.ligaNombre || '').replace(/^Liga /, '') + (m.jornada ? ' · J' + m.jornada : '')).toUpperCase();
+      return [m.mid && A.partidos[m.mid] ? ['Partido', hM(m.mid)] : ['Partido'], [t]]; }
     if (v === 'jugador') { const j = A.jugadores[parts[1]], e = j && equiposDe(j)[0]; return [['Jugadores', '#/jugadores']].concat(e ? [[mpCorto(e), '#/jugadores/' + e.id]] : []).concat(j ? [[corto(j, true)]] : []); }
     if (v === 'jugadores' && parts[1]) { const e = A.equipos.find(x => x.id === parts[1]); return e ? [['Jugadores', '#/jugadores'], [mpCorto(e)]] : null; }
     if (v === 'directo') return [['Inicio', '#/'], ['En directo']];
@@ -2931,7 +2926,7 @@
     else if (v === 'jugador') html = vJugador2(parts[1]);
     else if (v === 'historico' || v === 'legado') html = vLegado2();
     else if (v === 'pretemporada') html = vPretemporada2(parts[1]);
-    else if (v === 'directo') html = vDirecto(parts[1], parts[2]);
+    else if (v === 'directo') html = parts[2] === 'resumen' ? vResumen(parts[1]) : vVivo(parts[1]);   // rediseño final: resumen sin vídeo y directo
     else if (v === 'metodo') html = vMetodo();
     else if (v === 'sincronizar') html = vSincronizar(parts[1]);
     else if (v === 'banquillo') html = parts[1] ? vBanquillo(parts[1]) : '<div class="sy"><div class="lab" style="color:#FF6B63">BANQUILLO</div><p class="sy-ayuda">Entra desde el directo del partido (botón «Banquillo»).</p></div>';
@@ -2972,7 +2967,8 @@
     // el título de la pestaña dice qué página es (el jugador, el partido, el equipo o la liga)
     const pp = v === 'partido' && A.partidos[parts[1]], jj = v === 'jugador' && A.jugadores[parts[1]], ee = v === 'equipo' && A.equipos.find(x => x.id === parts[1]), ll = v === 'liga' && lgOf(parts[1]);
     const det = jj ? corto(jj, true) : pp ? abr(pp.local) + ' ' + (pp.gl != null ? pp.gl + '–' + pp.gv : 'vs') + ' ' + abr(pp.visitante) : rp ? 'Previa · ' + etqEq(rp.c.local, rp.L.id, true) + ' – ' + etqEq(rp.c.visitante, rp.L.id, true) : ee ? tituloOf(ee) : ll ? ll.nombre : '';
-    document.title = 'MADRIDPATINA · ' + (det || TITLES[v]);
+    const rsT = v === 'directo' && RS.m && RS.m.idp === parts[1] ? (parts[2] === 'resumen' ? 'Así fue · ' : RS.fase === 'fin' ? '' : 'En directo · ') + abr(RS.m.local) + ' ' + RS.m.gl + '–' + RS.m.gv + ' ' + abr(RS.m.visitante) : '';
+    document.title = 'MADRIDPATINA · ' + (rsT || det || TITLES[v]);
     save({ route: location.hash, eq: S.eq, lg: S.lg });
     try { sessionStorage.setItem(HKEY, JSON.stringify(S.hist.slice(-10))); } catch (e) { /* sin almacenamiento */ }
   }
@@ -3157,7 +3153,7 @@
     const el = introEl = document.createElement('div');
     el.className = 'intro'; el.tabIndex = -1;
     el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Próximos partidos');
-    el.innerHTML = `<div class="iv"><div class="iv-cab"><span class="marca iv-marca" aria-label="LAMHL / MP"><span>LAMHL</span><span class="bar" aria-hidden="true">/</span><span class="mp"><span>MP</span></span></span>
+    el.innerHTML = `<div class="iv"><div class="iv-cab"><span class="marca iv-marca" aria-label="LAMHL · MADRIDPATINA"><span>LAMHL</span><img src="escudos/badge/madridpatina-alpha.png" alt="" width="49" height="46"></span>
         <button class="iv-x" type="button" aria-label="Cerrar" data-cierra>✕</button></div>
       <div class="iv-centro"><div class="iv-tit">${titIntro(ps)}</div><div class="caja">${ps.map(filaIntro).join('')}</div></div>
       <div class="iv-pie"><button class="btn p iv-entrar" type="button" data-cierra>Entrar</button><span class="iv-m">o desliza hacia arriba</span><span class="iv-d">o pulsa Esc</span></div></div>`;
@@ -4772,6 +4768,539 @@
 
   const esperaHtml = () => (LIVE.ok === false && !LIVE.cargado ? casoHtml('Directo', 'El directo no está disponible', 'Ahora mismo no podemos seguir el partido en vivo. El resultado saldrá con el acta de la FMP.', 'SIN CONEXIÓN', 'neutro')
     : LIVE.cargado || (!LIVE.sesion && !DIRECTO_EJEMPLO) ? casoHtml('Directo', 'Este partido no está ahora en el directo', 'Cuando empiece, el marcador saldrá aquí solo. Si ya terminó, el resultado saldrá con el acta de la FMP.') : SKEL(260));
+  /* ── Así fue el partido (rediseño final · «Resumen sin vídeo», #/directo/{idp}/resumen): el partido se vuelve a jugar deprisa
+     en la misma página con las piezas del directo: alineaciones, reloj que corre (el partido entero en unos 10 s), marcador de
+     rodillo, aviso de cada momento al lado del marcador, porteros con su % de paradas que se mueve con cada tiro y línea de
+     tiempo. Al terminar, la página se queda en el acta. Sin escenas a pantalla completa y sin compartir.
+     Datos: el partido de app.json (con los tiros de tiros.json); recién acabado, antes del proceso de la noche, el del directo.
+     La tanda, lanzamiento a lanzamiento, solo si la trae el servicio del directo: nunca se inventa. ── */
+  const RS = { vivo: false, previa: false, relojOk: false, visto: 0, idp: null, sn: null, tTiros: null, m: null, fase: '', g: 0, vel: 1, pausa: false, desc: false, kick: 2, hold: 0, ann: null, annAt: 0, timer: null, tos: [], snap: {}, pidio: {}, flash: null, pen: null };
+  const rsLater = (fn, ms) => { RS.tos.push(setTimeout(fn, ms)); };
+  function rsLimpiar() { clearInterval(RS.timer); RS.timer = null; RS.tos.forEach(clearTimeout); RS.tos = []; }
+  const rsMin = t => Math.max(1, Math.ceil(t / 60)) + "'";
+  const rsRel = g => Math.floor(g / 60) + ':' + p2(Math.floor(g % 60));
+  const rsEs = n => ours(n);
+  // «#9 Santiago Muñoz»: de los nuestros, con su apodo si lo tiene; del rival, nombre y primer apellido
+  function rsQ(j, nuestro) { if (!j) return ''; const J = nuestro && j.k && A.jugadores[j.k]; const n = J ? nomCorto(J) : j.nombre ? corto(j, true) : (j.jugador_corto || j.jugador || '');
+    return ((j.dorsal ? '#' + j.dorsal + ' ' : '') + n).trim(); }
+  const rsFoto = (j, nuestro) => { if (!nuestro || !j) return null; const J = (j.k && A.jugadores[j.k]) || j; return fotoOK(J) ? J.foto : null; };
+  const rsApe = j => { const w = (j.apellidos || '').split(' ').filter(Boolean), o = []; for (const x of w) { o.push(x); if (!PART.has(x.toLowerCase()) || o.length === w.length) break; } return o.join(' ') || j.nombre || ''; };
+
+  // el partido de app.json → el modelo del resumen (minutos en segundos de juego, lados 'L'/'V')
+  function rsModelo(p) {
+    const per = (/^senior/.test(p.liga) ? 25 : 20) * 60, tot = per * 2; let ml = 0, mv = 0;
+    const ev = (p.ev || []).filter(e => /^P[12]$/.test(e.periodo) && ['gol', 'falta', 'cambio_portero'].includes(e.tipo)).map(e => {
+      const [mm, ss] = (e.minuto || '0:0').split(':').map(Number), pn = +e.periodo.slice(1), rest = mm * 60 + ss;
+      // el acta apunta algunos cambios de portero a 00:00 o al minuto entero de la parte: son del principio de esa parte
+      const t = e.tipo === 'cambio_portero' && (rest === 0 || rest >= per) ? (pn - 1) * per : (pn - 1) * per + per - rest;
+      return { t: Math.max(0, Math.min(tot, t)), tipo: e.tipo === 'cambio_portero' ? 'cambio' : e.tipo, lado: e.lado === 'local' ? 'L' : 'V', j: e.jugador || null, as: e.asistencia || null, falta: e.falta || '', min: e.minutos || 0 }; })
+      .sort((a, b) => a.t - b.t).map(e => { if (e.tipo === 'gol') { if (e.lado === 'L') ml++; else mv++; } return Object.assign(e, { ml, mv }); });
+    const x = TIR && TIR[p.idp]; let tiros = null;
+    if (x && x.s && x.s.length) { tiros = []; let a0 = 0, b0 = 0; x.s.forEach(([t, a, b]) => { for (let i = a0; i < a; i++) tiros.push({ t, lado: 'L' }); for (let i = b0; i < b; i++) tiros.push({ t, lado: 'V' }); a0 = Math.max(a0, a); b0 = Math.max(b0, b); }); }
+    return { idp: p.idp, mid: p.mid, liga: p.liga, ligaNombre: p.ligaNombre || (lgOf(p.liga) || {}).nombre || '', jornada: p.jornada, fecha: p.fecha, hora: p.hora, pista: p.pista,
+      local: p.local, visitante: p.visitante, gl: p.gl, gv: p.gv, pen: p.pen ? (p.pen === p.local ? 'L' : 'V') : null, per, tot, ev, tiros,
+      alin: { L: p.alin_l || [], V: p.alin_v || [] }, por: { L: p.por_l || [], V: p.por_v || [] }, staff: { L: p.staff_l || [], V: p.staff_v || [] }, arb: p.arb || [],
+      tl: p.tl, tv: p.tv, mvp: p.mvp || null, tanda: null };
+  }
+  // recién acabado (aún no está en app.json): el modelo sale del directo
+  function rsModeloSnap(sn) {
+    const ctx = ctxDirecto(sn), cal = enCalendario(sn), ligaId = cal ? cal.L.id : '', per = (ctx.dur || (/SENIOR/i.test(sn.liga || '') ? 1500 : 1200)), tot = per * 2;
+    const nombre = { L: ctx.nombre.L, V: ctx.nombre.V };
+    const persona = (l, dorsal, completo, cortoTxt) => { const J = ours(nombre[l]) ? jugadorMP(ctx, l, dorsal) : null;
+      if (J) return Object.assign({ dorsal }, J); const w = (completo || '').split(' '); return { dorsal, nombre: w[0] || cortoTxt || '', apellidos: w.slice(1).join(' ') }; };
+    let ml = 0, mv = 0;
+    const ev = (sn.eventos || []).filter(e => (e.periodo === 1 || e.periodo === 2) && ['GOL', 'FALTA', 'CAMBIO DE PORTERO'].includes(e.tipo) && segs(e.t) != null).map(e => ({
+      t: Math.min(tot, (e.periodo - 1) * per + segs(e.t)), tipo: e.tipo === 'GOL' ? 'gol' : e.tipo === 'FALTA' ? 'falta' : 'cambio', lado: e.lado,
+      j: e.dorsal || e.jugador ? persona(e.lado, e.dorsal, e.jugador, e.jugador_corto) : null, as: e.asist_dorsal || e.asist_jugador ? persona(e.lado, e.asist_dorsal, e.asist_jugador, e.asist_corto) : null,
+      falta: e.falta_tipo ? motivoFalta(e) : '', min: e.min_sancion || 0 })).sort((a, b) => a.t - b.t)
+      .map(e => { if (e.tipo === 'gol') { if (e.lado === 'L') ml++; else mv++; } return Object.assign(e, { ml, mv }); });
+    const pl = sn.plantillas || {}, porteros = sn.porteros || [];
+    const alin = l => (pl[l] || []).map(x => Object.assign(persona(l, x.dorsal, x.jugador || ((x.nombre || '') + ' ' + (x.apellido || '')), x.jugador_corto), {
+      portero: porteros.some(q => q.lado === l && q.dorsal === x.dorsal) || x.portero, capitan: x.pos === 'C' || x.rol === 'C', asistente: x.pos === 'A' || x.rol === 'A' }));
+    const por = l => porteros.filter(q => q.lado === l).map(q => { const b = persona(l, q.dorsal, q.jugador, q.jugador_corto), par = Math.max(0, (q.tiros || 0) - (q.gc || 0));
+      return Object.assign(b, { tiros: q.tiros || 0, gc: q.gc || 0, par, pct: q.tiros ? par / q.tiros * 100 : 0 }); });
+    const t2 = TIR_VIVO[sn.idp]; let tiros = null;
+    if (t2 && t2.s && t2.s.length) { tiros = []; let a0 = 0, b0 = 0; t2.s.forEach(([t, a, b]) => { for (let i = a0; i < a; i++) tiros.push({ t, lado: 'L' }); for (let i = b0; i < b; i++) tiros.push({ t, lado: 'V' }); a0 = Math.max(a0, a); b0 = Math.max(b0, b); }); }
+    const st = sn.staff || {}, [dd, mm] = (sn.fecha || '').split('/'), anio = new Date().getFullYear();
+    return { idp: sn.idp, mid: cal && cal.c.mid, liga: ligaId || (/SENIOR/i.test(sn.liga || '') ? 'senior' : 'cantera'), ligaNombre: titulo(sn.liga || ''), jornada: sn.jornada, fecha: dd && mm ? anio + '-' + mm + '-' + dd : '', hora: sn.hora, pista: sn.pista,
+      local: nombre.L, visitante: nombre.V, gl: sn.gl || 0, gv: sn.gv || 0, pen: sn.penaltis && sn.penaltis.ganador ? sn.penaltis.ganador : null, per, tot, ev, tiros,
+      alin: { L: alin('L'), V: alin('V') }, por: { L: por('L'), V: por('V') }, staff: { L: (st.L || []).map(x => x.nombre), V: (st.V || []).map(x => x.nombre) }, arb: sn.arbitros || [],
+      tl: sn.tiros ? sn.tiros.l : null, tv: sn.tiros ? sn.tiros.v : null, mvp: null, tanda: null };
+  }
+  // la tanda, lanzamiento a lanzamiento, del servicio del directo (si aún la tiene)
+  function rsTanda(m, sn) {
+    const td = sn && sn.penaltis && sn.penaltis.tanda; if (!td || !td.length) return null;
+    return td.map(x => { const lista = m.alin[x.lado] || [], j = lista.find(y => String(y.dorsal) === String(x.dorsal));
+      return { lado: x.lado, ronda: x.ronda, gol: !!x.gol, j: j || { dorsal: x.dorsal, nombre: x.jugador_corto || x.jugador || '' } }; });
+  }
+  // tramos de cada portería: quién estaba en pista de qué segundo a qué segundo (con los cambios de portero del acta)
+  function rsPorteria(m) {
+    const k = p => p && (p.k || '#' + p.dorsal);
+    return ['L', 'V'].map(l => { const lista = m.por[l] || [], o = l === 'L' ? 'V' : 'L', cambios = m.ev.filter(e => e.tipo === 'cambio' && e.lado === l && e.j);
+      const ini0 = lista.find(p => !cambios.length || k(p) !== k(cambios[0].j)) || lista[0] || (cambios[0] && cambios[0].j);
+      const segs2 = ini0 ? [{ p: ini0, from: 0 }] : [];
+      cambios.forEach(e => { const cur = segs2[segs2.length - 1], nuevo = lista.find(p => k(p) === k(e.j)) || e.j;
+        if (cur && k(cur.p) === k(e.j)) return; if (cur && cur.from === e.t) { cur.p = nuevo; return; } segs2.push({ p: nuevo, from: e.t, ev: e, sale: cur && cur.p }); });
+      segs2.forEach((sg, i) => { sg.to = i + 1 < segs2.length ? segs2[i + 1].from : m.tot + 1; });
+      return { l, o, segs: segs2 }; });
+  }
+  const rsAnunciable = (m, e) => e.tipo === 'gol' || (e.tipo === 'falta' && e.min >= 2) || (e.tipo === 'cambio' && RS.POR.some(x => x.segs.some(s => s.ev === e)));
+
+  // ── la página ──
+  function vResumen(idp) {
+    rsLimpiar(); clearInterval(RS.tTiros); RS.vivo = false;
+    const espera = '<div class="carga" role="status" aria-label="Cargando"><div class="sk" style="height:48px;width:50%;margin-top:24px"></div><div class="sk" style="height:420px"></div></div>';
+    const h = location.hash, otra = () => { if (location.hash === h) render(); };
+    if (!TIR) { cargarTiros().then(otra); return espera; }
+    const p = Object.values(A.partidos).find(x => x.idp === idp && x.gl != null);
+    let sn = LIVE.snaps[idp] || RS.snap[idp];
+    const pide = () => { RS.pidio[idp] = true; fetch(DIRECTO_URL + (DIRECTO_URL.includes('?') ? '&' : '?') + 'idp=' + encodeURIComponent(idp), { cache: 'no-store' }).then(r => r.json())
+      .then(d => { const x = (d.partidos || [d]).find(y => y.idp === idp); if (x) RS.snap[idp] = x; }).catch(() => {}).then(() => (p ? Promise.resolve() : tirosApi(idp).catch(() => null))).then(otra); };
+    let m;
+    if (p) {
+      m = rsModelo(p);
+      if (m.pen && !(sn && sn.penaltis && sn.penaltis.tanda) && !RS.pidio[idp]) { pide(); return espera; }   // la tanda solo la tiene el directo
+    } else {
+      if (!sn && !RS.pidio[idp]) { pide(); return espera; }
+      if (!sn) return `<div class="rs-vacio">${casoHtml('Partido', 'Todavía no está el acta', 'En cuanto la FMP publique el acta de este partido, aquí estará el resumen.', 'ACTA', 'derbi', [['Ir a Inicio', '#/']])}</div>`;
+      if (sn.estado !== 'final') { setTimeout(() => { history.replaceState(null, '', '#/directo/' + encodeURIComponent(idp)); render(); }, 0); return espera; }
+      if (!RS.pidio[idp]) { pide(); return espera; }
+      m = rsModeloSnap(sn);
+    }
+    m.tanda = m.pen ? rsTanda(m, sn) : null;
+    RS.m = m; RS.POR = rsPorteria(m);
+    rsLater(rsArrancar, 0);
+    return rsHtml(m);
+  }
+
+  function rsHtml(m) {
+    const derbi = ours(m.local) && ours(m.visitante), lid = m.liga, nm = n => largoEq(n, lid);
+    const L = lgOf(lid) || {}, ligaJ = ((L.nombre || m.ligaNombre || '').replace(/^Liga /, '') + (m.jornada ? ' · J' + m.jornada : '')).toUpperCase();
+    const cuando = `<div class="rs-cuando"><b>${esc(fd(m.fecha).toUpperCase())}<i>/</i>${esc(m.hora || 'Hora por fijar')}</b><span>${esc(m.pista ? pistaBonita(m.pista).replace(/-Pista \d+$/i, '').replace(/^Polid\. Municipal /i, 'Polideportivo ') : 'Pista por confirmar')}</span></div>`;
+    // alineaciones: los nuestros como cromos (foto o iniciales), el rival en fichas de dorsal y apellido
+    const orden = l => (l || []).slice().sort((a, b) => (b.portero ? 1 : 0) - (a.portero ? 1 : 0) || (b.capitan ? 1 : 0) - (a.capitan ? 1 : 0) || (b.asistente ? 1 : 0) - (a.asistente ? 1 : 0) || (+a.dorsal || 99) - (+b.dorsal || 99));
+    const entr = (j, l) => (m.staff[l] || []).some(s => rsMismo(s, j));
+    const roles = (j, l) => [j.portero ? 'POR' : '', j.capitan ? 'C' : '', j.asistente ? 'A' : '', entr(j, l) ? 'ENT' : ''].filter(Boolean);
+    const lados = ['L', 'V'].sort((a, b) => (ours(m[b === 'L' ? 'local' : 'visitante']) ? 1 : 0) - (ours(m[a === 'L' ? 'local' : 'visitante']) ? 1 : 0));
+    let k0 = 0;
+    const alin = lados.map(l => { const n = l === 'L' ? m.local : m.visitante, nos = ours(n), js = orden(m.alin[l]), d0 = k0; k0 += 150 + js.length * (nos ? 45 : 25);
+      const cab = `<div class="rs-al-cab">${escudo(n, 32, nos ? 'mp' : '')}<div><b class="${nos ? 'mp' : ''}">${esc(nm(n))}</b><span>${js.length} convocados${m.staff[l] && m.staff[l][0] ? ' · ' + esc(m.staff[l][0]) : ''}</span></div></div>`;
+      const cuerpo = nos ? `<div class="rs-cromos${derbi ? ' derbi' : ''}">${js.map((j, i) => { const f = rsFoto(j, true), r = roles(j, l);
+          return `<div class="rs-cromo${j.portero ? ' por' : ''}" style="--d:${derbi ? 120 + i * 10 : d0 + 150 + i * 45}ms"><span class="rs-cf"><span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>${f ? `<span class="ph" data-bg="${esc(f)}"></span>` : ''}
+            ${r.length ? `<span class="rs-rol${j.portero ? ' por' : ''}">${r.join(' · ')}</span>` : ''}<span class="rs-cd">${esc(j.dorsal || '')}</span></span><span class="rs-cn">${esc(derbi ? (j.nombre || '')[0] + '. ' + rsApe(j) : (j.nombre || '').split(' ')[0] + ' ' + rsApe(j))}</span></div>`; }).join('')}</div>`
+        : `<div class="rs-fichas">${js.map((j, i) => { const r = roles(j, l); return `<div class="rs-ficha" style="--d:${d0 + i * 25}ms"><b>${esc(j.dorsal || '')}</b><span>${esc(rsApe(j))}</span>${r.length ? `<i class="${j.portero ? 'por' : ''}">${r.join(' · ')}</i>` : ''}</div>`; }).join('')}</div>`;
+      return `<div class="rs-al-eq">${cab}${cuerpo}</div>`; }).join('');
+    // marcador: una fila por equipo (escudo, nombre, tiros a puerta, «B» del ganador de la tanda, rodillo)
+    const fila = l => { const n = l === 'L' ? m.local : m.visitante, nos = ours(n) && !(derbi && l === 'V');
+      return `<div class="rs-fila" data-rs-fila="${l}">${escudo(n, 0, 'rs-esc' + (nos ? ' mp' : ''))}<div class="rs-fn"><b class="${nos ? 'mp' : ''}">${esc(nm(n))}</b>
+        <span class="rs-fl"><span class="rs-tir" data-rs-tir="${l}"><b data-rs-tn="${l}">0</b> TIROS A PUERTA</span><span class="rs-tanda" data-rs-td="${l}"></span></span></div><span class="rs-b" data-rs-bp="${l}"></span>
+        <div class="rs-rod" data-rs-rod="${l}"><div>${Array.from({ length: Math.max(21, m.gl + 1, m.gv + 1) }, (_, d) => `<span>${d}</span>`).join('')}</div></div></div>`; };
+    const portero = l => `<div class="rs-por" data-rs-por="${l}"></div>`;
+    const ofi = `<div class="rs-ofi"><div><span class="rs-ok am">${m.arb.length > 1 ? 'ÁRBITROS' : 'ÁRBITRO'}</span>${m.arb.length ? m.arb.map(a => `<span>${esc(a)}</span>`).join('') : '<span class="nada">Sin datos en el acta</span>'}</div>
+      ${['L', 'V'].map(l => { const n = l === 'L' ? m.local : m.visitante, st = m.staff[l] || [];
+        return `<div><span class="rs-ok${ours(n) ? ' mp' : ''}">BANQUILLO · ${esc(nm(n).toUpperCase())}</span>${st.length ? st.map(s => { const j = (m.alin[l] || []).find(x => rsMismo(s, x)); return `<span>${esc(s)}${j ? `<i class="rs-tj">TAMBIÉN JUEGA · #${esc(j.dorsal)}</i>` : ''}</span>`; }).join('') : '<span class="nada">Sin datos en el acta</span>'}</div>`; }).join('')}</div>`;
+    return `<div class="rs" data-rs>
+      <div class="rs-card">
+        <div class="rs-top"><div class="rs-reloj"><span class="rs-t cifra" data-rs-t>0:00</span><span class="rs-parte" data-rs-parte>ALINEACIONES</span></div>${cuando}</div>
+        <div class="rs-alin${derbi ? ' derbi' : ''}" data-rs-alin>${alin}</div>
+        <div class="rs-juego" data-rs-juego hidden>
+          <div class="rs-main"><div class="rs-marc" data-rs-blq="1">${fila('L')}${fila('V')}</div><div class="rs-ann" data-rs-blq="2" data-rs-ann aria-live="polite"></div></div>
+          <div class="rs-pors" data-rs-blq="3">${portero('L')}${portero('V')}</div>
+          ${m.tiros || RS.vivo ? '' : '<div class="rs-sintiros">Este partido no tiene los tiros en directo: el % de paradas sale al final, con el acta.</div>'}
+          <div class="rs-lin" data-rs-blq="4"><div class="rs-linea" data-rs-linea></div>
+            <div class="rs-partes"><span>1.ª PARTE</span><span>DESCANSO</span><span>2.ª PARTE</span></div>
+            <div class="rs-ley"><span><i class="g mp"></i>${derbi ? 'Gol de ' + esc(etqEq(m.local, lid, true)) : 'Gol nuestro'}</span><span><i class="g"></i>${derbi ? 'Gol de ' + esc(etqEq(m.visitante, lid, true)) : 'Gol rival'}</span><span><i class="s"></i>Sanción</span><span><i class="c"></i>Cambio de portero</span>${m.tiros ? '<span><i class="t"></i>Tiro a puerta</span>' : ''}<span><i class="b"></i>Barra: ${derbi ? 'por delante · empate' : 'vamos ganando · empate · gana el rival'}</span></div></div>
+        </div>
+        ${ofi}
+        <div class="rs-pie" data-rs-pie></div>
+      </div>
+      <div class="rs-acta" data-rs-acta></div>
+    </div>`;
+  }
+  const rsMismo = (s, j) => { const a = norm(s), b = norm((j.nombre || '') + ' ' + (j.apellidos || '')); return !!a && !!b.trim() && (a === b || a.includes(b) || b.includes(a)); };
+
+  // ── el motor: alineaciones → saque → juego → (penaltis) → final y acta ──
+  function rsRoot() { return document.querySelector('[data-rs]'); }
+  function rsArrancar() {
+    const root = rsRoot(); if (!root || !RS.m || root.dataset.rsOn) return;
+    root.dataset.rsOn = '1'; root.addEventListener('click', rsClick);
+    rsLinea(root);
+    if (!MOV) return rsAcabar();
+    rsJugar();
+  }
+  function rsJugar() {
+    const root = rsRoot(); if (!root) return;
+    rsLimpiar(); Object.assign(RS, { fase: 'alin', g: 0, pausa: false, desc: false, kick: 0, hold: 0, ann: null, annAt: 0, flash: null, pen: null });
+    const al = root.querySelector('[data-rs-alin]'), jg = root.querySelector('[data-rs-juego]');
+    al.hidden = false; al.classList.remove('on', 'sale'); jg.hidden = true; jg.classList.remove('on');
+    root.querySelector('[data-rs-acta]').innerHTML = '';
+    rsPintar(); rsPie();
+    rsLater(() => al.classList.add('on'), 30);
+    rsLater(rsSaque, 3000 / RS.vel);
+  }
+  function rsSaque() {
+    if (RS.fase !== 'alin') return; rsLimpiar(); RS.fase = 'saque';
+    const root = rsRoot(); if (!root) return; root.querySelector('[data-rs-alin]').classList.add('sale'); rsPintar(); rsPie();
+    rsLater(rsEmpezar, 480);
+  }
+  function rsEmpezar() {
+    const root = rsRoot(); if (!root) return;
+    RS.fase = 'play'; RS.kick = 0;
+    root.querySelector('[data-rs-alin]').hidden = true;
+    const jg = root.querySelector('[data-rs-juego]'); jg.hidden = false; void jg.offsetWidth;
+    rsLater(() => jg.classList.add('on'), 30);
+    rsPintar(); rsPie();
+    rsLater(() => { RS.kick = 1; rsPintar(); rsLater(() => { RS.kick = 2; rsPintar(); RS.timer = setInterval(rsTick, 50); }, 1100 / RS.vel); }, 1300 / RS.vel);
+  }
+  function rsTick() {
+    if (!rsRoot()) return rsLimpiar();
+    const m = RS.m; if (RS.pausa || RS.fase !== 'play' || Date.now() < RS.hold) return;
+    const g0 = RS.g; let g = g0 + m.tot / 10 * 0.05 * RS.vel;
+    if (g0 < m.per && g >= m.per) {   // descanso: el reloj se para 0,9 s
+      RS.g = m.per; RS.desc = true; RS.hold = Date.now() + 900 / RS.vel; rsPintar();
+      rsLater(() => { RS.desc = false; rsPintar(); }, 900 / RS.vel); return;
+    }
+    const cruz = m.ev.filter(e => e.t > g0 && e.t <= g && rsAnunciable(m, e)), gol = cruz.find(e => e.tipo === 'gol');
+    if (gol) { g = gol.t; RS.hold = Date.now() + 600 / RS.vel; rsAviso(gol); }   // gol: el reloj se para 0,6 s para que se lea
+    else if (cruz.length) rsAviso(cruz[cruz.length - 1]);
+    RS.g = Math.min(g, m.tot);
+    if (RS.g >= m.tot) { clearInterval(RS.timer); RS.timer = null; rsPintar(); return m.pen ? rsLater(rsPenaltis, 300) : rsAcabar(); }
+    rsPintar();
+  }
+  function rsAviso(e) { RS.ann = e; RS.annAt = Date.now(); if (e.tipo === 'gol') RS.flash = { l: e.lado, hasta: Date.now() + 900 }; }
+  // la tanda: banda «SE DECIDE EN LOS PENALTIS» y, si el directo la trae, cada lanzamiento
+  function rsPenaltis() {
+    const m = RS.m; RS.fase = 'pen'; RS.pen = { banda: true, i: -1 }; RS.ann = null; rsPintar(); rsPie();
+    const td = m.tanda;
+    if (!td) { rsLater(() => { RS.pen.banda = false; rsPintar(); rsLater(rsAcabar, 1800); }, 1400); return; }
+    td.forEach((x, i) => rsLater(() => { RS.pen = { banda: false, i }; rsPintar(); }, 1400 + i * 1100));
+    rsLater(rsAcabar, 1400 + (td.length - 1) * 1100 + 1600);
+  }
+  function rsAcabar() {
+    rsLimpiar(); const m = RS.m, root = rsRoot(); if (!root) return;
+    Object.assign(RS, { fase: 'fin', g: m.tot, pausa: false, desc: false, kick: 2, ann: null, pen: null, flash: null });
+    root.querySelector('[data-rs-alin]').hidden = true;
+    const jg = root.querySelector('[data-rs-juego]'); jg.hidden = false; jg.classList.add('on');
+    rsPintar(); rsPie();
+    const acta = root.querySelector('[data-rs-acta]'); acta.innerHTML = rsActa(m); fondos(acta);
+    if (MOV) { void acta.offsetWidth; rsLater(() => acta.classList.add('on'), 30); rsLater(() => acta.querySelectorAll('[data-cuenta]').forEach(el => contar(el, +el.dataset.cuenta, 650, el.dataset.fmt === 'pct' ? v => Math.round(v) + '%' : undefined)), 300); }
+    else acta.classList.add('on');
+  }
+
+  // ── pintar el momento g ──
+  function rsPintar() {
+    const root = rsRoot(), m = RS.m; if (!root || !m) return;
+    const g = RS.g, fin = RS.fase === 'fin', pen = RS.fase === 'pen', derbi = ours(m.local) && ours(m.visitante), usL = ours(m.local) || derbi;
+    // reloj y parte
+    const t = root.querySelector('[data-rs-t]'), pt = root.querySelector('[data-rs-parte]');
+    let tt = rsRel(g), tc = '#F4F4F5', ptT, ptC = '#FF6B63', pulso = false;
+    if (RS.fase === 'alin') { tt = '0:00'; tc = '#55555B'; ptT = 'ALINEACIONES'; ptC = '#A6A6AD'; }
+    else if (RS.fase === 'saque') { tt = '0:00'; ptT = '1.ª PARTE'; ptC = '#A6A6AD'; }
+    else if (fin) { tt = rsRel(m.tot); tc = '#8A8A8F'; ptT = 'FINAL'; ptC = '#F4F4F5'; }
+    else if (pen) { tt = rsRel(m.tot); tc = '#8A8A8F'; ptT = 'PENALTIS'; ptC = '#FFB347'; }
+    else if (RS.desc) { tt = m.per / 60 + ':00'; ptT = 'DESCANSO'; ptC = '#FFB347'; pulso = true; }
+    else ptT = (g < m.per ? '1.ª' : '2.ª') + ' PARTE';
+    if (RS.pausa && RS.fase === 'play') { ptT = 'EN PAUSA · ' + ptT; ptC = '#FFB347'; pulso = true; }
+    if (RS.vivo && RS.fase === 'play' && !RS.desc && !RS.relojOk) { tt = ''; if (RS.previa) { ptT = 'ANTES DEL PARTIDO'; ptC = '#A6A6AD'; } }
+    t.textContent = tt; t.hidden = !tt; t.style.color = tc; pt.textContent = ptT; pt.style.color = ptC; pt.classList.toggle('pulso', pulso);
+    if (RS.fase === 'alin' || RS.fase === 'saque') return;
+    // marcador: goles hasta g, rodillo, destello de quien marca y, al final, el ganador
+    const gls = { L: 0, V: 0 }; m.ev.forEach(e => { if (e.tipo === 'gol' && e.t <= g) gls[e.lado]++; });
+    const ganaL = m.gl > m.gv || (m.gl === m.gv && m.pen === 'L'), fl = RS.flash && Date.now() < RS.flash.hasta ? RS.flash.l : null;
+    const nTir = l => m.tiros ? m.tiros.filter(x => x.lado === l && x.t <= g).length : null;
+    ['L', 'V'].forEach(l => {
+      const n = l === 'L' ? m.local : m.visitante, nos = ours(n) && !(derbi && l === 'V'), gana = l === 'L' ? ganaL : !ganaL;
+      const f = root.querySelector(`[data-rs-fila="${l}"]`); if (!f) return;
+      f.style.background = fl === l ? (nos ? 'rgba(211,32,42,.22)' : 'rgba(244,244,245,.10)') : '';
+      f.classList.toggle('golea', fl === l); f.classList.toggle('pierde', fin && !gana);
+      const rod = f.querySelector(`[data-rs-rod="${l}"]`); rod.classList.toggle('gana', fin && gana && nos);
+      rod.firstElementChild.style.transform = `translateY(calc(var(--rh) * -${gls[l]}))`;
+      f.querySelector(`[data-rs-bp="${l}"]`).textContent = fin && m.pen === l ? 'B' : '';
+      const tn = f.querySelector(`[data-rs-tn="${l}"]`), tl = f.querySelector(`[data-rs-tir="${l}"]`);
+      const nt = fin || RS.vivo ? (l === 'L' ? m.tl : m.tv) : nTir(l);
+      tl.hidden = nt == null; if (nt != null) tn.textContent = nt;
+      // cuadritos de la tanda
+      const td = f.querySelector(`[data-rs-td="${l}"]`);
+      if (m.tanda && (pen || fin)) { const hasta = fin ? m.tanda.length - 1 : RS.pen ? RS.pen.i : -1;
+        td.innerHTML = m.tanda.map((x, i) => x.lado !== l ? '' : `<i class="${i > hasta ? '' : x.gol ? 'si' : 'no'}${i === hasta && pen ? ' pop' : ''}">${i > hasta ? '' : x.gol ? '✓' : '✕'}</i>`).join(''); tl.classList.add('corta'); }
+      else { td.innerHTML = ''; tl.classList.remove('corta'); }
+    });
+    // porteros
+    RS.POR.forEach(x => { const el = root.querySelector(`[data-rs-por="${x.l}"]`); if (el) rsPortero(el, x, g, fin || pen); });
+    // aviso del momento
+    const ann = root.querySelector('[data-rs-ann]'), h = rsAnnHtml(m, g, fin, pen, derbi, usL);
+    if (ann.dataset.k !== h.k) { ann.dataset.k = h.k; ann.innerHTML = h.html; fondos(ann); if (MOV) { const c = ann.firstElementChild; if (c) { c.classList.add('entra'); void c.offsetWidth; requestAnimationFrame(() => c.classList.remove('entra')); } } }
+    // línea de tiempo
+    const lin = root.querySelector('[data-rs-linea]'); if (!lin || !lin.dataset.ok) return;
+    const x = g / m.tot * 100;
+    lin.querySelector('.rs-tapa').style.left = x + '%';
+    const cab = lin.querySelector('.rs-cabezal'); cab.style.left = x + '%'; cab.hidden = fin || pen;
+    lin.querySelectorAll('[data-t]').forEach(d => { const on = +d.dataset.t <= g + .01; if (on !== d.classList.contains('on')) d.classList.toggle('on', on); });
+    lin.querySelectorAll('[data-sup]').forEach(d => { const a = +d.dataset.sup, b = +d.dataset.hasta, hasta = fin || pen ? b : Math.min(g, b);
+      d.style.width = Math.max(0, hasta - a) / m.tot * 100 + '%'; d.style.opacity = !fin && !pen && g >= a && g < b ? 1 : .45; });
+  }
+  function rsPortero(el, x, g, alFinal) {
+    const m = RS.m, n = x.l === 'L' ? m.local : m.visitante, derbi = ours(m.local) && ours(m.visitante), nos = ours(n) && !(derbi && x.l === 'V');
+    const sg = alFinal ? x.segs[x.segs.length - 1] : x.segs.filter(s => s.from <= g).pop() || x.segs[0];
+    if (!sg) { if (el.dataset.k !== 'nada') { el.dataset.k = 'nada'; el.className = 'rs-por'; el.innerHTML = `<span class="rs-pl">PORTERÍA · ${esc(largoEq(n, m.liga).toUpperCase())}</span><b class="rs-pn">Sin portero en el acta</b>`; } return; }
+    const p = sg.p, multi = x.segs.length > 1, desde = multi && sg.from > 0 ? ' · desde el ' + rsMin(sg.from) : '';
+    let sub, pct = '', w = 0;
+    const st = (m.por[x.l] || []).find(q => (q.k || '#' + q.dorsal) === (p.k || '#' + p.dorsal));
+    if ((alFinal || RS.vivo) && st && st.tiros) { sub = st.par + ' paradas de ' + st.tiros + desde; pct = dec((+st.pct).toFixed(1)) + '%'; w = st.pct; }
+    else if (m.tiros) { const hasta = Math.min(g, sg.to - .01), tiros = m.tiros.filter(z => z.lado === x.o && z.t >= sg.from && z.t <= hasta).length,
+        ga = m.ev.filter(e => e.tipo === 'gol' && e.lado === x.o && e.t >= sg.from && e.t <= hasta).length, par = Math.max(0, tiros - ga);
+      sub = par + ' paradas de ' + tiros + desde; pct = tiros ? dec((par / tiros * 100).toFixed(1)) + '%' : '—'; w = tiros ? par / tiros * 100 : 0; }
+    else { const ga = m.ev.filter(e => e.tipo === 'gol' && e.lado === x.o && e.t >= sg.from && e.t <= Math.min(g, sg.to - .01)).length; sub = 'Encaja ' + ga + desde; }
+    const f = rsFoto(p, nos), cambia = sg.ev && RS.ann === sg.ev && Date.now() - RS.annAt < 1800 && !alFinal, k = (p.k || p.dorsal) + '|' + sub + '|' + pct + '|' + cambia;
+    if (el.dataset.k === k) return;
+    const nuevoP = el.dataset.p && el.dataset.p !== String(p.k || p.dorsal);
+    el.dataset.k = k; el.dataset.p = p.k || p.dorsal;
+    el.className = 'rs-por' + (nos ? ' mp' : '') + (cambia ? ' cambia' : '');
+    el.innerHTML = `${f ? `<span class="rs-pf${nuevoP && MOV ? ' swap' : ''}" data-bg="${esc(f)}"></span>` : `<span class="rs-pi">${esc(ini(p.nombre, p.apellidos))}</span>`}
+      <span class="rs-pl">PORTERÍA · ${esc(largoEq(n, m.liga).toUpperCase())}${cambia ? '<i>↻ CAMBIO</i>' : ''}</span>
+      <b class="rs-pn">${esc(rsQ(p, nos))}</b><span class="rs-pp cifra">${pct}</span><span class="rs-ps">${esc(sub)}</span><span class="rs-pb"><i style="width:${w.toFixed(1)}%"></i></span>`;
+    fondos(el);
+  }
+  // el panel de al lado del marcador: el aviso del momento, o la calma («SE JUEGA», descanso, superioridad, final)
+  function rsAnnHtml(m, g, fin, pen, derbi, usL) {
+    const lid = m.liga, nmT = n => largoEq(n, lid), Ln = etqEq(m.local, lid, true), Vn = etqEq(m.visitante, lid, true), nosLado = l => derbi ? l === 'L' : (l === 'L') === usL;
+    const sanc = m.ev.filter(e => e.tipo === 'falta' && e.min >= 2 && e.t <= g), activa = fin || pen ? [] : sanc.filter(e => g < Math.min(m.tot, e.t + e.min * 60));
+    const supTxt = e => derbi ? nmT(e.lado === 'L' ? m.local : m.visitante) + ' con uno menos' : nosLado(e.lado) ? 'Jugamos con uno menos' : 'Jugamos con uno más';
+    const calma = (t, c, s, cls = '') => ({ k: 'c|' + t + '|' + s, html: `<div class="rs-calma ${cls}"><b style="color:${c}">${esc(t)}</b>${s ? `<span>${esc(s)}</span>` : ''}</div>` });
+    const aviso = (tipo, bg, fg, quien, det, min, minC, foto) => ({ k: 'a|' + tipo + '|' + quien + '|' + min, html: `<div class="rs-aviso">${foto ? `<span class="rs-af" data-bg="${esc(foto)}"></span>` : ''}<div class="rs-at">
+      <span class="rs-tag" style="background:${bg};color:${fg}"><span>${esc(tipo)}</span></span><b>${esc(quien)}</b><span>${esc(det)}</span></div><span class="rs-am cifra" style="color:${minC}">${esc(min)}</span></div>` });
+    if (pen) {
+      if (RS.pen && RS.pen.banda) return { k: 'pb', html: `<div class="rs-penb"><b>SE DECIDE EN LOS PENALTIS</b><span class="cifra">${m.gl}–${m.gv}</span></div>` };
+      if (m.tanda && RS.pen && RS.pen.i >= 0) { const x = m.tanda[RS.pen.i], n = x.lado === 'L' ? m.local : m.visitante, hasta = m.tanda.slice(0, RS.pen.i + 1);
+        const a = hasta.filter(y => y.lado === 'L' && y.gol).length, b = hasta.filter(y => y.lado === 'V' && y.gol).length;
+        return { k: 'pt' + RS.pen.i, html: `<div class="rs-lanz"><div class="rs-at"><span class="rs-tag" style="background:#FFB347;color:#0D0D0E"><span>PENALTI · RONDA ${x.ronda}</span></span>
+          <b class="${ours(n) ? 'mp' : ''}">${esc(rsQ(x.j, ours(n)))}</b><span>${esc(nmT(n))} · tanda ${a}–${b}</span></div><span class="rs-res ${x.gol ? 'si' : 'no'}">${x.gol ? 'GOL' : 'FALLA'}</span></div>` }; }
+      return aviso('PENALTIS', '#FFB347', '#0D0D0E', 'Penaltis para ' + nmT(m.pen === 'L' ? m.local : m.visitante), m.gl + '–' + m.gv + ' al final del tiempo', '', '#FFB347');
+    }
+    if (fin) {
+      const nos = usL ? m.gl : m.gv, ell = usL ? m.gv : m.gl, ganamos = derbi ? null : (usL ? m.gl > m.gv || (m.gl === m.gv && m.pen === 'L') : m.gv > m.gl || (m.gl === m.gv && m.pen === 'V'));
+      let best = { d: 0 }, worst = { d: 0 };
+      m.ev.filter(e => e.tipo === 'gol').forEach(e => { const dd = usL ? e.ml - e.mv : e.mv - e.ml, sc = usL ? e.ml + '–' + e.mv : e.mv + '–' + e.ml;
+        if (dd > best.d) best = { d: dd, m: sc, min: Math.ceil(e.t / 60) }; if (dd < worst.d) worst = { d: dd, m: sc, min: Math.ceil(e.t / 60) }; });
+      const tM = m.tanda ? ' (' + Math.max(...['L', 'V'].map(l => m.tanda.filter(x => x.lado === l && x.gol).length)) + '–' + Math.min(...['L', 'V'].map(l => m.tanda.filter(x => x.lado === l && x.gol).length)) + ')' : '';
+      const ganador = m.gl > m.gv || (m.gl === m.gv && m.pen === 'L') ? m.local : m.visitante;
+      const frase = derbi ? (m.pen ? m.gl + '–' + m.gv + ' al final del tiempo y la tanda' + tM + ' para ' + nmT(ganador) + '.' : nmT(ganador) + ' gana ' + Math.max(m.gl, m.gv) + '–' + Math.min(m.gl, m.gv) + '.')
+        : nos === ell ? nos + '–' + ell + ' al final del tiempo y la tanda' + tM + ' para ' + (ganamos ? 'nosotros' : nmT(ganador)) + '.'
+        : ganamos ? (worst.d <= -2 ? 'Remontada: perdíamos ' + worst.m + ' en el minuto ' + worst.min + ' y ganamos ' + nos + '–' + ell + '.' : 'Ganamos ' + nos + '–' + ell + '.')
+        : (best.d >= 2 ? 'Llegamos a ir ' + best.m + ' en el minuto ' + best.min + ' y perdimos ' + nos + '–' + ell + '.' : 'Perdimos ' + nos + '–' + ell + '.');
+      return derbi ? calma('GANA ' + etqEq(ganador, lid, true).toUpperCase(), '#FF6B63', frase) : calma(ganamos ? 'VICTORIA' : 'DERROTA', ganamos ? '#3DD27E' : '#C9C9CE', frase);
+    }
+    if (RS.fase === 'play' && RS.kick !== 2 && g === 0) return RS.kick === 1 ? calma('COMIENZA EL PARTIDO', '#FFFFFF', '1.ª parte · ' + m.per / 60 + ' minutos', 'pop') : { k: 'vacio', html: '' };
+    if (RS.vivo && RS.previa) return calma('TODAVÍA NO HA EMPEZADO', '#C9C9CE', m.hora ? 'Empieza a las ' + m.hora : 'La FMP aún no ha fijado la hora');
+    const e0 = RS.ann, vivo = e0 && (RS.pausa || Date.now() - RS.annAt < (RS.vivo ? 8000 : 2400));
+    if (vivo) {
+      const n = e0.lado === 'L' ? m.local : m.visitante, nos = ours(n) && !(derbi && e0.lado === 'V'), suyo = ours(n);
+      if (e0.tipo === 'gol') return aviso('GOL', nos ? '#D3202A' : '#F4F4F5', nos ? '#FFFFFF' : '#0D0D0E', rsQ(e0.j, suyo), (e0.as ? 'Asistencia de ' + rsQ(e0.as, suyo) + ' · ' : '') + Ln + ' ' + e0.ml + '–' + e0.mv + ' ' + Vn, rsMin(e0.t), nos ? '#FF6B63' : '#F4F4F5', rsFoto(e0.j, suyo));
+      if (e0.tipo === 'falta') return aviso('SANCIÓN', '#FFB347', '#0D0D0E', rsQ(e0.j, suyo), String(e0.min).replace('.', ',') + "' · " + (e0.falta || 'falta') + ' · ' + supTxt(e0), rsMin(e0.t), '#FFB347', rsFoto(e0.j, suyo));
+      const sg = RS.POR.flatMap(x => x.segs).find(z => z.ev === e0) || {};
+      return aviso('CAMBIO DE PORTERO', '#F4F4F5', '#0D0D0E', 'Entra ' + rsQ(sg.p || e0.j, suyo), (sg.sale ? 'Sale ' + rsQ(sg.sale, suyo) + ' · ' : '') + nmT(n), rsMin(e0.t), '#C9C9CE', rsFoto(sg.p || e0.j, suyo));
+    }
+    if (RS.desc) { const gl = m.ev.filter(e => e.tipo === 'gol' && e.t <= g), a = gl.filter(e => e.lado === 'L').length, b = gl.length - a, nos = usL ? a - b : b - a;
+      return calma(derbi ? 'MITAD DEL DERBI' : nos > 0 ? 'MANDAMOS AL DESCANSO' : nos < 0 ? 'PERDEMOS AL DESCANSO' : 'IGUALADOS AL DESCANSO', '#FFB347', 'Quedan ' + m.per / 60 + ' minutos'); }
+    if (activa.length) { const e = activa[activa.length - 1]; return calma(supTxt(e).toUpperCase(), '#FFB347', 'Hasta el minuto ' + Math.ceil(Math.min(m.tot, e.t + e.min * 60) / 60)); }
+    return calma('SE JUEGA', '#C9C9CE', '', 'pulso');
+  }
+
+  // ── línea de tiempo: goles y cambios de portero arriba (hasta tres carriles), barra de quién va ganando, sanciones y tiros ──
+  function rsLinea(root) {
+    const m = RS.m, lin = root.querySelector('[data-rs-linea]'); if (!lin) return;
+    const derbi = ours(m.local) && ours(m.visitante), usL = ours(m.local) || derbi, W = lin.clientWidth || 600, S = W >= 600 ? 12 : 10, pct = t => t / m.tot * 100;
+    const marcas = m.ev.filter(e => e.tipo === 'gol' || (e.tipo === 'cambio' && RS.POR.some(x => x.segs.some(s => s.ev === e))));
+    const fil = []; let nF = 1;
+    marcas.forEach(e => { const px = pct(e.t) / 100 * W; let r = 0; while (r < 3 && fil[r] != null && px - fil[r] < S + 2) r++; if (r >= 3) r = 2; fil[r] = px; e._r = r; nF = Math.max(nF, r + 1); });
+    const lane = nF * (S + 3), bar = lane + 10;
+    lin.style.height = bar + 25 + 'px'; lin.style.setProperty('--S', S + 'px');
+    // tramos de la barra: rojo si vamos ganando, blanco si empate, gris si gana el rival
+    const tramos = []; let a = 0, b = 0, desde = 0;
+    const col = () => { const d = usL ? a - b : b - a; return d > 0 ? '#D3202A' : d < 0 ? '#8A8A8F' : '#F4F4F5'; };
+    m.ev.filter(e => e.tipo === 'gol').forEach(e => { tramos.push([desde, e.t, col()]); if (e.lado === 'L') a++; else b++; desde = e.t; });
+    tramos.push([desde, m.tot, col()]);
+    const txt = e => { const n = e.lado === 'L' ? m.local : m.visitante, suyo = ours(n);
+      if (e.tipo === 'gol') return ['GOL · ' + rsMin(e.t), rsQ(e.j, suyo) + ' · ' + e.ml + '–' + e.mv, ours(n) && !(derbi && e.lado === 'V') ? 'gol' : ''];
+      if (e.tipo === 'falta') return ['SANCIÓN · ' + rsMin(e.t), String(e.min).replace('.', ',') + "' a " + rsQ(e.j, suyo), 'sanc'];
+      const sg = RS.POR.flatMap(x => x.segs).find(z => z.ev === e) || {}; return ['CAMBIO DE PORTERO · ' + rsMin(e.t), 'entra ' + rsQ(sg.p || e.j, suyo) + (sg.sale ? ', sale ' + rsQ(sg.sale, suyo) : ''), '']; };
+    const punto = (e, cls, top) => { const [t1, t2, c] = txt(e); return `<button type="button" class="rs-d ${cls}" data-t="${e.t}" data-tip="${esc(t1)}" data-tip2="${esc(t2)}" data-tc="${c}" style="left:${pct(e.t)}%;top:${top}px" aria-label="${esc(t1 + ' · ' + t2)}"><i></i></button>`; };
+    const sanc = m.ev.filter(e => e.tipo === 'falta' && e.min >= 2);
+    lin.innerHTML = `<div class="rs-base" style="top:${bar}px">${tramos.map(([x0, x1, c]) => `<i style="left:${pct(x0)}%;width:${pct(x1 - x0)}%;background:${c}"></i>`).join('')}<span class="rs-tapa"></span><span class="rs-corte"></span></div>
+      ${(m.tiros || []).map(x => `<span class="rs-ti ${(x.lado === 'L') === usL || derbi ? 'nos' : ''}" data-t="${x.t}" style="left:${pct(x.t)}%;top:${lane + 2}px"></span>`).join('')}
+      ${sanc.map(e => `<span class="rs-sup" data-sup="${e.t}" data-hasta="${Math.min(m.tot, e.t + e.min * 60)}" style="left:${pct(e.t)}%;top:${bar + 9}px" title="${esc((derbi ? largoEq(e.lado === 'L' ? m.local : m.visitante, m.liga) + ' con uno menos' : ((e.lado === 'L') === usL ? 'Jugamos con uno menos' : 'Jugamos con uno más')) + ' · min ' + rsMin(e.t).replace("'", '') + '–' + Math.ceil(Math.min(m.tot, e.t + e.min * 60) / 60))}"></span>`).join('')}
+      ${sanc.map(e => punto(e, 'sanc', bar + 15)).join('')}
+      ${marcas.map(e => punto(e, e.tipo === 'gol' ? 'gol ' + (ours(e.lado === 'L' ? m.local : m.visitante) && !(derbi && e.lado === 'V') ? 'mp' : '') : 'cambio', lane - (e._r + 1) * (S + 3) + 3)).join('')}
+      <span class="rs-cabezal" style="top:${bar - 3}px"></span><div class="rs-tip" hidden></div>`;
+    lin.dataset.ok = '1';
+  }
+  function rsTip(d, mostrar) {
+    const lin = d.closest('[data-rs-linea]'), tip = lin && lin.querySelector('.rs-tip'); if (!tip) return;
+    if (!mostrar) { tip.hidden = true; return; }
+    tip.innerHTML = `<b class="${d.dataset.tc}">${esc(d.dataset.tip)}</b><span>${esc(d.dataset.tip2)}</span>`; tip.hidden = false;
+    const x = parseFloat(d.style.left), W = lin.clientWidth, px = x / 100 * W;
+    tip.style.left = Math.max(0, Math.min(W - 200, px - 100)) + 'px'; tip.style.top = (parseFloat(d.style.top) - 6) + 'px';
+  }
+  document.addEventListener('mouseover', e => { const d = e.target.closest && e.target.closest('.rs-d'); if (d && matchMedia('(hover: hover)').matches) rsTip(d, true); });
+  document.addEventListener('mouseout', e => { const d = e.target.closest && e.target.closest('.rs-d'); if (d && matchMedia('(hover: hover)').matches) rsTip(d, false); });
+
+  // ── botones: empezar ya, pausa, velocidad, saltar al final, repetir; y los puntos de la línea ──
+  function rsPie() {
+    const root = rsRoot(), el = root && root.querySelector('[data-rs-pie]'), m = RS.m; if (!el) return;
+    const jugando = RS.fase === 'play' || RS.fase === 'pen';
+    if (RS.vivo) { el.innerHTML = RS.fase === 'fin' ? `<span>Final · acta de la FMP</span><div class="rs-bots"><a class="rs-bt" href="#/directo/${encodeURIComponent(RS.idp)}/resumen">↺ Repetir</a></div>`
+      : `<span>${RS.previa && m.hora ? 'Empieza a las ' + esc(m.hora) + ' · ' : 'En directo · '}el acta de la FMP se actualiza cada 15 s</span><div class="rs-bots">${tgHtml}</div>`; return; }
+    el.innerHTML = RS.fase === 'fin' ? `<span>Resumen hecho con el acta de la FMP</span><div class="rs-bots"><button type="button" class="rs-bt" data-rs-b="otra">↺ Repetir</button></div>`
+      : `<span>Del acta de la FMP · ${m.tot / 60} minutos en unos 10 s</span><div class="rs-bots">${RS.fase === 'alin' ? '<button type="button" class="rs-bt p" data-rs-b="ya">Empezar ya</button>' : ''}
+        ${jugando ? `<button type="button" class="rs-bt ic${RS.pausa ? ' p' : ''}" data-rs-b="pausa" aria-label="${RS.pausa ? 'Seguir' : 'Pausa'}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${RS.pausa ? 'M4 2.5 13.5 8 4 13.5Z' : 'M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z'}"/></svg></button>
+          <button type="button" class="rs-bt vel${RS.vel === 2 ? ' on' : ''}" data-rs-b="vel" aria-label="Velocidad">×${RS.vel}</button>` : ''}
+        <button type="button" class="rs-bt" data-rs-b="fin">Saltar al final</button></div>`;
+  }
+  function rsClick(e) {
+    const b = e.target.closest('[data-rs-b]'), d = e.target.closest('.rs-d');
+    if (b) { const k = b.dataset.rsB;
+      if (k === 'ya') rsSaque();
+      else if (k === 'pausa') { RS.pausa = !RS.pausa; if (!RS.pausa && RS.ann) RS.annAt = Date.now() - Math.min(1200, Date.now() - RS.annAt); rsPintar(); rsPie(); }
+      else if (k === 'vel') { RS.vel = RS.vel === 1 ? 2 : 1; rsPie(); }
+      else if (k === 'fin') rsAcabar();
+      else if (k === 'otra') { RS.vel = 1; rsJugar(); }
+      return; }
+    if (d) {   // un punto de la línea: en el juego, salta a ese momento (en pausa, con su aviso); en el móvil, además, qué pasó
+      if (RS.fase === 'play' && !RS.vivo) { const t = +d.dataset.t, ev = RS.m.ev.find(x => x.t === t && rsAnunciable(RS.m, x)); RS.g = t; RS.pausa = true; RS.desc = false; RS.hold = 0; if (ev) { RS.ann = ev; RS.annAt = Date.now(); } rsPintar(); rsPie(); }
+      if (RS.vivo || !matchMedia('(hover: hover)').matches) { const tip = d.closest('[data-rs-linea]').querySelector('.rs-tip'); rsTip(d, tip.hidden); }
+    }
+  }
+  // al salir del directo o del resumen se para todo (entre los dos, cada página para lo suyo al pintarse)
+  window.addEventListener('hashchange', () => { if (!/^#\/directo\//.test(location.hash)) { rsLimpiar(); clearInterval(RS.tTiros); RS.vivo = false; } });
+
+  // ── el acta: momentos clave, goles a dos lados, el mejor, en números, tanda y porteros ──
+  function rsActa(m) {
+    const derbi = ours(m.local) && ours(m.visitante), A0 = ours(m.local) || derbi ? 'L' : 'V', B0 = A0 === 'L' ? 'V' : 'L', lid = m.liga;
+    const nmS = l => l === 'L' ? m.local : m.visitante, nmT = l => largoEq(nmS(l), lid), nos = l => ours(nmS(l)) && !(derbi && l === 'V'), mpC = l => nos(l) ? '#FF6B63' : '#F4F4F5';
+    const sc = e => A0 === 'L' ? e.ml + '–' + e.mv : e.mv + '–' + e.ml, golesA = m.ev.filter(e => e.tipo === 'gol');
+    // momentos
+    let lead = { d: 0 }, run = { n: 0 }, cur = { l: null, n: 0 }, decisivo = null, prev = 0;
+    golesA.forEach(e => { const dd = A0 === 'L' ? e.ml - e.mv : e.mv - e.ml; if (Math.abs(dd) > Math.abs(lead.d)) lead = { d: dd, e };
+      if (cur.l === e.lado) cur.n++; else cur = { l: e.lado, n: 1, from: e }; if (cur.n > run.n) run = { n: cur.n, l: e.lado, from: cur.from, to: e };
+      const sg = Math.sign(dd); if (sg !== prev && sg !== 0) decisivo = e; if (sg === 0) decisivo = null; prev = sg; });
+    const mom = [], g0 = golesA[0];
+    if (g0) mom.push(['PRIMER GOL', rsMin(g0.t), mpC(g0.lado), rsQ(g0.j, ours(nmS(g0.lado))) + ' · ' + nmT(g0.lado), nos(g0.lado)]);
+    if (lead.e) { const l = lead.d > 0 ? A0 : B0; mom.push(['MAYOR VENTAJA', '+' + Math.abs(lead.d), mpC(l), nmT(l) + ' ' + sc(lead.e) + ' en el ' + rsMin(lead.e.t), nos(l)]); }
+    if (run.n >= 2) mom.push(['MEJOR RACHA', run.n + ' seguidos', mpC(run.l), nmT(run.l) + ', del ' + rsMin(run.from.t) + ' al ' + rsMin(run.to.t), nos(run.l)]);
+    if (m.pen) mom.push(['SE DECIDE EN', 'PENALTIS', '#FFB347', 'Gana ' + nmT(m.pen) + ' tras el ' + m.gl + '–' + m.gv, 'am']);
+    else if (decisivo) mom.push(['GOL DECISIVO', rsMin(decisivo.t), mpC(decisivo.lado), rsQ(decisivo.j, ours(nmS(decisivo.lado))) + ' · ' + sc(decisivo), nos(decisivo.lado)]);
+    const momH = mom.length ? `<div class="rs-mom">${mom.slice(0, 4).map(([k, v, vc, s, n], i) => `<div class="rs-mc${n === 'am' ? ' am' : n ? ' mp' : ''}" style="--d:${i * 70}ms"><span class="etq">${k}</span><b class="cifra" style="color:${vc}">${esc(v)}</b><span>${esc(s)}</span></div>`).join('')}</div>` : '';
+    // espina de goles: los nuestros a la izquierda
+    let kk = 0;
+    const gol = e => `<div class="rs-eg ${e.lado === A0 ? 'a' : 'b'}${nos(e.lado) ? ' mp' : ''}" style="--d:${200 + (kk++) * 60}ms"><div class="rs-eq"><b>${esc(rsQ(e.j, ours(nmS(e.lado))))}</b>${e.as ? `<span>Asist. ${esc(rsQ(e.as, ours(nmS(e.lado))))}</span>` : ''}<em>${esc(nmT(e.lado).toUpperCase())}</em></div>
+      <div class="rs-em"><span class="cifra">${rsMin(e.t)}</span><b class="cifra">${sc(e)}</b></div></div>`;
+    const sep = (t, v, cls) => `<div class="rs-es ${cls}"><span>${t}${v ? ` <b class="cifra">${v}</b>` : ''}</span></div>`;
+    const g1 = golesA.filter(e => e.t < m.per), g2 = golesA.filter(e => e.t >= m.per), fA = A0 === 'L' ? m.gl : m.gv, fB = A0 === 'L' ? m.gv : m.gl;
+    const espina = `<div class="rs-esp" style="--d:120ms"><div class="rs-esp-cab"><b style="color:${mpC(A0)}">${esc(nmT(A0))}</b><span class="etq">GOLES</span><b style="color:${mpC(B0)}">${esc(nmT(B0))}</b></div>
+      ${golesA.length ? g1.map(gol).join('') + sep('DESCANSO', g1.length ? sc(g1[g1.length - 1]) : '0–0', 'desc') + g2.map(gol).join('') + sep('FINAL', fA + '–' + fB, 'fin') : '<div class="pv-nota">Sin goles</div>'}
+      ${m.pen ? sep('PENALTIS PARA ' + nmT(m.pen).toUpperCase(), '', 'pen') : ''}</div>`;
+    // el mejor del partido
+    const mv = m.mvp, mvN = mv && ours(mv.equipo), mvF = mv && mvN ? fotoDe(mv.nombre, mv.apellidos) : null;
+    const mejor = mv ? `<div class="rs-mvp${mvN ? ' mp' : ''}${mvF ? ' con-f' : ''}" style="--d:220ms">${mvF ? `<span class="rs-mvf" data-bg="${esc(mvF)}"></span>` : ''}<div><span class="etq">EL MEJOR DEL PARTIDO</span>
+      <b>${esc(rsQ(mv, mvN))}</b><span>${esc(largoEq(mv.equipo, lid) + (mvN ? '' : ' · rival'))}</span>${mv.motivo ? `<span class="rs-tag blanco"><span>${esc(mv.motivo)}</span></span>` : ''}</div></div>` : '';
+    // en números
+    const tir = l => (l === 'L' ? m.tl : m.tv) || 0, gl = l => l === 'L' ? m.gl : m.gv;
+    const parP = l => { const ps = m.por[l] || [], t = ps.reduce((s, p) => s + (p.tiros || 0), 0); return t ? ps.reduce((s, p) => s + (p.par || 0), 0) / t * 100 : null; };
+    const g12 = (l, dos) => golesA.filter(e => e.lado === l && (e.t >= m.per) === dos).length, fal = l => m.ev.filter(e => e.tipo === 'falta' && e.lado === l).reduce((s, e) => s + (e.min || 0), 0);
+    const filas = [['Goles', gl(A0), gl(B0), 1, ''], ['Tiros a puerta', tir(A0), tir(B0), 1, ''], tir(A0) && tir(B0) ? ['Acierto', gl(A0) / tir(A0) * 100, gl(B0) / tir(B0) * 100, 1, '%'] : null,
+      parP(A0) != null && parP(B0) != null ? ['Paradas', parP(A0), parP(B0), 1, '%'] : null, ['Goles en la 1.ª parte', g12(A0, false), g12(B0, false), 1, ''], ['Goles en la 2.ª parte', g12(A0, true), g12(B0, true), 1, ''], ['Minutos de sanción', fal(A0), fal(B0), -1, '']].filter(Boolean);
+    const num = `<div class="rs-num" style="--d:320ms"><span class="etq">EN NÚMEROS</span>${filas.map(([k, a, b, dir, suf], i) => { const mx = Math.max(a, b, .0001), wa = suf ? a >= b : dir > 0 ? a > b : a < b, wb = suf ? b >= a : dir > 0 ? b > a : b < a;
+      const fmt = v => suf ? Math.round(v) + '%' : dec(String(Math.round(v * 10) / 10));
+      const barra = (l, w, gana) => `<i style="width:${(suf ? w : w / mx * 100).toFixed(1)}%;background:${nos(l) ? (gana ? '#D3202A' : '#6B2A2E') : (gana ? '#C9C9CE' : '#55555B')};--d:${400 + i * 60}ms"></i>`;
+      return `<div class="rs-nf"><b class="cifra${wa ? ' gana' : ''}"${!suf && Number.isInteger(a) ? ` data-cuenta="${a}"` : ''}>${fmt(a)}</b><div><span>${k}</span><div class="rs-nb"><span class="a">${barra(A0, a, wa)}</span><span>${barra(B0, b, wb)}</span></div></div><b class="cifra${wb ? ' gana' : ''}"${!suf && Number.isInteger(b) ? ` data-cuenta="${b}"` : ''}>${fmt(b)}</b></div>`; }).join('')}</div>`;
+    // tanda (si el directo la trae)
+    let tanda = '';
+    if (m.tanda) { const rs2 = [...new Set(m.tanda.map(x => x.ronda))].sort((a, b) => a - b), tl = m.tanda.filter(x => x.lado === 'L' && x.gol).length, tv = m.tanda.filter(x => x.lado === 'V' && x.gol).length;
+      const marca = x => x ? `<span class="rs-tm ${x.gol ? 'si' : 'no'}">${x.gol ? '✓' : '✕'}</span>` : '<span class="rs-tm"></span>';
+      tanda = `<div class="rs-tnd" style="--d:320ms"><span class="etq">TANDA DE PENALTIS</span><div class="rs-tnd-cab"><b style="color:${mpC('L')}">${esc(etqEq(m.local, lid, true))}</b><b class="cifra">${tl}–${tv}</b><b style="color:${mpC('V')}">${esc(etqEq(m.visitante, lid, true))}</b></div>
+        ${rs2.map(r => { const a = m.tanda.find(x => x.ronda === r && x.lado === 'L'), b = m.tanda.find(x => x.ronda === r && x.lado === 'V');
+          return `<div class="rs-tr"><span>${a ? esc(rsQ(a.j, ours(m.local))) : ''}</span>${marca(a)}<i>R${r}</i>${marca(b)}<span>${b ? esc(rsQ(b.j, ours(m.visitante))) : ''}</span></div>`; }).join('')}
+        <div class="rs-tg${nos(m.pen) ? ' mp' : ''}">GANA LA TANDA ${esc(nmT(m.pen).toUpperCase())}</div></div>`; }
+    // porteros en anillo
+    const pors = [A0, B0].flatMap(l => (m.por[l] || []).filter(p => p.tiros).map(p => ({ p, l })));
+    const porH = pors.length ? `<div class="rs-anillos" style="--d:420ms">${pors.map(({ p, l }) => { const x = RS.POR.find(z => z.l === l), sg = x && x.segs.find(z => (z.p.k || '#' + z.p.dorsal) === (p.k || '#' + p.dorsal)), multi = x && x.segs.length > 1;
+      const rango = multi && sg ? ' · del ' + rsMin(sg.from) + ' al ' + Math.min(m.tot / 60, Math.ceil((sg.to - 1) / 60)) + "'" : '';
+      return `<div class="rs-an${nos(l) ? ' mp' : ''}"><span class="rs-ring" style="--p:${(+p.pct).toFixed(1)}"><b class="cifra">${Math.round(p.pct)}%</b></span><div><b>${esc(rsQ(p, ours(nmS(l))))}</b><span>${esc(nmT(l))}</span><span>${p.par} de ${p.tiros}${rango}</span></div></div>`; }).join('')}</div>` : '';
+    return `${momH}<div class="rs-acta-g">${espina}<div class="rs-acta-d">${mejor}${num}${tanda}${porH}</div></div>`;
+  }
+
+
+  /* ── El directo (rediseño final, #/directo/{idp}): la misma página que «Así fue el partido», con los datos del servicio del
+     directo (cada 15 s). Antes de empezar, las alineaciones (si ya está abierta el acta); en juego, reloj, marcador de rodillo,
+     aviso de cada gol, sanción o cambio de portero (8 s), porteros con sus paradas del acta, línea de tiempo con los tiros del
+     vigía; en los penaltis, cada lanzamiento; al acabar, el acta. Sin reacciones ni votación; el canal de Telegram, abajo. ── */
+  function vVivo(idp) {
+    rsLimpiar(); clearInterval(RS.tTiros); RS.vivo = true;
+    const espera = '<div class="carga" role="status" aria-label="Cargando"><div class="sk" style="height:48px;width:50%;margin-top:24px"></div><div class="sk" style="height:420px"></div></div>';
+    const h = location.hash, otra = () => { if (location.hash === h) render(); };
+    const sn = LIVE.snaps[idp] || RS.snap[idp];
+    if (!sn) {
+      if (!RS.pidio[idp]) { RS.pidio[idp] = true; fetch(DIRECTO_URL + (DIRECTO_URL.includes('?') ? '&' : '?') + 'idp=' + encodeURIComponent(idp), { cache: 'no-store' }).then(r => r.json())
+        .then(d => { const x = (d.partidos || [d]).find(y => y.idp === idp); if (x) RS.snap[idp] = x; }).catch(() => {}).then(otra); return espera; }
+      return `<div class="rs-vacio">${casoHtml('En directo', 'Este partido no está en directo', 'El directo sale cuando la FMP abre el acta del partido. Mientras, la previa y el calendario.', 'DIRECTO', 'derbi', [['Ir a Inicio', '#/'], ['Calendario', '#/calendario']])}</div>`;
+    }
+    // terminado y ya en los datos de la noche: el acta de app.json (con el mejor del partido); si no, la del directo
+    const p = sn.estado === 'final' && Object.values(A.partidos).find(x => x.idp === idp && x.gl != null);
+    const m = p ? rsModelo(p) : rsModeloSnap(sn);
+    m.tanda = rsTanda(m, sn);
+    RS.m = m; RS.POR = rsPorteria(m); RS.idp = idp; RS.sn = sn;
+    RS.visto = m.ev.filter(e => rsAnunciable(m, e)).length;   // lo que ya había al abrir no se anuncia
+    rsVivoEstado(sn);
+    rsLater(rsVivoArrancar, 0);
+    return rsHtml(m);
+  }
+  // en qué momento está: alineaciones (antes de empezar), juego, penaltis o final; y el segundo de partido
+  function rsVivoEstado(sn) {
+    const m = RS.m, conAlin = (m.alin.L.length + m.alin.V.length) > 0;
+    RS.previa = sn.estado === 'previa';
+    RS.fase = sn.estado === 'final' ? 'fin' : sn.fase === 'penaltis' ? 'pen' : RS.previa && conAlin ? 'alin' : 'play';
+    RS.desc = sn.estado === 'descanso'; RS.kick = 2; RS.pausa = false;
+    const r = relojDe(sn), ult = m.ev.length ? m.ev[m.ev.length - 1].t : 0;
+    RS.relojOk = !!r && sn.estado === 'directo';
+    RS.g = RS.fase === 'fin' || RS.fase === 'pen' ? m.tot : RS.desc ? m.per : RS.previa ? 0 : Math.min(m.tot, Math.max(ult, ((sn.periodo || 1) - 1) * m.per + (RS.relojOk ? segs(r) || 0 : 0)));
+    if (RS.fase === 'pen') { const td = m.tanda || []; RS.pen = { banda: !td.length, i: td.length - 1 }; } else RS.pen = null;
+  }
+  function rsVivoArrancar() {
+    const root = rsRoot(); if (!root || !RS.m || root.dataset.rsOn) return;
+    root.dataset.rsOn = '1'; root.addEventListener('click', rsClick);
+    rsLinea(root);
+    const al = root.querySelector('[data-rs-alin]'), jg = root.querySelector('[data-rs-juego]');
+    if (RS.fase === 'alin') { al.hidden = false; jg.hidden = true; requestAnimationFrame(() => al.classList.add('on')); }
+    else { al.hidden = true; jg.hidden = false; requestAnimationFrame(() => jg.classList.add('on')); }
+    if (RS.fase === 'fin') return rsAcabar();
+    rsPintar(); rsPie();
+    rsVivoTiros(); RS.tTiros = setInterval(rsVivoTiros, 60000);
+  }
+  // los tiros minuto a minuto los graba el vigía en el servicio: se piden al abrir y cada minuto
+  function rsVivoTiros() {
+    const idp = RS.idp; if (!RS.vivo || !idp || !rsRoot()) return clearInterval(RS.tTiros);
+    apiGet('tiros?idp=' + encodeURIComponent(idp)).then(d => { if (!d || !d.s || !d.s.length || RS.idp !== idp || !RS.vivo) return; TIR_VIVO[idp] = d;
+      const t = []; let a0 = 0, b0 = 0; d.s.forEach(([s, a, b]) => { for (let i = a0; i < a; i++) t.push({ t: s, lado: 'L' }); for (let i = b0; i < b; i++) t.push({ t: s, lado: 'V' }); a0 = Math.max(a0, a); b0 = Math.max(b0, b); });
+      if (RS.m.tiros && RS.m.tiros.length === t.length) return; RS.m.tiros = t; const root = rsRoot(); if (root) { rsLinea(root); rsPintar(); } }).catch(() => {});
+  }
+  // llega un dato nuevo del directo: se rehace el modelo, se anuncia lo último nuevo y se repinta
+  function rsVivoActualizar(idp) {
+    const root = rsRoot(); if (!root || !RS.vivo || RS.idp !== idp) return;
+    const sn = LIVE.snaps[idp]; if (!sn || sn === RS.sn) return;
+    const antes = RS.m, faseAntes = RS.fase, alinAntes = antes.alin.L.length + antes.alin.V.length;
+    const m = rsModeloSnap(sn); m.tiros = antes.tiros; m.tanda = rsTanda(m, sn);
+    if (m.alin.L.length + m.alin.V.length !== alinAntes) { RS.snap[idp] = sn; return render(); }   // se ha abierto el acta: la página entera
+    RS.m = m; RS.POR = rsPorteria(m); RS.sn = sn;
+    const anun = m.ev.filter(e => rsAnunciable(m, e));
+    if (anun.length > RS.visto) { const e = anun[anun.length - 1]; RS.ann = e; RS.annAt = Date.now(); if (e.tipo === 'gol') RS.flash = { l: e.lado, hasta: Date.now() + 1500 }; }
+    RS.visto = anun.length;
+    rsVivoEstado(sn);
+    const al = root.querySelector('[data-rs-alin]'), jg = root.querySelector('[data-rs-juego]');
+    if (faseAntes === 'alin' && RS.fase !== 'alin') { al.classList.add('sale'); setTimeout(() => { al.hidden = true; jg.hidden = false; requestAnimationFrame(() => jg.classList.add('on')); }, MOV ? 480 : 0); }
+    if (RS.fase === 'fin') { clearInterval(RS.tTiros); return rsAcabar(); }
+    rsLinea(root); rsPintar(); rsPie();
+  }
+
   function vDirecto(idp, modo) {
     if (ESC.abierta && ESC.abierta.tipo === 'resumen') ESC.abierta.cerrar();
     cargarHitos();
@@ -5096,8 +5625,8 @@
     const m = /^#\/directo\/([^/]+)/.exec(location.hash);
     if (!m) return;
     const idp = decodeURIComponent(m[1]);
-    if (DV.vacio) { if (LIVE.snaps[idp]) render(); else if (!/\/resumen/.test(location.hash)) { const w = $('[data-dv="espera"]'); if (w) w.innerHTML = esperaHtml(); } return; }
-    if (DV.idp === idp) actualizarDirecto();
+    if (/\/resumen/.test(location.hash)) return;   // el resumen no cambia con el directo
+    if (RS.vivo && RS.idp === idp) rsVivoActualizar(idp); else if (LIVE.snaps[idp] && !rsRoot()) render();
   });
   /* ── 9a · Barra «En directo» sobre el menú ──────────────────────────────────────────────────
      En toda la web mientras haya un partido nuestro en juego (o en el descanso): marcador de rodillo, parte · reloj y el
@@ -5177,6 +5706,7 @@
   setInterval(() => {
     Object.values(LIVE.snaps).forEach(sn => { if (sn.estado === 'directo' && sn.reloj) { const st = document.querySelector(`[data-bdst="${CSS.escape(sn.idp)}"]`); if (st) st.textContent = estadoCorto(sn);
       const fi = introEl && introEl.querySelector(`[data-vivo="${CSS.escape(sn.idp)}"] .cuando`); if (fi) fi.innerHTML = cuandoVivo(sn); } });
+    if (/^#\/directo\//.test(location.hash)) { if (RS.vivo && RS.sn && rsRoot() && RS.fase !== 'fin') { rsVivoEstado(RS.sn); rsPintar(); } return; }   // el directo nuevo (rediseño final)
     if (!DV.vacio && /^#\/directo\//.test(location.hash) && Object.values(LIVE.snaps).some(sn => sn.estado === 'directo' && sn.reloj)) pintarHoy();
     if (DV.vacio || !/^#\/directo\//.test(location.hash)) return;
     const sn = snapDV();
