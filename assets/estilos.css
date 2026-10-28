@@ -110,9 +110,11 @@ a.tarjeta:hover { background: #1F1F23; color: inherit; }
 /* Cabecera fija (rediseño §4): 72 px en escritorio, 60 en el móvil; fondo translúcido con desenfoque */
 .top { position: sticky; top: 0; z-index: 10; padding-top: env(safe-area-inset-top, 0px); background: rgba(13,13,14,.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid #26262A; }
 .top .in { max-width: 1280px; height: 72px; margin: 0 auto; padding: 0 32px 0 var(--margen); display: flex; align-items: center; gap: 32px; }
-/* marca: LAMHL (34 px) con el escudo de MADRIDPATINA a la derecha, pegado (−8 px) y algo más alto que el texto (46 px) */
-.marca { flex: none; display: flex; align-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 34px; line-height: 1; letter-spacing: .03em; color: #F4F4F5; white-space: nowrap; }
-.marca img { flex: none; height: 46px; width: auto; margin: -6px 0 -6px -8px; }
+/* marca: LAMHL / MP, sin escudo (30 px; 26 en el móvil). La misma en la cabecera y en la ventana del principio */
+.marca { flex: none; display: flex; align-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 30px; line-height: 1; letter-spacing: .03em; color: #F4F4F5; white-space: nowrap; }
+.marca .bar { color: #D3202A; margin: 0 3px; font-weight: 600; }
+.marca .mp { display: inline-block; background: #D3202A; padding: 3px 7px 2px; transform: skewX(-10deg); }
+.marca .mp > span { display: inline-block; transform: skewX(10deg); color: #FFFFFF; }
 .nav { position: relative; display: flex; gap: 4px; flex: 1; overflow-x: auto; min-width: 0; scrollbar-width: none; }
 .nav a { position: relative; flex: none; padding: 9px 14px 7px; border-radius: 8px; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 20px; line-height: 1;
   letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; color: #C9C9CE; background: transparent; transition: color .2s, background .2s; }
@@ -176,7 +178,7 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 @media (max-width: 720px) {
   .top .nav { display: none; }
   .top .in { height: 60px; gap: 6px; padding-right: 6px; }
-  .marca { flex: 1; }
+  .marca { flex: 1; font-size: 26px; }
   .legado-ic { display: grid; }
   .wrap { padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
   .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; height: calc(68px + env(safe-area-inset-bottom, 0px));
@@ -1493,6 +1495,17 @@ a.an-tg:hover { background: #1B2A38; color: #FFFFFF; }
   .ff-p { align-items: flex-start; align-self: end; padding-left: 4px; }
   .ff-pct { font-size: 40px; }
 }
+/* móvil: lo mismo que en el escritorio, en dos filas en vez de tres columnas, para no apilarlo todo a la derecha:
+   arriba, cuándo y lo que falta; abajo, los equipos y el % de ganar («Previa» no cabe: toda la fila lleva a la previa) */
+@media (max-width: 720px) {
+  .ff { grid-template-areas: "c f" "e p"; gap: 8px 12px; }
+  .ff-t { display: contents; }
+  .ff-cuando { grid-area: c; }
+  .ff-eqs { grid-area: e; }
+  .ff-falta { font-size: 20px; }
+  .ff-previa { display: none; }
+  .ff-p { flex-direction: row; align-items: baseline; gap: 5px; }
+}
 /* en directo */
 .directo-ini .finde-cab { align-items: center; }
 .dir-t { display: flex; align-items: center; gap: 10px; margin-right: auto; }
@@ -1738,6 +1751,19 @@ a.an-tg:hover { background: #1B2A38; color: #FFFFFF; }
 .pv-forma span { font-size: 14px; color: #A6A6AD; }
 .pv-res { display: flex; gap: 4px; }
 .pv-res .res-l { width: 28px; height: 28px; font-family: 'IBM Plex Sans Condensed', sans-serif; font-size: 14px; font-weight: 700; }
+/* a vigilar: cromos 3:4 con la foto (o las iniciales), el dorsal arriba a la derecha y el pie con fundido */
+.pv-crs { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
+.pv-cr { position: relative; aspect-ratio: 3 / 4; border-radius: 12px; overflow: hidden; background: #1F1F23; display: flex; flex-direction: column; justify-content: flex-end; }
+.pv-cr .ph { background-position: 50% 18%; }
+.pv-cr::after { content: ''; position: absolute; inset: 40% 0 0 0; background: linear-gradient(transparent, rgba(13,13,14,.92) 70%); }
+.pv-cr-i { position: absolute; left: 12px; top: 8px; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 34px; line-height: 1; color: #55555B; }
+.pv-cr-d { position: absolute; right: 10px; top: 6px; z-index: 1; font-size: 38px; line-height: 1; color: #F4F4F5; text-shadow: 0 2px 10px rgba(0,0,0,.6); }
+.pv-cr-p { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 6px; padding: 12px; }
+.pv-cr-n { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 18px; line-height: 1.05; color: #F4F4F5; overflow-wrap: anywhere; }
+.pv-cr-t { font-size: 12px; color: #C9C9CE; }
+.pv-cr-v { display: flex; align-items: baseline; gap: 5px; }
+.pv-cr-v .cifra { font-size: 28px; line-height: 1; }
+.pv-cr-v span { font-size: 12px; color: #C9C9CE; }
 .pv-vig { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 52px; border-top: 1px solid #26262A; padding-top: 8px; }
 .pv-ini { width: 40px; height: 40px; border-radius: 50%; background: #26262A; display: grid; place-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 17px; color: #A6A6AD; }
 .pv-vig > div:nth-child(2) { display: flex; flex-direction: column; min-width: 0; }
@@ -1806,40 +1832,14 @@ button.cal-fin-c { cursor: pointer; }
 @media (min-width: 721px) { .cal-fin-t { font-size: 32px; } }
 .cal-dia { display: flex; flex-direction: column; gap: 8px; }
 .cal-dia > .etq { margin-top: 6px; }
-.cal-p { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "h d" "t d"; gap: 6px 12px; align-items: center; padding: 12px 14px; border-radius: 10px; background: #18181B; color: #F4F4F5; }
-a.cal-p:hover { background: #1F1F23; color: #FFFFFF; }
-.cal-p.casa { background: #2A1416; box-shadow: inset 3px 0 0 #D3202A; }
-a.cal-p.casa:hover { background: #331A1D; }
-.cal-h { grid-area: h; display: flex; align-items: baseline; gap: 8px; }
-.cal-h .cifra { font-weight: 800; font-size: 22px; line-height: 1; }
-.cal-h.fijar .cifra, .cal-h.cambio .cifra { color: #FFB347; text-transform: uppercase; }
-.cal-h.fijar .cifra { white-space: nowrap; font-size: 20px; }
-.cal-h s { font-size: 13px; font-weight: 700; color: #8A8A8F; }
-.cal-t { grid-area: t; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.cal-eqs { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; min-width: 0; }
-.cal-us { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 20px; line-height: 1; color: #FF6B63; }
-.cal-vs { font-size: 12px; font-weight: 700; color: #A6A6AD; }
-.cal-them { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 16px; line-height: 1; }
-.cal-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; color: #C9C9CE; }
-.cal-sub .chip { height: 20px; padding: 0 6px; font-size: 11px; }
+.cal-fin > .cal-dia:last-child, .cal-dia.sel-dia { margin-bottom: 14px; }
+/* partidos del día: como la lista de Inicio (.ff-lista y .ff), con la liga y la pista junto a la hora */
+.ff-cuando s { color: #8A8A8F; }
+.ff-cuando .cambio { color: #FFB347; }
+.ff-cuando .chip.casa { height: 20px; padding: 0 6px; }
 .chip.ambar.fuerte { background: #FFB347; color: #0D0D0E; border-color: #FFB347; }
-.cal-d { grid-area: d; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.cal-d .ir { min-height: 0; font-size: 15px; }
-.cal-pct { display: flex; flex-direction: column; align-items: flex-end; }
-.cal-pct .cifra { font-size: 26px; line-height: .9; color: #FF6B63; }
-.cal-pct span:last-child { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: #A6A6AD; text-transform: uppercase; }
-.cal-res { display: flex; align-items: center; gap: 8px; }
-.cal-res .cifra { font-size: 28px; line-height: 1; }
-@media (min-width: 721px) {
-  .cal-p { grid-template-columns: 96px minmax(0, 1fr) auto; grid-template-areas: "h t d"; padding: 16px 20px; }
-  .cal-h { flex-direction: column; gap: 0; }
-  .cal-h .cifra { font-size: 30px; }
-  .cal-h.fijar .cifra { font-size: 22px; }
-  .cal-us { font-size: 24px; }
-  .cal-them { font-size: 20px; }
-  .cal-pct .cifra { font-size: 34px; }
-  .cal-res .cifra { font-size: 34px; }
-}
+.cal-ff .ff-res { display: inline-flex; align-items: center; gap: 6px; }
+.cal-ff .ff-res .res-l { width: 22px; height: 22px; font-family: 'IBM Plex Sans Condensed', sans-serif; font-size: 12px; font-weight: 700; }
 /* festivos, cumpleaños y cambios de hora: borde discontinuo */
 .cal-ev { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; border: 1px dashed #5A4320; color: #F4F4F5; }
 .cal-ev svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -2302,6 +2302,8 @@ a.lg-f.nos:hover { background: #33181B; }
 .lg-lid { position: relative; overflow: hidden; min-height: 150px; padding: 14px 16px; border-radius: 12px; background: #18181B; color: #F4F4F5; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; min-width: 0; }
 a.lg-lid:hover { background: #1F1F23; color: #FFFFFF; }
 .lg-lid-g { position: absolute; right: -6px; top: -14px; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 110px; line-height: .8; color: #1F1F23; }
+.lg-lid-f { position: absolute; top: 0; right: 0; bottom: 0; width: 58%; background-size: cover; background-position: 50% 18%; background-repeat: no-repeat;
+  filter: grayscale(.35) contrast(1.05); opacity: .55; -webkit-mask-image: linear-gradient(90deg, transparent, #000 55%); mask-image: linear-gradient(90deg, transparent, #000 55%); }
 .lg-lid .etq, .lg-lid-c, .lg-lid-us { position: relative; }
 .lg-lid-c { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
 .lg-lid-n { display: flex; flex-direction: column; min-width: 0; }

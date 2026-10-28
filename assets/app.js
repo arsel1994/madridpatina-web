@@ -138,6 +138,14 @@
   const hLg = (id, sub) => '#/liga/' + id + (sub ? '/' + sub : '');
   const hM = mid => mid && A.partidos[mid] ? '#/partido/' + encodeURIComponent(mid) : null;
   const hP = k => k && A.jugadores[k] ? '#/jugador/' + encodeURIComponent(k) : null;
+  // foto y dorsal de cualquier jugador que salga en app.json, rivales incluidos (mapa.json no los trae). Solo adultos:
+  // el generador no exporta fotos de menores y aquí se descarta además cualquier registro marcado «menor»
+  let FK = null;
+  const idxFK = () => { if (FK && FK.a === A) return FK; FK = { a: A, f: {}, d: {} };
+    const walk = o => { if (Array.isArray(o)) o.forEach(walk); else if (o && typeof o === 'object') {
+      if (o.nombre && o.apellidos) { const k = kOf(o.nombre, o.apellidos); if (o.dorsal && !FK.d[k]) FK.d[k] = o.dorsal; if (o.foto && !o.menor && !FK.f[k]) FK.f[k] = o.foto; }
+      Object.values(o).forEach(walk); } };
+    walk(A); return FK; };
   const hT = name => { const t = teamOf(name); return t ? hEq(t.id) : null; };
   const hPre = id => '#/pretemporada/' + id;
   /* Bloque navegable: <a> si hay destino; si no, un contenedor normal */
@@ -568,12 +576,15 @@
       const mine = y.local === n ? y.gl : y.gv, oth = y.local === n ? y.gv : y.gl, pz = mine === oth && y.mid && A.partidos[y.mid] ? A.partidos[y.mid].pen : null, l = mine > oth || pz === n ? 'V' : 'D';
       return `<span class="res-l ${l.toLowerCase()}" title="${esc(abr(y.local === n ? y.visitante : y.local) + ' ' + mine + '–' + oth)}">${l}</span>`; }).join('');
     const llegan = `<div class="tarjeta pv-b"><div class="etq">Cómo llegan</div>${[us, them].map(n => `<div class="pv-forma"><div><b class="${ours(n) ? 'mp' : ''}">${esc(etqEq(n, lid, true))}</b><span>${esc(pos(n))}</span></div><div class="pv-res">${forma(n) || '<span class="pv-nota">Aún no ha jugado</span>'}</div></div>`).join('')}</div>`;
-    // a vigilar: sus 3 jugadores con más puntos por partido (mapa de la liga) y su portero; sin fotos de otros clubes
-    const ML = MAPA && MAPA.ligas && MAPA.ligas[lid];
-    const vig = !derbi && ML ? ML.jug.filter(y => y.eq === them).sort((a, b) => b.x - a.x).slice(0, 3).map(y => [ini(y.n, y.a), y.n + ' ' + y.a, (ARQ[y.arq] ? ARQ[y.arq][0] + ' · ' : '') + dec(y.gl.toFixed(1)) + ' g · ' + dec(y.al.toFixed(1)) + ' a por partido', dec(y.x.toFixed(1)), 'puntos/partido']) : [];
+    // a vigilar: sus 3 jugadores con más puntos por partido (mapa de la liga) y su portero, en cromos con su foto (solo
+    // adultos) y su dorsal; sin foto, las iniciales (rediseño/Cambios fotos rivales.md)
+    const ML = MAPA && MAPA.ligas && MAPA.ligas[lid], FKx = idxFK();
+    const vig = !derbi && ML ? ML.jug.filter(y => y.eq === them).sort((a, b) => b.x - a.x).slice(0, 3).map(y => [y, (ARQ[y.arq] ? ARQ[y.arq][0] + ' · ' : '') + dec(y.gl.toFixed(1)) + ' g · ' + dec(y.al.toFixed(1)) + ' a por partido', dec(y.x.toFixed(1)), 'puntos/partido']) : [];
     const pt = !derbi && ML && (ML.por || []).filter(y => y.eq === them).sort((a, b) => b.pj - a.pj)[0];
-    if (pt) vig.push([ini(pt.n, pt.a), pt.n + ' ' + pt.a, 'Su portero · ' + pt.pj + ' partidos', dec(pt.pct.toFixed(1)) + '%', 'de paradas']);
-    const vigilar = vig.length ? `<div class="tarjeta pv-b"><div class="etq">A vigilar</div>${vig.map(([i, n, d, v, u]) => `<div class="pv-vig"><span class="pv-ini">${esc(i)}</span><div><b>${esc(n)}</b><span>${esc(d)}</span></div><div class="pv-vv"><span class="cifra">${v}</span><span>${u}</span></div></div>`).join('')}</div>` : '';
+    if (pt) vig.push([pt, 'Su portero · ' + pt.pj + ' partidos', dec(pt.pct.toFixed(1)) + '%', 'de paradas']);
+    const vigilar = vig.length ? `<div class="tarjeta pv-b"><div class="etq">A vigilar</div><div class="pv-crs">${vig.map(([y, d, v, u]) => { const f = FKx.f[y.k], dr = FKx.d[y.k];
+      return `<div class="pv-cr${f ? '' : ' sin'}">${f ? `<span class="ph" data-bg="${esc(f)}"></span>` : `<span class="pv-cr-i">${esc(ini(y.n, y.a))}</span>`}${dr ? `<b class="cifra pv-cr-d">${esc(dr)}</b>` : ''}
+        <span class="pv-cr-p"><b class="pv-cr-n">${esc(y.n + ' ' + y.a)}</b><span class="pv-cr-t">${esc(d)}</span><span class="pv-cr-v"><b class="cifra">${v}</b><span>${u}</span></span></span></div>`; }).join('')}</div></div>` : '';
     // ese día en esta pista: solo si juega otro equipo nuestro
     const dia = AGE && ag.pista ? AGE.dias.find(d => d.fecha === c.fecha && d.pista === ag.pista) : null;
     const nos = dia ? dia.nuestros.map(i => AGE.partidos[i]).filter(q => q).map(q => ({ q, actual: q.local === c.local && q.visitante === c.visitante })) : [];
@@ -1011,7 +1022,8 @@
       <div class="pv-nota">G y P cuentan los penaltis: victoria 3 puntos, ganar en penaltis 2, perder en penaltis 1.</div></div>`;
     const LT = [['goleadores', 'Goleador', x => x.goles], ['asistentes', 'Asistente', x => x.asistencias], ['porteros', 'Portero', x => dec((+x.pct_paradas || 0).toFixed(1)) + '%'], ['sancionados', 'Más sancionado', x => fmin(x.minutos)]];
     const lideres = (L.lideres ? LT.filter(([k]) => (L.lideres[k] || []).length) : []).map(([k, t, f]) => { const ls = L.lideres[k], x = ls[0], u = ls.find(y => y.nuestro), ui = u ? ls.indexOf(u) : -1, kx = kOf(x.nombre, x.apellidos), h = hP(kx);
-      return `<${h ? `a href="${h}"` : 'div'} class="lg-lid${k === 'sancionados' ? ' sanc' : ''}"><span class="lg-lid-g" aria-hidden="true">${esc(ini(x.nombre, x.apellidos))}</span><span class="etq">${t}</span>
+      const fx = x.foto && !x.menor ? x.foto : null;   // con foto (solo adultos), la foto en la mitad derecha; si no, la inicial grande
+      return `<${h ? `a href="${h}"` : 'div'} class="lg-lid${k === 'sancionados' ? ' sanc' : ''}">${fx ? `<span class="lg-lid-f" aria-hidden="true" data-bg="${esc(fx)}"></span>` : `<span class="lg-lid-g" aria-hidden="true">${esc(ini(x.nombre, x.apellidos))}</span>`}<span class="etq">${t}</span>
         <span class="lg-lid-c"><span class="lg-lid-n"><b${x.nuestro ? ' class="nos"' : ''}>${esc(nomCorto(x))}</b><span>${esc(largoEq(x.equipo, L.id))}</span></span><b class="cifra">${esc(f(x))}</b></span>
         ${u && ui > 0 ? `<span class="lg-lid-us">El mejor de los nuestros: ${esc(nomCorto(u))}, ${ui + 1}º con ${esc(f(u))}</span>` : ''}</${h ? 'a' : 'div'}>`; }).join('');
     const f1 = (L.cal || []).map(c => c.fecha).filter(Boolean).sort()[0], diaL = f => { const [y, m, d] = f.split('-').map(Number), x = new Date(y, m - 1, d); return ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][x.getDay()] + ' ' + d + ' de ' + MES_L[m - 1]; };
@@ -2009,35 +2021,37 @@
   }
   const ICO_EV = { fest: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>', cumple: '<path d="M4 21h16M5 21v-7h14v7M8 14v-3M12 14v-3M16 14v-3M8 8.5a1 1 0 0 0 0-2M12 8.5a1 1 0 0 0 0-2M16 8.5a1 1 0 0 0 0-2"/>', reloj: '<path d="M12 7v5l3 2M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18z"/>' };
   const evFila = e => `<${e.k ? `a href="${hP(e.k)}"` : 'div'} class="cal-ev ${e.tipo}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICO_EV[e.tipo]}</svg><span><b>${esc(e.t)}</b><span>${esc(e.sub)}</span></span></${e.k ? 'a' : 'div'}>`;
-  // una fila por partido: hora (o «por fijar»), los nuestros y el rival, marcas, liga y pista; a la derecha, % de ganar o el resultado
+  // una fila por partido, como la lista de Inicio (filaFinde): hora, liga y pista arriba; los dos equipos con su escudo y sus
+  // siglas; % de ganar; a la derecha, lo que falta y «Previa», o el resultado. Los partidos de cada día, en una caja .ff-lista
   function calFila(p) {
     const hoy = hoyISO(), derbi = p.derbi && p.eqs.length > 1, jugado = p.gl != null, pend = !jugado && p.fecha && p.fecha < hoy;
-    const nomEq = (n, eq) => (n === 'MADRIDPATINA' ? 'MADRIDPATINA ' + (eq === 'AL' ? 'ALEVÍN' : 'INFANTIL') : n);
-    const us = derbi ? nomEq(p.local, p.eq) + ' · ' + nomEq(p.visitante, p.eq) : p.eq.length === 1 ? 'MADRIDPATINA ' + p.eq : nomEq('MADRIDPATINA', p.eq);
-    const usL = ours(p.local), nos = usL ? p.gl : p.gv, ell = usL ? p.gv : p.gl;
+    const x = { fecha: p.fecha, hora: p.hora || null, ts: p.fecha ? tsDe(p.fecha, p.hora || '23:59') : 0 }, ya = !jugado && !pend && p.hora && p.fecha === hoy && x.ts <= Date.now();
+    const yaJugado = jugado || pend || (p.fecha && p.fecha < hoy);   // en un partido pasado no hay avisos de hora, fecha ni pista
     const chips = [];
-    const yaJugado = jugado || pend || (p.fecha && p.fecha < hoyISO());   // en un partido pasado no hay avisos de hora, fecha ni pista
     if (!yaJugado && p.fechaAnt) chips.push(`<span class="chip ambar fuerte">CAMBIO DE FECHA · ANTES ${esc(fd(p.fechaAnt))}</span>`);
     else if (!yaJugado && p.horaAnt) chips.push('<span class="chip ambar fuerte">CAMBIO DE HORA</span>');
-    if (derbi) chips.push('<span class="chip derbi">DERBI</span>');
-    if (p.casa) chips.push('<span class="chip casa">EN CASA</span>');
     if (pend) chips.push('<span class="chip ambar">ACTA PENDIENTE</span>');
-    let der = '';
+    else if (derbi && !jugado) chips.push('<span class="chip derbi">DERBI</span>');
+    if (p.casa && !jugado && !pend) chips.push('<span class="chip casa">EN CASA</span>');
+    const lado = n => `${escudo(n, 28)}<span class="ff-n${ours(n) && !jugado ? ' mp' : ''}">${esc(p.lid ? etqEq(n, p.lid, true) : abr(n))}</span>`;
+    const hora = p.horaAnt && !yaJugado ? `<s>${esc(p.horaAnt)}</s> <b class="cambio">${esc(p.hora || 'hora por fijar')}</b>` : esc(p.hora || 'hora por fijar');
+    const donde = [esc(p.liga), p.pista ? esc(pistaCal(p.pista)) : ''].filter(Boolean).join(' · ');
+    const P = derbi || jugado || pend || ya ? null : pronDe(p.lid, p.j, p.local, p.visitante);
+    let der;
     if (jugado) {
-      const ganaPen = p.pen ? ours(p.pen) && (!derbi) : null, r = derbi ? '' : nos > ell || (nos === ell && ganaPen) ? 'V' : 'D';
-      const bL = p.pen && p.pen === p.local, bV = p.pen && p.pen === p.visitante, b = '<span class="b-pen">B</span>';
-      der = `<div class="cal-res">${r ? `<span class="res-l ${r.toLowerCase()}">${r}</span>` : ''}<span class="cifra">${derbi ? p.gl + (bL ? b : '') + '–' + p.gv + (bV ? b : '') : nos + ((usL ? bL : bV) ? b : '') + '–' + ell + ((usL ? bV : bL) ? b : '')}</span></div><span class="ir">Acta</span>`;
-    } else if (!pend) {
-      const P = derbi ? null : pronDe(p.lid, p.j, p.local, p.visitante);
-      der = `${P ? `<div class="cal-pct"><span class="cifra">${P.g}%</span><span>ganar</span></div>` : ''}<span class="ir">Previa</span>`;
-    }
+      const usL = ours(p.local), nos = usL ? p.gl : p.gv, ell = usL ? p.gv : p.gl, ganaPen = p.pen ? ours(p.pen) : null;
+      const r = derbi ? '' : nos > ell || (nos === ell && ganaPen) ? 'v' : 'd', b = '<span class="b-pen">B</span>';
+      der = `<span class="ff-res">${r ? `<span class="res-l ${r}">${r.toUpperCase()}</span>` : ''}${p.gl}${p.pen && p.pen === p.local ? b : ''}–${p.gv}${p.pen && p.pen === p.visitante ? b : ''}</span><span class="ff-l">Ver partido</span>`;
+    } else if (pend) der = '<span class="ff-res">—</span><span class="ff-l">sin resultado aún</span>';
+    else if (ya) der = '<span class="ff-falta">Ha empezado</span><span class="ff-l">aún sin datos del acta</span>';
+    else { const [a, b] = faltaTxt(x); der = `<span class="ff-falta"${p.hora ? ` data-falta="${x.ts}"` : ''}>${a}</span><span class="ff-l">${b}</span><span class="ff-previa">PREVIA</span>`; }
     const href = p.lid ? hPar(p.lid, p.j, p.local, p.visitante) : null;
-    return `<${href ? `a href="${href}"` : 'div'} class="cal-p${p.casa ? ' casa' : ''}${jugado ? ' jugado' : ''}">
-      <div class="cal-h${p.hora ? '' : ' fijar'}${p.horaAnt && !yaJugado ? ' cambio' : ''}">${p.horaAnt && !yaJugado ? `<s>${esc(p.horaAnt)}</s>` : ''}<span class="cifra">${esc(p.hora || 'Por fijar')}</span></div>
-      <div class="cal-t"><div class="cal-eqs"><span class="cal-us">${esc(us)}</span>${derbi ? escudo('MADRIDPATINA', 26) : `<span class="cal-vs">${p.casa ? 'vs' : 'en'}</span>${escudo(p.rival, 26)}<span class="cal-them">${esc(p.rival)}</span>`}</div>
-        <div class="cal-sub">${chips.join('')}<span>${esc(p.liga)}${p.pista ? ' · ' + esc(pistaCal(p.pista)) : ''}</span></div></div>
-      <div class="cal-d">${der}</div></${href ? 'a' : 'div'}>`;
+    return `<${href ? `a href="${href}"` : 'div'} class="ff cal-ff${jugado ? ' fin' : ''}">
+      <div class="ff-t"><div class="ff-cuando"><span>${hora} · ${donde}</span>${chips.join('')}</div><div class="ff-eqs">${lado(p.local)}<span class="ff-g">vs</span>${lado(p.visitante)}</div></div>
+      <div class="ff-p">${P ? `<span class="ff-pct">${P.g}%</span><span class="ff-l">ganar</span>` : ''}</div>
+      <div class="ff-f">${der}</div></${href ? 'a' : 'div'}>`;
   }
+  const calFilas = ps => (ps.length ? `<div class="ff-lista cal-ffl${ps.length > 1 ? ' dos' : ''}">${ps.map(calFila).join('')}</div>` : '');
   let CAL_PEDIDO = false;
   function vCalendario() {
     if (!AGE || !FEST || !PRON) {
@@ -2084,7 +2098,7 @@
       const sub = (g.ps.length ? g.ps.length + (g.ps.length === 1 ? ' partido' : ' partidos') : 'Sin partidos') + (nC ? ' · ' + nC + ' en casa' : '');
       const resumen = pasado ? g.ps.filter(p => p.gl != null && !(p.derbi && p.eqs.length > 1)).map(p => { const usL = ours(p.local), n = usL ? p.gl : p.gv, o = usL ? p.gv : p.gl, r = n > o || (n === o && p.pen && ours(p.pen)) ? 'V' : 'D'; return `<span class="res-l ${r.toLowerCase()}" title="${esc('MP ' + p.eq + ' ' + n + '–' + o)}">${r}</span>`; }).join('') : '';
       const dias = [...new Set(g.ps.map(p => p.fecha).concat(g.ev.map(e => e.fecha)))].sort();
-      const cuerpo = abierto ? dias.map(f => `<div class="cal-dia"><div class="etq">${esc(fd(f))}</div>${g.ev.filter(e => e.fecha === f).map(evFila).join('')}${g.ps.filter(p => p.fecha === f).map(calFila).join('')}</div>`).join('') : '';
+      const cuerpo = abierto ? dias.map(f => `<div class="cal-dia"><div class="etq">${esc(fd(f))}</div>${g.ev.filter(e => e.fecha === f).map(evFila).join('')}${calFilas(g.ps.filter(p => p.fecha === f))}</div>`).join('') : '';
       const tit = `<span class="cal-fin-t${k === prox ? ' prox' : pasado ? ' pasado' : ''}">${esc(fd(k))} – ${esc(fd(masDias(k, 1)))}</span><span class="cal-fin-s">${sub}</span>`;
       return `<section class="cal-fin">${k === prox ? `<div class="etq cal-este">${proxTit}</div>` : ''}
         ${pasado ? `<button type="button" class="cal-fin-c" data-cal-abre="${k}" aria-expanded="${abierto}">${tit}<span class="cal-fin-r">${resumen}</span><span class="cal-chev" aria-hidden="true">${abierto ? '▴' : '▾'}</span></button>` : `<div class="cal-fin-c">${tit}</div>`}
@@ -2112,7 +2126,7 @@
       celdas.push(`<button type="button" class="cal-c${ps.length ? ' con' : ''}${casa ? ' casa' : ''}${iso === hoy ? ' hoy' : ''}${CAL.dia === iso ? ' sel' : ''}${iso < hoy && !ps.length ? ' pasado' : ''}" data-cal-dia="${iso}"${ps.length || evd.length ? '' : ' tabindex="-1"'}><span class="cal-n">${dn}</span>${marcas}${chips}</button>`);
     }
     const dia = CAL.dia && CAL.dia.slice(0, 7) === mk ? CAL.dia : null;
-    const panel = dia ? `<div class="cal-dia sel-dia"><div class="etq">${esc(fdLarga(dia))}</div>${ev.filter(e => e.fecha === dia).map(evFila).join('')}${todos.filter(p => p.fecha === dia).map(calFila).join('') || (ev.some(e => e.fecha === dia) ? '' : '<div class="pv-nota">Ese día no jugamos.</div>')}</div>` : '';
+    const panel = dia ? `<div class="cal-dia sel-dia"><div class="etq">${esc(fdLarga(dia))}</div>${ev.filter(e => e.fecha === dia).map(evFila).join('')}${calFilas(todos.filter(p => p.fecha === dia)) || (ev.some(e => e.fecha === dia) ? '' : '<div class="pv-nota">Ese día no jugamos.</div>')}</div>` : '';
     return `<div class="cal-mes-cab">${flecha(mi - 1, -1)}<h2 class="sem-h cal-mes-t">${esc(MES_L[mm - 1].toUpperCase())} ${yy}</h2>${flecha(mi + 1, 1)}</div>
       <div class="cal-dows">${['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(x => `<span>${x}</span>`).join('')}</div>
       <div class="calm-grid">${celdas.join('')}</div>${panel}
@@ -3153,7 +3167,7 @@
     const el = introEl = document.createElement('div');
     el.className = 'intro'; el.tabIndex = -1;
     el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Próximos partidos');
-    el.innerHTML = `<div class="iv"><div class="iv-cab"><span class="marca iv-marca" aria-label="LAMHL · MADRIDPATINA"><span>LAMHL</span><img src="escudos/badge/madridpatina-alpha.png" alt="" width="49" height="46"></span>
+    el.innerHTML = `<div class="iv"><div class="iv-cab"><span class="marca iv-marca" aria-label="LAMHL / MP"><span>LAMHL</span><span class="bar" aria-hidden="true">/</span><span class="mp"><span>MP</span></span></span>
         <button class="iv-x" type="button" aria-label="Cerrar" data-cierra>✕</button></div>
       <div class="iv-centro"><div class="iv-tit">${titIntro(ps)}</div><div class="caja">${ps.map(filaIntro).join('')}</div></div>
       <div class="iv-pie"><button class="btn p iv-entrar" type="button" data-cierra>Entrar</button><span class="iv-m">o desliza hacia arriba</span><span class="iv-d">o pulsa Esc</span></div></div>`;
