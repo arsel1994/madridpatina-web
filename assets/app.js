@@ -318,7 +318,7 @@
       <span class="vc-g${g > o && ctx.mp[L] && !(ctx.mp.L && ctx.mp.V) ? ' gana' : ''}" data-vv-g="${esc(sn.idp)}-${L}"><span>${g}</span></span></div>`;
     return `<a class="vc tarjeta" href="#/directo/${encodeURIComponent(sn.idp)}" data-vivo-card="${esc(sn.idp)}">
       <div class="vc-cab"><div class="vc-est"><i class="punto"></i><span class="vc-parte${desc ? ' desc' : ''}">${desc ? 'DESCANSO' : esc(ordinal(sn.periodo || 1).replace('ª', '.ª').toUpperCase()) + ' PARTE'}</span><span class="vc-liga">${esc((m.L && m.L.corto) || '')}</span></div>
-        <span class="vc-reloj${desc ? ' desc' : ''}">${desc ? dur / 60 + ':00' : esc(relojDe(sn) || '')}</span></div>
+        <span class="vc-reloj${desc ? ' desc' : ''}">${desc ? dur / 60 + ':00' : esc(relojDe(sn) || minEst(sn))}</span></div>
       <div class="vc-eqs">${fila('L', m.local, gl, gv)}${fila('V', m.vis, gv, gl)}</div>
       <div class="vc-prog"><i style="width:${(t / tot * 100).toFixed(1)}%"></i></div>
       <div class="vc-pie"><span class="vc-ult">${pie}</span><span class="vc-seguir">Seguir<span class="nm-largo"> el directo</span> ›</span></div>
@@ -3241,6 +3241,10 @@
   }
   // reloj de la parte: avanza solo entre respuestas; si el portal no lo da, no hay reloj (no se inventa)
   // en el resumen, el reloj es el de la simulación; en directo avanza solo entre respuestas
+  // la FMP no publica el reloj: el servicio estima el segundo de partido (seg_est) desde el último apunte del acta; avanza en local
+  const segEst = sn => { if (!sn || sn.seg_est == null || sn.estado !== 'directo' || sn.fase === 'penaltis') return null; const dur = sn.duracion_periodo || 1500, per = sn.periodo || 1;
+    return Math.min(per * dur, sn.seg_est + Math.max(0, (Date.now() - (LIVE.recibido[sn.idp] || Date.now())) / 1000)); };
+  const minEst = sn => { const s = segEst(sn); return s == null ? '' : '≈ ' + Math.max(1, Math.ceil(s / 60)) + "'"; };
   const relojDe = sn => (sn && sn.reloj ? (sn._resumen ? sn.reloj : MPDirecto.relojLocal(sn, LIVE.recibido[sn.idp] || Date.now())) : null);
   let pintaPendiente = false;
   function pintarDirecto() {   // las piezas del directo (pasos 4-7) escuchan 'mp-directo'
@@ -5001,7 +5005,7 @@
     else if (RS.desc) { tt = m.per / 60 + ':00'; ptT = 'DESCANSO'; ptC = '#FFB347'; pulso = true; }
     else ptT = (g < m.per ? '1.ª' : '2.ª') + ' PARTE';
     if (RS.pausa && RS.fase === 'play') { ptT = 'EN PAUSA · ' + ptT; ptC = '#FFB347'; pulso = true; }
-    if (RS.vivo && RS.fase === 'play' && !RS.desc && !RS.relojOk) { tt = ''; if (RS.previa) { ptT = 'ANTES DEL PARTIDO'; ptC = '#A6A6AD'; } }
+    if (RS.vivo && RS.fase === 'play' && !RS.desc && !RS.relojOk) { tt = RS.estOk && !RS.previa ? '≈ ' + rsMin(g) : ''; if (RS.previa) { ptT = 'ANTES DEL PARTIDO'; ptC = '#A6A6AD'; } }
     t.textContent = tt; t.hidden = !tt; t.style.color = tc; pt.textContent = ptT; pt.style.color = ptC; pt.classList.toggle('pulso', pulso);
     if (RS.fase === 'alin' || RS.fase === 'saque') return;
     // marcador: goles hasta g, rodillo, destello de quien marca y, al final, el ganador
@@ -5260,9 +5264,9 @@
     RS.previa = sn.estado === 'previa';
     RS.fase = sn.estado === 'final' ? 'fin' : sn.fase === 'penaltis' ? 'pen' : RS.previa && conAlin ? 'alin' : 'play';
     RS.desc = sn.estado === 'descanso'; RS.kick = 2; RS.pausa = false;
-    const r = relojDe(sn), ult = m.ev.length ? m.ev[m.ev.length - 1].t : 0;
-    RS.relojOk = !!r && sn.estado === 'directo';
-    RS.g = RS.fase === 'fin' || RS.fase === 'pen' ? m.tot : RS.desc ? m.per : RS.previa ? 0 : Math.min(m.tot, Math.max(ult, ((sn.periodo || 1) - 1) * m.per + (RS.relojOk ? segs(r) || 0 : 0)));
+    const r = relojDe(sn), ult = m.ev.length ? m.ev[m.ev.length - 1].t : 0, est = segEst(sn);
+    RS.relojOk = !!r && sn.estado === 'directo'; RS.estOk = !RS.relojOk && est != null;
+    RS.g = RS.fase === 'fin' || RS.fase === 'pen' ? m.tot : RS.desc ? m.per : RS.previa ? 0 : Math.min(m.tot, Math.max(ult, RS.estOk ? est : 0, ((sn.periodo || 1) - 1) * m.per + (RS.relojOk ? segs(r) || 0 : 0)));
     if (RS.fase === 'pen') { const td = m.tanda || []; RS.pen = { banda: !td.length, i: td.length - 1 }; } else RS.pen = null;
   }
   function rsVivoArrancar() {
