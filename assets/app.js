@@ -2735,6 +2735,132 @@
   /* ── Cómo lo calculamos: cada número que publicamos, de dónde sale y qué no puede decir ─────────────────────────────── */
   const COMO = sec => ` · <a href="#/metodo/${sec}">cómo se calcula</a>`;
   const comoL = sec => `<a class="como-l" href="#/metodo/${sec}">¿Cómo se calcula?</a>`;
+  /* ── ¿Nuevo en el hockey línea? (#/nuevo): lo básico para seguir un partido, con las Reglas de juego 2026 y las Bases
+     de la FMP 2026/27 (duraciones, empates, categorías). Sin datos de nadie: solo el reglamento. ─────────────────── */
+  function vNuevo() {
+    const sec = (id, n, k, t, cuerpo) => `<section id="n-${id}" class="mt-sec nv-sec" data-anim="mpUp .45s cubic-bezier(.2,.8,.2,1)">
+        <div class="mt-cab"><span class="n">${n}</span><div><div class="k">${k}</div><h2>${t}</h2></div></div>${cuerpo}</section>`;
+    const P = x => `<p class="mt-p">${x}</p>`;
+    // la pista, a escala (50 × 25 m, 10 px por metro): línea central, porterías, áreas y puntos de saque
+    const gx = [43, 457], spots = [[104, 63], [104, 197], [396, 63], [396, 197]];
+    const marca = (x, y, n) => `<g class="nv-m"><circle cx="${x}" cy="${y}" r="17"/><text x="${x}" y="${y + 7}">${n}</text></g>`;
+    const pista = `<svg class="nv-pista" viewBox="0 0 500 260" role="img" aria-label="Plano de una pista de hockey línea de 50 por 25 metros">
+        <rect x="5" y="5" width="490" height="250" rx="50" class="valla"/>
+        <line x1="250" y1="5" x2="250" y2="255" class="roja"/>
+        <circle cx="250" cy="130" r="30" class="circ"/><circle cx="250" cy="130" r="3" class="pto"/>
+        ${gx.map(x => `<line x1="${x}" y1="${x < 250 ? 22 : 22}" x2="${x}" y2="238" class="gol"/>`).join('')}
+        ${spots.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="30" class="circ"/><circle cx="${x}" cy="${y}" r="3" class="pto"/>`).join('')}
+        <rect x="43" y="118.5" width="12" height="23" class="area"/><rect x="445" y="118.5" width="12" height="23" class="area"/>
+        <rect x="32" y="121.5" width="11" height="17" class="port"/><rect x="457" y="121.5" width="11" height="17" class="port"/>
+        ${marca(250, 32, 1)}${marca(22, 96, 2)}${marca(78, 130, 3)}${marca(104, 63, 4)}
+      </svg>`;
+    const ley = [['1', 'La línea del centro', 'Es la única línea que importa para el juego. No hay fuera de juego: se puede pasar el disco de una punta a otra.'],
+      ['2', 'La portería', '1,70 m de ancho y 1,05 m de alto. Más pequeña que una de fútbol sala (3 × 2 m).'],
+      ['3', 'El área del portero', 'El rectángulo rojo delante de la portería. Un atacante no puede quedarse dentro si el disco no está en ella.'],
+      ['4', 'Los puntos de saque', 'Cinco: el del centro y dos en cada lado. Ahí se reanuda el juego cuando se para.']];
+    const s1 = sec('pista', '01', 'LA PISTA', 'Unos 50 × 25 metros, con valla alrededor', `
+      <div class="nv-pista-c">${pista}</div>
+      <div class="nv-ley">${ley.map(([n, t, x]) => `<div><span class="nv-num">${n}</span><div><b>${t}</b><span>${x}</span></div></div>`).join('')}</div>
+      ${P('La valla mide algo más de un metro y tiene las esquinas redondeadas: el disco rebota en ella y sigue el juego. El suelo suele ser de baldosa deportiva, como el de un polideportivo.')}`);
+    // quién juega
+    const ficha = (c, t) => `<span class="nv-j ${c}">${t}</span>`;
+    const s2 = sec('equipos', '02', 'LOS EQUIPOS', 'Cuatro y el portero', `
+      <div class="nv-cinco"><div>${ficha('', '')}${ficha('', '')}${ficha('', '')}${ficha('', '')}${ficha('por', 'P')}</div><span>contra</span><div>${ficha('riv', '')}${ficha('riv', '')}${ficha('riv', '')}${ficha('riv', '')}${ficha('riv por', 'P')}</div></div>
+      <div class="mt-tarjetas">
+        <div class="mt-tarj"><div class="ic">4 + 1</div><b>En pista</b><p>Cada equipo juega con cuatro jugadores y un portero. En el acta pueden ir hasta 15 jugadores y el portero.</p></div>
+        <div class="mt-tarj"><div class="ic">⇄</div><b>Cambios en marcha</b><p>Se cambia sin parar el juego, cuantas veces se quiera: el que sale tiene que llegar a menos de 3 metros del banquillo antes de que entre el otro.</p></div>
+        <div class="mt-tarj"><div class="ic">C · A</div><b>Capitán</b><p>Lleva una «C» en la camiseta, y sus suplentes una «A». El portero no puede ser capitán.</p></div>
+      </div>`);
+    // cuánto dura: dos partes y 5 minutos de descanso; el reloj se para
+    const dur = [['Senior', 25, 'nuestros equipos A, B, C y D'], ['Júnior, juvenil, infantil y alevín', 20, 'nuestros Infantil y Alevín'], ['Benjamín y prebenjamín', 15, '']];
+    const s3 = sec('tiempo', '03', 'EL PARTIDO', 'Dos partes y el reloj se para', `
+      <div class="nv-dur">${dur.map(([c, m, x]) => `<div class="nv-dur-f"><div class="nv-dur-t"><b>${c}</b><span>${m} + ${m} minutos${x ? ' · ' + x : ''}</span></div>
+        <div class="nv-dur-b"><i style="flex:${m}">${m}'</i><i class="d" style="flex:5">5'</i><i style="flex:${m}">${m}'</i><i class="hueco" style="flex:${25 - m}"></i></div></div>`).join('')}</div>
+      <div class="cal-ley"><span class="l-por">Partes</span><span class="l-d">Descanso</span></div>
+      <div class="mt-tarjetas">
+        <div class="mt-tarj"><div class="ic">⏸</div><b>Tiempo de juego real</b><p>El reloj se para cada vez que se para el juego y vuelve a correr cuando el árbitro suelta el disco. Por eso un partido senior ocupa una hora y media de pista.</p></div>
+        <div class="mt-tarj"><div class="ic">1'</div><b>Un tiempo muerto</b><p>Cada equipo puede pedir uno de un minuto en cada parte, con el juego parado.</p></div>
+        <div class="mt-tarj"><div class="ic">0</div><b>Sin empates</b><p>Si acaba empatado, se tiran penaltis en ese momento. Lo explicamos más abajo.</p></div>
+      </div>`);
+    // el material
+    const s4 = sec('material', '04', 'EL MATERIAL', 'Un disco, no una bola', `
+      <div class="mt-tarjetas">
+        <div class="mt-tarj"><div class="ic"><span class="nv-disco" aria-hidden="true"></span></div><b>El disco</b><p>De plástico, de 7,7 cm y unos 125 gramos, con unos pequeños tacos debajo para que se deslice por el suelo. En Madrid se juega con un modelo concreto, el Stilmat.</p></div>
+        <div class="mt-tarj"><div class="ic">⟋</div><b>El stick</b><p>Como mucho 1,57 m. La pala, curvada al gusto de cada uno.</p></div>
+        <div class="mt-tarj"><div class="ic">●●●●</div><b>Los patines</b><p>En línea, de tres o cuatro ruedas. Los porteros pueden llevar cinco, más pequeñas.</p></div>
+        <div class="mt-tarj"><div class="ic">⛑</div><b>Las protecciones</b><p>Casco, guantes, coderas, espinilleras y protección de la cara. Los menores de 19 años la llevan completa; los mayores, al menos una visera.</p></div>
+      </div>`);
+    // goles: ¿vale o no vale? (se toca para ver la respuesta)
+    const quiz = [['El disco rebota sin querer en el patín de un atacante y entra.', true, 'Vale. Lo que no vale es empujarlo a propósito con el patín.'],
+      ['Un atacante lo mete de una patada.', false, 'No vale. Dar patadas al disco está permitido en toda la pista, pero no para marcar.'],
+      ['Un defensor lo mete en su propia portería.', true, 'Vale, y se le da al último atacante que tocó el disco, sin asistencia.'],
+      ['Entra tras golpearlo con el stick por encima del larguero.', false, 'No vale: el stick alto anula el gol.'],
+      ['Rebota en el árbitro y entra.', false, 'No vale.'],
+      ['Un atacante choca con el portero dentro de su área y el disco entra.', false, 'No vale, y además es castigo para el atacante.']];
+    const s5 = sec('goles', '05', 'LOS GOLES', '¿Vale o no vale?', `
+      ${P('Un gol vale cuando el disco cruza entero la línea de gol, empujado con el stick. Cada gol lleva como mucho una asistencia: la del último pase. Toca cada jugada para ver la respuesta:')}
+      <div class="nv-quiz">${quiz.map(([q, ok, x]) => `<details class="nv-q"><summary><span>${q}</span><i aria-hidden="true">?</i></summary><div class="${ok ? 'si' : 'no'}"><b>${ok ? 'GOL' : 'NO VALE'}</b><span>${x}</span></div></details>`).join('')}</div>`);
+    // faltas y castigos
+    const cast = [['1\'30\'\'', 'Menor', 'Se sienta en el banquillo de castigados y su equipo juega con uno menos. Si el rival marca, vuelve antes.', 90, 'r'],
+      ['1\'30\'\' + 1\'30\'\'', 'Doble menor', 'Por pinchar con la punta de la pala o golpear con el extremo del mango. Si el rival marca, se acaba la primera y empieza la segunda.', 180, 'r'],
+      ['4\'', 'Mayor', 'Uno menos durante 4 minutos, aunque el rival marque.', 240, 'r'],
+      ['10\'', 'Mala conducta', 'Se sienta 10 minutos, pero entra un compañero: el equipo sigue completo.', 600, 'g'],
+      ['Fuera', 'Al vestuario', 'Se acaba su partido y se pierde el siguiente. Si va con una mayor, su equipo cumple 4 minutos con uno menos.', 0, 'n']];
+    const faltas = [['Zancadilla', 'Hacer caer al rival con el stick o la pierna.'], ['Stick alto', 'Levantar el stick por encima del hombro.'], ['Golpear con el stick', 'Dar al rival con el stick.'],
+      ['Enganchar', 'Frenar al rival con la pala del stick.'], ['Agarrar', 'Sujetarle con la mano o el brazo.'], ['Interferencia', 'Bloquear a quien no lleva el disco.'],
+      ['Carga contra la valla', 'Empujar al rival contra la valla.'], ['Carga por la espalda', 'Empujar por detrás. De las más castigadas.'], ['Demasiados jugadores', 'Entrar al cambio antes de que salga el compañero.']];
+    const s6 = sec('faltas', '06', 'FALTAS Y CASTIGOS', 'Con uno menos', `
+      ${P('Chocar al disputar el disco es normal. Lo que no se puede es cargar, empujar contra la valla o jugar con el stick contra el rival. El árbitro castiga con tiempo fuera de la pista:')}
+      <div class="nv-cast">${cast.map(([t, n, x, s, c]) => `<div class="nv-c ${c}"><b class="cifra">${t}</b><div><span class="etq">${n}</span><p>${x}</p></div>${s ? `<i style="--w:${(s / 600 * 100).toFixed(1)}%"></i>` : ''}</div>`).join('')}</div>
+      <p class="mt-nota">A la tercera menor, 10 minutos más; a la cuarta, al vestuario. Son las duraciones del reglamento de 2026: en partidos de temporadas anteriores verás menores de 2 minutos y mayores de 5.</p>
+      ${'<div class="mt-h">Las faltas más habituales</div>'}
+      <div class="nv-faltas">${faltas.map(([n, x]) => `<div><b>${n}</b><span>${x}</span></div>`).join('')}</div>
+      ${P('Si el equipo que sufre la falta tiene el disco, el árbitro levanta el brazo y deja seguir. Si marcan en esa jugada, la menor ya no se cumple.')}`);
+    // empates y penaltis
+    const pts = [['Ganar', 3, 'v'], ['Ganar en los penaltis', 2, 'v'], ['Perder en los penaltis', 1, 'd'], ['Perder', 0, 'd']];
+    const s7 = sec('penaltis', '07', 'SIN EMPATES', 'Penaltis desde el centro', `
+      <div class="mt-dos al">
+        <div>${P('Si el partido acaba empatado, en la liga se tiran penaltis en ese momento, sin prórroga:')}
+          <ul class="mt-lista">${['Empieza el equipo de casa y se tira uno y uno.', 'Si uno marca y el otro falla, se acabó: muerte súbita desde el primero.', 'No puede repetir nadie hasta que hayan tirado todos.', 'El penalti se tira desde el centro de la pista: el jugador sale con el disco, solo contra el portero, y tira. Si el portero lo para, no vale el rechace.'].map(x => `<li><i style="color:#FF6B63">·</i><span>${x}</span></li>`).join('')}</ul></div>
+        <div class="tarjeta nv-pts"><span class="etq">Puntos en la clasificación</span>${pts.map(([t, n, c]) => `<div><span class="res-l ${c}">${c.toUpperCase()}</span><span>${t}</span><b class="cifra">${n}</b></div>`).join('')}
+          <div class="pv-nota">En la web, la <span class="b-pen">B</span> junto al marcador dice quién ganó la tanda: 5<span class="b-pen">B</span>–5.</div></div>
+      </div>`);
+    // curiosidades
+    const cur = [['0', 'fueras de juego', 'No existe el fuera de juego. Solo hay una línea, la del centro.'],
+      ['🦶', 'patada sí, gol no', 'Se puede jugar el disco con el patín por toda la pista, pero un gol de patada no vale.'],
+      ['✋', 'encima de la valla', 'Si el disco se queda quieto encima de la valla, sigue en juego y se puede coger con la mano.'],
+      ['💧', 'toalla y botella', 'El portero tiene su botella y su toalla en la portería: no puede ir al banquillo a beber.'],
+      ['5', 'ruedas', 'Los porteros pueden llevar patines de cinco ruedas; el resto, de tres o cuatro.'],
+      ['✕', 'hombreras', 'Están prohibidas las hombreras de hockey hielo.'],
+      ['1', 'asistencia', 'Cada gol lleva como mucho una asistencia. En el hockey hielo pueden ser dos.'],
+      ['🥅', 'portería vacía', 'Se puede quitar al portero para meter un jugador más. Si con la portería vacía hacen falta al que va solo hacia ella, es gol directo.']];
+    const s8 = sec('curioso', '08', 'COSAS QUE SORPRENDEN', 'Lo que no esperabas', `
+      <div class="nv-cur">${cur.map(([v, t, x]) => `<div class="nv-cu"><b>${v}</b><span class="etq">${t}</span><p>${x}</p></div>`).join('')}</div>`);
+    // categorías 2026/27 por año de nacimiento
+    const cats = [['Senior', '2007 y antes', true], ['Júnior', '2008 y 2009'], ['Juvenil', '2010 y 2011'], ['Infantil', '2012 y 2013', true], ['Alevín', '2014 y 2015', true], ['Benjamín', '2016 y 2017'], ['Prebenjamín', '2018 y 2019'], ['Micro', '2020 y 2021']];
+    const s9 = sec('categorias', '09', 'CATEGORÍAS', '¿En qué categoría juega?', `
+      ${P(`Por año de nacimiento, en la temporada ${esc(A.temporada)}. En rojo, en las que tenemos equipo. Hasta juvenil, los equipos pueden ser mixtos.`)}
+      <div class="nv-cats">${cats.map(([c, a, mp]) => `<div class="${mp ? 'mp' : ''}"><b>${c}</b><span>${a}</span></div>`).join('')}</div>`);
+    // cómo leer la web
+    const s10 = sec('web', '10', 'EN ESTA WEB', 'Cómo leer lo que verás', `
+      <div class="nv-faltas">
+        <div><b><span class="res-l v">V</span> <span class="res-l d">D</span></b><span>Victoria y derrota. Un partido ganado en los penaltis cuenta como victoria.</span></div>
+        <div><b>5<span class="b-pen">B</span>–5</b><span>Empate decidido en los penaltis: la B va con quien ganó la tanda.</span></div>
+        <div><b>≈ 12'</b><span>Minuto aproximado en el directo: el acta no publica el reloj.</span></div>
+        <div><b>Uno más / uno menos</b><span>Gol marcado con un rival castigado, o con un compañero castigado.</span></div>
+        <div><b>PJ · G · A</b><span>Partidos jugados, goles y asistencias.</span></div>
+        <div><b>% de paradas</b><span>De cada 100 tiros a puerta que recibe el portero, cuántos para.</span></div>
+      </div>
+      <a class="como-l" href="#/metodo">Cómo calculamos cada número</a>`);
+    const indice = [['pista', 'La pista'], ['equipos', 'Los equipos'], ['tiempo', 'El partido'], ['material', 'El material'], ['goles', '¿Vale o no?'], ['faltas', 'Faltas'], ['penaltis', 'Penaltis'], ['curioso', 'Sorpresas'], ['categorias', 'Categorías'], ['web', 'En esta web']];
+    return `<div class="mt-hero nv-hero"><div class="lab" style="color:#FF6B63">MADRIDPATINA · HOCKEY LÍNEA</div><h1>¿Nuevo en el hockey línea?</h1>
+        <p>Todo lo que hace falta para seguir un partido desde la grada: la pista, cuánto dura, qué vale y qué no, los castigos y los penaltis.</p>
+        <div class="nv-kpis"><div><b class="cifra">4+1</b><span>por equipo</span></div><div><b class="cifra">2×25'</b><span>en senior</span></div><div><b class="cifra">0</b><span>empates</span></div><div><b class="cifra">0</b><span>fueras de juego</span></div></div></div>
+      <nav class="nv-ind" aria-label="Apartados">${indice.map(([id, t]) => `<a href="#/nuevo/${id}">${t}</a>`).join('')}</nav>
+      ${s1}${s2}${s3}${s4}${s5}${s6}${s7}${s8}${s9}${s10}
+      <p class="mt-nota nv-fuente">Según las Reglas de juego de hockey línea (junio de 2026) y las Bases de la Federación Madrileña de Patinaje para ${esc(A.temporada)}.</p>`;
+  }
+
   function vMetodo() {
     const F = A.fmpe || {}, fac = F.factores || {}, f = k => (fac[k] || {}).f, PJ = F.pj_temporada || 18;
     const fx = (x, n) => x.toFixed(n).replace('.', ','), d2 = x => fx(x, 2), d1 = x => fx(x, 1);
@@ -2858,6 +2984,7 @@
       .map(([id, n, t, x]) => `<a class="blk" href="#/metodo/${id}"><span class="n">${n}</span><b>${t}</b><span class="x">${x}</span></a>`).join('');
     return `<div class="mt-hero"><div class="lab" style="color:#FF6B63">MADRIDPATINA · MÉTODO</div><h1>Cómo lo calculamos</h1>
         <p>Qué mide cada número de la web y cómo lo calculamos. Casi todo sale de las actas de la Federación Madrileña de Patinaje; lo que no, lo decimos en su sitio.</p>
+        <a class="como-l" href="#/nuevo">¿Nuevo en el hockey línea? Lo básico para seguir un partido</a>
         <div class="mt-corto"><span class="etq">En pocas palabras</span>${lista(['Los números salen de las actas de la federación, desde 2016/17, y la web se actualiza cada noche.', 'El FMPe pone los puntos de todas las ligas senior en la misma escala, para poder compararlos.', 'Las opciones de ganar salen de lo que pasó otras veces con el mismo marcador; los pronósticos, de los goles de esta temporada.', 'Nada de esto sabe de bajas, lesiones ni de cómo llega cada uno ese día.'])}</div></div>
       <nav class="mt-indice" aria-label="Apartados">${indice}</nav>
       ${datos}${fmpe}${pre}${directo}${ficha}${mapaM}${probM}`;
@@ -2930,8 +3057,8 @@
     jugadores: '<path d="M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M17.2 6.4a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2zM16.5 14.1c2.8.3 5 2.3 5 5.9"/>',
   };
   // a qué sección del menú pertenece cada página (Pretemporada vive en Ligas; el directo y los resúmenes, en Inicio)
-  const TOP = { inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', buzon: 'inicio' };
-  const TITLES = { inicio: 'Inicio', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
+  const TOP = { inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', nuevo: 'metodo', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', buzon: 'inicio' };
+  const TITLES = { inicio: 'Inicio', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', nuevo: '¿Nuevo en el hockey línea?', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
   // migas: el título de sección se toca para subir un nivel («EQUIPOS / MP A»); la última es la página en la que se está
   const migasHtml = xs => `<nav class="migas" aria-label="Estás en">${xs.map(([t, h], i) => (i ? '<i aria-hidden="true">/</i>' : '') + (h && i < xs.length - 1 ? `<a href="${h}">${esc(t)}</a>` : `<span class="act" aria-current="page">${esc(t)}</span>`)).join('')}</nav>`;
   const mpCorto = e => e.cantera ? (e.id === 'AL' ? 'MP Alevín' : 'MP Infantil') : 'MP ' + e.id;
@@ -2956,6 +3083,7 @@
     if (v === 'directo') return [['Inicio', '#/'], ['En directo']];
     if (v === 'video') return [['Inicio', '#/'], ['Resumen en vídeo']];
     if (v === 'metodo') return [['Inicio', '#/'], ['Cómo lo calculamos']];
+    if (v === 'nuevo') return [['Inicio', '#/'], ['¿Nuevo en el hockey línea?']];
     if (v === 'apodo') return [['Inicio', '#/'], ['Tu apodo']];
     return null;
   }
@@ -3012,6 +3140,7 @@
     else if (v === 'pretemporada') html = vPretemporada2(parts[1]);
     else if (v === 'directo') html = parts[2] === 'resumen' ? vResumen(parts[1]) : vVivo(parts[1]);   // rediseño final: resumen sin vídeo y directo
     else if (v === 'metodo') html = vMetodo();
+    else if (v === 'nuevo') html = vNuevo();
     else if (v === 'sincronizar') html = vSincronizar(parts[1]);
     else if (v === 'banquillo' && !parts[1]) { history.replaceState(null, '', '#/'); return render(); }
     else if (v === 'banquillo') html = vBanquillo(parts[1]);
@@ -3021,10 +3150,10 @@
     else if (v === 'buzon') html = vBuzon();
     else html = vInicio(parts[0] === 'jornada' || parts[0] === 'inicio' ? parts[1] : null);
     const mg = migasDe(v, parts), back = mg ? migasHtml(mg) : '';
-    const pie = `<footer class="pie"><span>MADRIDPATINA · Temporada ${esc(A.temporada)}</span><span><a href="${TELEGRAM}" target="_blank" rel="noopener">Avisos en Telegram</a> · <a href="#/metodo">Cómo lo calculamos</a> · Datos: Federación Madrileña de Patinaje · actualizado ${fdc(A.actualizado).toLowerCase()}</span></footer>`;
+    const pie = `<footer class="pie"><span>MADRIDPATINA · Temporada ${esc(A.temporada)}</span><span><a href="${TELEGRAM}" target="_blank" rel="noopener">Avisos en Telegram</a> · <a href="#/nuevo">¿Nuevo en el hockey línea?</a> · <a href="#/metodo">Cómo lo calculamos</a> · Datos: Federación Madrileña de Patinaje · actualizado ${fdc(A.actualizado).toLowerCase()}</span></footer>`;
     view.innerHTML = back + html + pie;
     if (!VID) cargarVideos().then(() => { const m = /^#\/directo\/([^/]+)\/resumen/.exec(location.hash); if (/^#\/partido\//.test(location.hash) || (m && VID[decodeURIComponent(m[1])])) render(); });
-    if (v === 'metodo' && parts[1]) setTimeout(() => { const el = document.getElementById('m-' + parts[1]); if (el) el.scrollIntoView({ block: 'start' }); }, 60);
+    if ((v === 'metodo' || v === 'nuevo') && parts[1]) setTimeout(() => { const el = document.getElementById((v === 'nuevo' ? 'n-' : 'm-') + parts[1]); if (el) el.scrollIntoView({ block: 'start' }); }, 60);
     if ((v === 'inicio' || v === 'jornada') && parts[1]) setTimeout(() => { const el = document.getElementById('semana'); if (el) el.scrollIntoView({ block: 'start' }); }, 60);   // al cambiar de semana
     // entrada de página (nivel 1): toda la vista sube 8 px en 240 ms, sin cascada
     if (MOV) { view.style.animation = 'none'; void view.offsetWidth; view.style.animation = 'mpEntra .24s cubic-bezier(.2,.8,.2,1) both'; }
