@@ -366,6 +366,14 @@
   const fdLarga = s => { const [y, m, d] = s.split('-').map(Number); return ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][new Date(y, m - 1, d).getDay()] + ' ' + d + ' de ' + ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][m - 1]; };
 
   // ── la semana: una tarjeta por equipo con el resultado y la clasificación (el detalle, al tocar el partido) ──
+  // racha: los últimos 5 resultados hasta esa fecha (los penaltis cuentan para quien ganó la tanda) y, si gana seguido, cuántas
+  function rachaDe(e, hasta) {
+    const rs = (e.cal || []).filter(c => c.resultado && c.fecha && c.fecha <= hasta).slice(-5).map(c => {
+      if (c.r !== 'E') return c.r; const pz = c.mid && A.partidos[c.mid] && A.partidos[c.mid].pen; return pz ? (pz === e.clas.equipo ? 'V' : 'D') : null; }).filter(Boolean);
+    if (rs.length < 2) return '';
+    let k = 0; for (let i = rs.length - 1; i >= 0 && rs[i] === 'V'; i--) k++;
+    return `<div class="sem-racha"><span class="pv-res">${rs.map(r => `<span class="res-l ${r.toLowerCase()}">${r}</span>`).join('')}</span>${k >= 2 ? `<span>${k} victorias seguidas</span>` : ''}</div>`;
+  }
   const TONO = l => (/^senior-2/.test(l) ? 'tono-s2' : /^senior/.test(l) ? 'tono-s4' : 'tono-cant');
   const fotoDe = (nombre, apellidos) => { const j = A.jugadores[kOf(nombre || '', apellidos || '')]; return fotoOK(j) ? j.foto : null; };
   function semanaHtml(wi) {
@@ -410,7 +418,7 @@
           <div class="sem-l"><span class="sem-letra">${esc(letra)}</span>${chip}</div>
           <div class="sem-score${p ? '' : ' vacio'}">${score}</div>
           ${rival ? `<div class="sem-riv">${escudo(rivalCrest, 28)}<div><b>${esc(rival)}</b><span>${esc(donde)}</span></div></div>` : '<div class="sem-riv"></div>'}
-          <div class="sem-pie"><div class="sem-pt"><span>${esc(puesto)}</span>${mov}</div><div class="sem-dots">${dots}</div></div></div>${destHtml}</a>` });
+          ${derbi || !e.clas ? '' : rachaDe(e, w.hasta)}<div class="sem-pie"><div class="sem-pt"><span>${esc(puesto)}</span>${mov}</div><div class="sem-dots">${dots}</div></div></div>${destHtml}</a>` });
     });
     // filas sin huecos: en escritorio de 3 en 3; en el móvil de 2 en 2, y a lo ancho el derbi y las que llevan destacado
     const grupo = l => (/^senior-2/.test(l) ? 0 : /^senior/.test(l) ? 1 : 2);
@@ -567,7 +575,23 @@
         <div class="pv-pron"><i style="width:${P.g}%"><span>${P.g} %</span></i><i class="pen" style="width:${P.e}%"></i><i class="riv" style="width:${P.pe}%"><span>${P.pe} %</span></i></div>
         <div class="pv-pron-l"><span>Penaltis ${P.e} %</span><span>Lo más probable: <b>${esc(etqEq(c.local, lid, true))} ${a1}–${b1} ${esc(etqEq(c.visitante, lid, true))}</b></span></div>
         ${P.poco ? `<div class="aviso">Llevamos pocos partidos (${P.x.pj[usL ? 0 : 1]} nosotros y ${P.x.pj[usL ? 1 : 0]} ellos): el pronóstico todavía dice poco.</div>` : ''}
-        <div class="pv-nota">Calculado el ${esc(P.x.hecho.slice(8, 10) + '/' + P.x.hecho.slice(5, 7))} a las ${esc(P.x.hecho.slice(11))}. Se congela el día del partido y no se vuelve a tocar.</div></div>`;
+        <div class="pv-nota">Calculado el ${esc(P.x.hecho.slice(8, 10) + '/' + P.x.hecho.slice(5, 7))} a las ${esc(P.x.hecho.slice(11))}. Se congela el día del partido y no se vuelve a tocar.</div>${comoL('probabilidad')}</div>`;
+    }
+    // qué nos jugamos: dónde quedaríamos con cada resultado, contando solo este partido (ganar 3 puntos; en los penaltis, 2 y 1)
+    let juego = '';
+    const rU = L.clasif.find(y => y.equipo === us), rT = L.clasif.find(y => y.equipo === them);
+    if (!pasado && !derbi && rU && rT && L.clasif.length > 2) {
+      const sitio = (pu, pt) => { const otros = L.clasif.filter(y => y !== rU && y !== rT).map(y => y.pts).concat(pt), a = otros.filter(q => q > pu).length + 1, b = a + otros.filter(q => q === pu).length; return [a, b]; };
+      const txt = ([a, b]) => a === b ? a + 'º' : a + 'º–' + b + 'º';   // empatados a puntos: según el desempate
+      const opts = [['Ganamos', 3, 0, 'v'], ['Ganamos en los penaltis', 2, 1, 'v'], ['Perdemos en los penaltis', 1, 2, 'd'], ['Perdemos', 0, 3, 'd']].map(([t, a, b, c]) => ({ t, c, pts: rU.pts + a, s: sitio(rU.pts + a, rT.pts + b) }));
+      const cur = rU.puesto, que = ([a, b], suma) => (a === b ? (a === cur ? 'seguimos ' + a + 'º' : (a < cur ? 'subimos al ' : 'bajamos al ') + a + 'º')
+        : a > cur ? 'podemos bajar hasta el ' + b + 'º' : a < cur && (suma || b < cur) ? 'podemos subir hasta el ' + a + 'º' : 'seguimos ' + cur + 'º');
+      const w0 = opts[0].s, l0 = opts[3].s;
+      const fr = w0[0] === l0[0] && w0[1] === l0[1] ? `Pase lo que pase, ${que(w0, 3)}.` : `Si ganamos, ${que(w0, 3)}. Si perdemos, ${que(l0, 0)}.`;
+      const rv = rT.pts > rU.pts && rU.pts + 3 > rT.pts ? ' Ganando, les pasamos.' : '';
+      juego = `<div class="tarjeta pv-b"><div class="etq">Qué nos jugamos</div><div class="dest">${fr}${rv}</div>
+        ${opts.map(o => `<div class="pv-jg"><span class="res-l ${o.c}">${o.c.toUpperCase()}</span><span>${o.t}</span><span class="cifra">${o.pts} ${o.pts === 1 ? 'punto' : 'puntos'}</span><b class="cifra">${txt(o.s)}</b></div>`).join('')}
+        <div class="pv-nota">Ahora somos ${rU.puesto}º con ${rU.pts} ${rU.pts === 1 ? 'punto' : 'puntos'}. Contamos solo este partido: los demás equipos también juegan.${opts.some(o => o.s[0] !== o.s[1]) ? ' Con guion, empatados a puntos con otros: el puesto lo decide el desempate.' : ''}</div></div>`;
     }
     // cara a cara (con el club, todas las temporadas): los empates que se decidieron en los penaltis, aparte
     const hh = !derbi && (eU.h2h || []).find(y => y.rival === them), n2 = hh ? hh.v + hh.e + hh.d : 0, ult = hh && hh.partidos[0];
@@ -603,7 +627,7 @@
       const frase = luego ? `Quédate: a las ${luego.q.hora || 'hora por fijar'} juega ${quien(luego.q)} aquí.` : antes ? `Ven antes: a las ${antes.q.hora || 'hora por fijar'} juega ${quien(antes.q)} aquí.` : '';
       diaHtml2 = `<div class="tarjeta pv-b"><div class="etq">Ese día en esta pista</div>${frase ? `<div class="dest">${frase}</div>` : ''}${nos.map(({ q, actual }) => `<div class="pv-dia-f${actual ? ' act' : ''}"><span class="cifra">${esc(q.hora || '—')}</span><span>${esc(nm(q)(q.local) + ' – ' + nm(q)(q.visitante))}${actual ? ' · este partido' : ''}</span></div>`).join('')}</div>`;
     }
-    return `<div class="previa">${cab}<div class="pv-grid"><div class="pv-col">${comp}${pron}${h2h}</div><div class="pv-col">${llegan}${vigilar}${diaHtml2}</div></div></div>`;
+    return `<div class="previa">${cab}<div class="pv-grid"><div class="pv-col">${juego}${comp}${pron}${h2h}</div><div class="pv-col">${llegan}${vigilar}${diaHtml2}</div></div></div>`;
   }
 
   /* ── Pestañas dentro de una página (rediseño, fase 4): todas las vistas se pintan y se enseña una; la elegida se
@@ -792,7 +816,7 @@
           <path d="${linea} L600 192 L0 192 Z" fill="rgba(211,32,42,.18)"/><path class="dibuja" d="${linea}" fill="none" stroke="#D3202A" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>
         ${marcas}<span class="pa-g-y a">100 %</span><span class="pa-g-y b">0 %</span></div>
         <div class="vv-ejes"><span>0'</span><span>Descanso</span><span>${tot}'</span></div>
-        <div class="cal-ley"><span class="l-por">${derbi ? 'Opciones de ganar de ' + esc(nmC(p.local)) : 'Nuestras opciones de ganar, minuto a minuto'}</span><span class="l-d">${derbi ? 'Gol de ' + esc(nmC(p.visitante)) : 'Gol del rival'}</span></div>`;
+        <div class="cal-ley"><span class="l-por">${derbi ? 'Opciones de ganar de ' + esc(nmC(p.local)) : 'Nuestras opciones de ganar, minuto a minuto'}</span><span class="l-d">${derbi ? 'Gol de ' + esc(nmC(p.visitante)) : 'Gol del rival'}</span></div>${comoL('probabilidad')}`;
     }
     const pc = v => Math.round(v * 100) + ' %';
     // momentos clave: el primer gol, el que dejó el partido decidido (desde él el ganador ya no dejó de ir por delante) y el último
@@ -905,6 +929,36 @@
         <div class="fi-bar"><i class="g" style="width:${((esPor ? x.pj : x.g) / mx * 100).toFixed(1)}%"></i>${esPor ? '' : `<i class="a" style="width:${(x.a / mx * 100).toFixed(1)}%"></i>`}</div>
         <span class="fi-tv">${esPor ? x.pj + ' PJ' + (x.tiros ? ' · ' + dec(((x.tiros - x.gc) / x.tiros * 100).toFixed(1)) + ' %' : '') : x.pj + ' PJ · ' + x.g + ' G · ' + x.a + ' A'}</span></div>`).join('')}</div>
       <div class="cal-ley"><span class="l-por">${esPor ? 'Partidos' : 'Goles'}</span>${esPor ? '' : '<span class="l-d">Asistencias</span>'}</div>` : '<div class="pv-nota">Aún no tiene partidos con nosotros.</div>';
+    // evolución: puntos por partido (porteros, % de paradas) en cada temporada con 3 partidos o más (porteros, 30 tiros)
+    const evoP = lst.slice().reverse().map(x => ({ t: x.t, ahora: x.ahora, v: esPor ? (x.tiros >= 30 ? (x.tiros - x.gc) / x.tiros * 100 : null) : (x.pj >= 3 ? (x.g + x.a) / x.pj : null) })).filter(x => x.v != null);
+    let evo = '';
+    if (evoP.length >= 2) {
+      const W = 340, Hh = 130, n0 = evoP.length, lo = esPor ? Math.max(0, Math.min(...evoP.map(x => x.v)) - 6) : 0, hi = Math.max(...evoP.map(x => x.v)) * (esPor ? 1 : 1.2) + (esPor ? 2 : .1);
+      const X = i => 26 + i * (W - 52) / Math.max(1, n0 - 1), Y = v => 26 + (1 - (v - lo) / (hi - lo)) * (Hh - 56);
+      const fmt = v => (esPor ? dec(Math.round(v)) + ' %' : dec(v.toFixed(1)));
+      const tramo = (a, b) => `<line x1="${X(a)}" y1="${Y(evoP[a].v)}" x2="${X(b)}" y2="${Y(evoP[b].v)}" class="${evoP[b].ahora ? 'curso' : ''}"/>`;
+      const best = evoP.filter(x => !x.ahora).reduce((m, x) => (!m || x.v > m.v ? x : m), null);
+      evo = `<div class="tarjeta fi-evo"><span class="etq">${esPor ? '% de paradas' : 'Puntos por partido'}, temporada a temporada</span>
+        ${best ? `<div class="dest">Su mejor temporada: ${esc(best.t)}, con ${fmt(best.v)}${esPor ? ' de paradas' : ' por partido'}.</div>` : ''}
+        <svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esPor ? '% de paradas' : 'Puntos por partido'} en cada temporada">
+          ${evoP.slice(1).map((_, i) => tramo(i, i + 1)).join('')}
+          ${evoP.map((x, i) => `<circle cx="${X(i)}" cy="${Y(x.v)}" r="${x === best ? 6 : 4}" class="${x.ahora ? 'curso' : x === best ? 'mejor' : ''}"/><text x="${X(i)}" y="${Y(x.v) - 11}" class="v">${fmt(x.v)}</text><text x="${X(i)}" y="${Hh - 6}" class="t">${esc(x.t.slice(2))}</text>`).join('')}
+        </svg><div class="pv-nota">${esPor ? 'Paradas de cada 100 tiros, en las temporadas con 30 tiros o más.' : 'Goles más asistencias, entre partidos jugados, en las temporadas con 3 partidos o más.'}${evoP.some(x => x.ahora) ? ' La de este año, en curso.' : ''}</div></div>`;
+    }
+    // su mejor partido con nosotros: más goles + asistencias (porteros: más paradas, con 10 tiros o más); de las
+    // temporadas cerradas sale de historico.json y de esta, de sus partidos en app.json
+    const cands = ((hj && hj.mejor) || []).filter(m => !!m.por === !!esPor).map(m => Object.assign({}, m));
+    (j.partidos || []).forEach(x => { const pm = A.partidos[x.mid]; if (!pm) return;
+      const mio = [pm.alin_l, pm.por_l, pm.gol_l].some(l => (l || []).some(y => y.k === j.k)), R = resLado(pm, mio ? pm.local : pm.visitante);
+      const base = { t: A.temporada, fecha: pm.fecha, rival: mio ? pm.visitante : pm.local, nos: R.nos, ell: R.ell, pen: !!R.pen, gano: R.r === 'V', mid: x.mid };
+      if (esPor && x.tiros >= 10) cands.push(Object.assign(base, { por: true, tiros: x.tiros, par: x.par }));
+      if (!esPor && (x.g || 0) + (x.a || 0) >= 2) cands.push(Object.assign(base, { g: x.g || 0, a: x.a || 0 })); });
+    const clave = m => (esPor ? [m.par, -(m.tiros - m.par)] : [m.g + m.a, m.g]).concat(m.fecha || '');
+    const mj = cands.sort((a, b) => { const x = clave(a), y = clave(b); for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] < y[i] ? 1 : -1; return 0; })[0];
+    const fLarga = f => f ? +f.slice(8, 10) + '/' + +f.slice(5, 7) + '/' + f.slice(0, 4) : '';
+    const mejorP = mj ? `<${mj.mid ? `a href="${hM(mj.mid)}"` : 'div'} class="tarjeta fi-mejor"><span class="etq">Su mejor partido con nosotros</span>
+        <b class="cifra">${esPor ? mj.par + '<small> paradas de ' + mj.tiros + '</small>' : [mj.g ? mj.g + '<small>' + (mj.g === 1 ? ' gol' : ' goles') + '</small>' : '', mj.a ? mj.a + '<small>' + (mj.a === 1 ? ' asistencia' : ' asistencias') + '</small>' : ''].filter(Boolean).join(' <small>y</small> ')}</b>
+        <span>Contra ${esc(ours(mj.rival) ? mj.rival.replace('MADRIDPATINA ', 'MP ') : mj.rival)} · ${mj.gano ? 'ganamos' : 'perdimos'}${mj.pen ? ' en los penaltis' : ''} ${mj.nos}–${mj.ell} · ${esc(fLarga(mj.fecha))}</span></${mj.mid ? 'a' : 'div'}>` : '';
     // en otros clubes (historico.json → fuera): equipo, competición y cifras de las actas de la FMP, la más reciente arriba
     const fz = (H && H.fuera && H.fuera[H.tok(j.nombre + ' ' + j.apellidos)]) || [];
     const ligaF = l => titulo(l).replace(/ Y /g, ' y ').replace(/ De /g, ' de ');
@@ -960,7 +1014,7 @@
       return `<a class="fi-p ${Rr.r.toLowerCase()}" href="${hM(x.mid)}">${escudo(x.rival, 40)}<div><span>J${p.jornada} · ${esc(fd(p.fecha))}</span><b>${esc(x.rival)}</b><span class="fi-p-r">${Rr.r === 'V' ? 'Ganado' : 'Perdido'} ${Rr.nos}–${Rr.ell}${Rr.pen ? ' (penaltis)' : ''}</span></div><span class="cifra">${esPor && x.pct != null ? dec(Math.round(x.pct)) + ' %' : (x.g || 0) + 'G ' + (x.a || 0) + 'A'}</span></a>`; }).join('');
     const partidos = (j.partidos || []).length ? `${svgTemporada(j)}<div class="fi-ps">${partidosF}</div><div data-goles-video="${esc(j.k)}"></div>` : '<div class="pv-nota">Aún no ha jugado esta temporada.</div>';
     const TB = pestanas('ficha', [['temp', 'Temporadas'], ['log', 'Logros'], ['eq', 'En el equipo'], ['comp', 'Comparar'], ['part', 'Partidos']], 'temp');
-    return `<div class="ficha2">${cab}${TB.nav}${TB.panel('temp', temporadas + fueraH)}${TB.panel('log', logros)}${TB.panel('eq', `<div class="ee">${enEq}</div>`)}${TB.panel('comp', comparar)}${TB.panel('part', partidos)}</div>`;
+    return `<div class="ficha2">${cab}${TB.nav}${TB.panel('temp', mejorP + evo + temporadas + fueraH)}${TB.panel('log', logros)}${TB.panel('eq', `<div class="ee">${enEq}</div>${comoL('ficha')}`)}${TB.panel('comp', comparar + comoL('mapa'))}${TB.panel('part', partidos)}</div>`;
   }
 
   /* ── Liga (#/liga/<id>[/evolucion|/mapa|/acertamos|/j/N] · rediseño, fase 5): cabecera con nuestro puesto y la barra
@@ -1139,7 +1193,7 @@
           <div class="tarjeta ac-q"><span class="etq">3 · ¿Mejor que ir con el de arriba?</span><div class="ac-q3"><div class="nos"><b class="cifra">${a3}</b><span>nuestro pronóstico</span></div><div><b class="cifra">${b3}</b><span>el que va por delante</span></div></div><span class="ac-q-t">${q3t}</span></div></div>
         <div class="ac-lista-w"><h2 class="h2">Partido a partido</h2><div class="ac-lista">${lista}</div>${fuera ? `<div class="pv-nota">${fuera}</div>` : ''}</div>`;
     }
-    return `<div class="liga2"><div class="lg-arriba">${hero}${pills}</div>${archivo}${T.nav}${T.panel('clas', pClas)}${T.panel('jor', pJor)}${T.panel('evo', pEvo)}${T.panel('mapa', pMapa)}${T.panel('ac', pAc)}</div>`;
+    return `<div class="liga2"><div class="lg-arriba">${hero}${pills}</div>${archivo}${T.nav}${T.panel('clas', pClas)}${T.panel('jor', pJor)}${T.panel('evo', pEvo)}${T.panel('mapa', pMapa + comoL('mapa'))}${T.panel('ac', pAc + comoL('probabilidad'))}</div>`;
   }
   // jornadas: flechas anterior / siguiente sin recargar
   document.addEventListener('click', e => {
@@ -1192,7 +1246,7 @@
     const mx = Math.max(1, ...eqs.map(e => (e.fuerza || {}).total || 0));
     const fuerza = eqs.filter(e => e.fuerza).sort((a, b) => a.fuerza.puesto - b.fuerza.puesto).map(e => `<div class="fz${e.nuestro ? ' nos' : ''}"><b class="cifra fz-p">${e.fuerza.puesto}º</b><b class="fz-n">${esc(largoEq(e.equipo, L.id))}</b>
       <span class="fz-b" data-bx style="--i:${e.fuerza.puesto - 1}"><i style="width:${(e.fuerza.confirmada / mx * 100).toFixed(1)}%"></i><i class="pos" style="width:${(e.fuerza.posible / mx * 100).toFixed(1)}%"></i></span><b class="cifra fz-v">${e.fuerza.total}</b></div>`).join('');
-    const fzH = fuerza ? `<section class="pre-sec"><h2 class="h2">¿Quién tiene más plantilla?</h2><p class="pre-p">Sumamos lo que hicieron la temporada pasada los jugadores que tiene hoy cada equipo, en puntos ajustados a la categoría en la que jugaron. Cuanto más larga la barra, más plantilla sobre el papel.</p>
+    const fzH = fuerza ? `<section class="pre-sec"><h2 class="h2">¿Quién tiene más plantilla?</h2><p class="pre-p">Sumamos lo que hicieron la temporada pasada los jugadores que tiene hoy cada equipo, en puntos ajustados a la categoría en la que jugaron. Cuanto más larga la barra, más plantilla sobre el papel. ${comoL('pretemporada')}</p>
       <div class="cal-ley"><span class="l-fz">Ya han jugado esta temporada</span><span class="l-fzp">En la plantilla, aún sin debutar</span></div><div class="fzs" data-dib>${fuerza}</div></section>` : '';
     const mpN = n => ours(n) ? (A.equipos.find(x => x.nombre === n) ? mpCortoN(n, (A.equipos.find(x => x.nombre === n) || {}).ligaId) : n).toUpperCase() : n.toUpperCase();
     const cromo = (j, rol, cls, nota, apag) => { const ok = fotoOK(j), h = j.k && A.jugadores[j.k] ? hP(j.k) : null;
@@ -2680,6 +2734,7 @@
 
   /* ── Cómo lo calculamos: cada número que publicamos, de dónde sale y qué no puede decir ─────────────────────────────── */
   const COMO = sec => ` · <a href="#/metodo/${sec}">cómo se calcula</a>`;
+  const comoL = sec => `<a class="como-l" href="#/metodo/${sec}">¿Cómo se calcula?</a>`;
   function vMetodo() {
     const F = A.fmpe || {}, fac = F.factores || {}, f = k => (fac[k] || {}).f, PJ = F.pj_temporada || 18;
     const fx = (x, n) => x.toFixed(n).replace('.', ','), d2 = x => fx(x, 2), d1 = x => fx(x, 1);
@@ -2802,7 +2857,8 @@
       ['probabilidad', '07', 'Pronósticos y análisis', 'Pronósticos, opciones de ganar y cómo juega cada equipo']]
       .map(([id, n, t, x]) => `<a class="blk" href="#/metodo/${id}"><span class="n">${n}</span><b>${t}</b><span class="x">${x}</span></a>`).join('');
     return `<div class="mt-hero"><div class="lab" style="color:#FF6B63">MADRIDPATINA · MÉTODO</div><h1>Cómo lo calculamos</h1>
-        <p>Qué mide cada número de la web y cómo lo calculamos. Casi todo sale de las actas de la Federación Madrileña de Patinaje; lo que no, lo decimos en su sitio.</p></div>
+        <p>Qué mide cada número de la web y cómo lo calculamos. Casi todo sale de las actas de la Federación Madrileña de Patinaje; lo que no, lo decimos en su sitio.</p>
+        <div class="mt-corto"><span class="etq">En pocas palabras</span>${lista(['Los números salen de las actas de la federación, desde 2016/17, y la web se actualiza cada noche.', 'El FMPe pone los puntos de todas las ligas senior en la misma escala, para poder compararlos.', 'Las opciones de ganar salen de lo que pasó otras veces con el mismo marcador; los pronósticos, de los goles de esta temporada.', 'Nada de esto sabe de bajas, lesiones ni de cómo llega cada uno ese día.'])}</div></div>
       <nav class="mt-indice" aria-label="Apartados">${indice}</nav>
       ${datos}${fmpe}${pre}${directo}${ficha}${mapaM}${probM}`;
   }
@@ -2819,9 +2875,9 @@
     Hx.jugadores.forEach(j => {
       const k = tok(j.nombre); j.temporadas.forEach(t => { t.temporada = st(t.temporada); });
       const m = Hx.byTok[k];
-      if (m) { m.temporadas = m.temporadas.concat(j.temporadas); m.ahora = (m.ahora || []).concat(j.ahora || []); m.foto = m.foto || j.foto;
+      if (m) { m.temporadas = m.temporadas.concat(j.temporadas); m.mejor = (m.mejor || []).concat(j.mejor || []); m.ahora = (m.ahora || []).concat(j.ahora || []); m.foto = m.foto || j.foto;
         m.adulto = m.adulto === true || j.adulto === true ? true : m.adulto === false && j.adulto === false ? false : (m.adulto ?? j.adulto); const acc = x => (x.match(/[áéíóúÁÉÍÓÚ]/g) || []).length; if (acc(j.nombre) > acc(m.nombreRaw)) { m.nombreRaw = j.nombre; m.nombre = tc(j.nombre); } }
-      else Hx.byTok[k] = { tok: k, nombreRaw: j.nombre, nombre: tc(j.nombre), temporadas: j.temporadas.slice(), adulto: j.adulto, ahora: (j.ahora || []).slice(), foto: j.foto };
+      else Hx.byTok[k] = { tok: k, nombreRaw: j.nombre, nombre: tc(j.nombre), temporadas: j.temporadas.slice(), adulto: j.adulto, ahora: (j.ahora || []).slice(), foto: j.foto, mejor: (j.mejor || []).slice() };
     });
     Hx.jugadores = Object.values(Hx.byTok).map(j => Object.assign(j, { carrera: { pj: j.temporadas.reduce((s, t) => s + t.pj, 0), g: j.temporadas.reduce((s, t) => s + t.g, 0), a: j.temporadas.reduce((s, t) => s + t.a, 0), pim: j.temporadas.reduce((s, t) => s + (t.pim || 0), 0), hattricks: j.temporadas.reduce((s, t) => s + (t.hattricks || 0), 0), temporadas: new Set(j.temporadas.map(t => t.temporada)).size } }))
       .sort((a, b) => b.carrera.g - a.carrera.g || b.carrera.a - a.carrera.a);

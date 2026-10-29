@@ -3194,3 +3194,30 @@ a.pre-l:hover { color: #FFFFFF; background: #18181B; }
   .rs-d.gol.on i { transform: rotate(45deg) !important; }
 }
 .cal-fil .pests button { min-width: 44px; justify-content: center; }   /* filtros A, B, C, D: zona de toque de 44 px */
+
+/* ── novedades 30/10: racha, qué nos jugamos, evolución, mejor partido y enlaces al «?» ── */
+.sem-racha { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; font-weight: 700; color: #3DD27E; }
+.sem-racha .pv-res { display: flex; gap: 4px; }
+.sem-racha .res-l { width: 20px; height: 20px; font-family: 'IBM Plex Sans Condensed', sans-serif; font-size: 11px; font-weight: 700; }
+.pv-jg { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 64px; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #26262A; font-size: 14px; color: #C9C9CE; }
+.pv-jg .res-l { width: 24px; height: 24px; font-family: 'IBM Plex Sans Condensed', sans-serif; font-size: 12px; font-weight: 700; }
+.pv-jg .cifra { color: #8A8A8F; font-size: 14px; }
+.pv-jg b.cifra { text-align: right; font-size: 18px; font-weight: 800; color: #F4F4F5; }
+.fi-mejor { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; color: #C9C9CE; }
+.fi-mejor > b.cifra { font-size: 34px; line-height: 1; color: #F4F4F5; }
+.fi-mejor > b small { font-family: 'IBM Plex Sans Condensed', sans-serif; font-size: 15px; font-weight: 600; color: #A6A6AD; }
+.fi-mejor > span:last-child { font-size: 13px; color: #A6A6AD; }
+a.fi-mejor:hover { box-shadow: inset 0 0 0 1px #3A3A40; }
+.fi-evo { margin-bottom: 12px; }
+.fi-evo svg { display: block; width: 100%; max-width: 560px; height: auto; margin: 6px 0 2px; overflow: visible; }
+.fi-evo line { stroke: #D3202A; stroke-width: 2.5; }
+.fi-evo line.curso { stroke-dasharray: 5 4; }
+.fi-evo circle { fill: #18181B; stroke: #D3202A; stroke-width: 2.5; }
+.fi-evo circle.mejor { fill: #D3202A; }
+.fi-evo circle.curso { stroke-dasharray: 3 2; }
+.fi-evo text { text-anchor: middle; font-family: 'IBM Plex Sans Condensed', sans-serif; }
+.fi-evo text.v { font-size: 12px; font-weight: 700; fill: #F4F4F5; }
+.fi-evo text.t { font-size: 11px; font-weight: 600; fill: #8A8A8F; }
+.como-l { display: inline-block; padding: 12px 0; font-size: 13px; font-weight: 600; color: #A6A6AD; text-decoration: underline; text-underline-offset: 3px; }
+.como-l:hover { color: #F4F4F5; }
+.mt-corto { margin-top: 18px; max-width: 760px; }
