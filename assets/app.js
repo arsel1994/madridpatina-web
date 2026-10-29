@@ -2738,13 +2738,26 @@
   /* ── ¿Nuevo en el hockey línea? (#/nuevo): lo básico para seguir un partido, con las Reglas de juego 2026 y las Bases
      de la FMP 2026/27 (duraciones, empates, categorías). Sin datos de nadie: solo el reglamento. ─────────────────── */
   function vNuevo() {
+    const ico = d => `<svg class="nv-ico" viewBox="0 0 48 48" aria-hidden="true">${d}</svg>`;
+    const PATIN = '<path d="M9 7h13v13l12 4c4 1.3 6 3.6 6 7v2H9z"/><path d="M7 37h35"/><circle cx="12" cy="42" r="3.5"/><circle cx="21" cy="42" r="3.5"/><circle cx="30" cy="42" r="3.5"/><circle cx="39" cy="42" r="3.5"/>';
+    const IC = {
+      cambio: ico('<path d="M7 16h30M30 9l7 7-7 7"/><path d="M41 32H11M18 25l-7 7 7 7"/>'),
+      reloj: ico('<circle cx="24" cy="27" r="16"/><path d="M20 6h8M24 6v5M36 13l3-3"/><path d="M20 21v12M28 21v12"/>'),
+      stick: ico('<path d="M37 3 20 36"/><path class="g" d="M20 36c-2 4-5 5-9 5H4"/>'),
+      patin: ico(PATIN),
+      casco: ico('<path d="M8 29a16 16 0 0 1 32 0v3H8z"/><path d="M13 32v8h22v-8M19 32v8M25 32v8M31 32v8"/><path d="M24 13v8"/>'),
+      patada: ico('<g transform="translate(-4 2) scale(.8)">' + PATIN + '</g><ellipse class="f" cx="40" cy="37" rx="6" ry="2.6"/><path d="M33 31l4 2"/>'),
+      valla: ico('<rect x="3" y="28" width="42" height="15" rx="2"/><path d="M3 34h42"/><ellipse class="f" cx="24" cy="24" rx="9" ry="3.4"/><path d="M24 8v8M20 12l4 4 4-4"/>'),
+      botella: ico('<path d="M20 4h8v5l4 5v27a3 3 0 0 1-3 3H19a3 3 0 0 1-3-3V14l4-5z"/><path d="M16 24c3-2 5 2 8 0s5 2 8 0"/><path d="M8 18h4M8 26h4M8 34h4"/>'),
+      vacia: ico('<path d="M5 42V12h38v30"/><path d="M5 12l8 8h22l8-8M13 20v22M35 20v22"/><path class="g" d="M19 30l10 0M24 25v10" transform="rotate(45 24 30)"/>'),
+    };
     const sec = (id, n, k, t, cuerpo) => `<section id="n-${id}" class="mt-sec nv-sec" data-anim="mpUp .45s cubic-bezier(.2,.8,.2,1)">
         <div class="mt-cab"><span class="n">${n}</span><div><div class="k">${k}</div><h2>${t}</h2></div></div>${cuerpo}</section>`;
     const P = x => `<p class="mt-p">${x}</p>`;
     // la pista, a escala (50 × 25 m, 10 px por metro): línea central, porterías, áreas y puntos de saque
     const gx = [43, 457], spots = [[104, 63], [104, 197], [396, 63], [396, 197]];
     const marca = (x, y, n) => `<g class="nv-m"><circle cx="${x}" cy="${y}" r="17"/><text x="${x}" y="${y + 7}">${n}</text></g>`;
-    const pista = `<svg class="nv-pista" viewBox="0 0 500 260" role="img" aria-label="Plano de una pista de hockey línea de 50 por 25 metros">
+    const pista = `<svg class="nv-pista" viewBox="0 0 500 260" role="img" aria-label="Plano de una pista de hockey línea de 50 por 25 metros, la medida ideal">
         <rect x="5" y="5" width="490" height="250" rx="50" class="valla"/>
         <line x1="250" y1="5" x2="250" y2="255" class="roja"/>
         <circle cx="250" cy="130" r="30" class="circ"/><circle cx="250" cy="130" r="3" class="pto"/>
@@ -2758,17 +2771,18 @@
       ['2', 'La portería', '1,70 m de ancho y 1,05 m de alto. Más pequeña que una de fútbol sala (3 × 2 m).'],
       ['3', 'El área del portero', 'El rectángulo rojo delante de la portería. Un atacante no puede quedarse dentro si el disco no está en ella.'],
       ['4', 'Los puntos de saque', 'Cinco: el del centro y dos en cada lado. Ahí se reanuda el juego cuando se para.']];
-    const s1 = sec('pista', '01', 'LA PISTA', 'Unos 50 × 25 metros, con valla alrededor', `
+    const s1 = sec('pista', '01', 'LA PISTA', 'Cada pista mide distinto', `
+      ${P('El reglamento admite pistas de 40 a 60 metros de largo y de 20 a 30 de ancho; lo ideal es 50 × 25, con el ancho la mitad del largo. Muchas son la pista de un polideportivo, así que de un sitio a otro cambia bastante. El plano es el de una pista de 50 × 25:')}
       <div class="nv-pista-c">${pista}</div>
       <div class="nv-ley">${ley.map(([n, t, x]) => `<div><span class="nv-num">${n}</span><div><b>${t}</b><span>${x}</span></div></div>`).join('')}</div>
-      ${P('La valla mide algo más de un metro y tiene las esquinas redondeadas: el disco rebota en ella y sigue el juego. El suelo suele ser de baldosa deportiva, como el de un polideportivo.')}`);
+      ${P('La valla mide algo más de un metro y tiene las esquinas redondeadas: el disco rebota en ella y sigue el juego. El suelo suele ser de baldosa deportiva, aunque también se juega sobre madera, cemento o asfalto.')}`);
     // quién juega
     const ficha = (c, t) => `<span class="nv-j ${c}">${t}</span>`;
     const s2 = sec('equipos', '02', 'LOS EQUIPOS', 'Cuatro y el portero', `
       <div class="nv-cinco"><div>${ficha('', '')}${ficha('', '')}${ficha('', '')}${ficha('', '')}${ficha('por', 'P')}</div><span>contra</span><div>${ficha('riv', '')}${ficha('riv', '')}${ficha('riv', '')}${ficha('riv', '')}${ficha('riv por', 'P')}</div></div>
       <div class="mt-tarjetas">
         <div class="mt-tarj"><div class="ic">4 + 1</div><b>En pista</b><p>Cada equipo juega con cuatro jugadores y un portero. En el acta pueden ir hasta 15 jugadores y el portero.</p></div>
-        <div class="mt-tarj"><div class="ic">⇄</div><b>Cambios en marcha</b><p>Se cambia sin parar el juego, cuantas veces se quiera: el que sale tiene que llegar a menos de 3 metros del banquillo antes de que entre el otro.</p></div>
+        <div class="mt-tarj"><div class="ic">${IC.cambio}</div><b>Cambios en marcha</b><p>Se cambia sin parar el juego, cuantas veces se quiera: el que sale tiene que llegar a menos de 3 metros del banquillo antes de que entre el otro.</p></div>
         <div class="mt-tarj"><div class="ic">C · A</div><b>Capitán</b><p>Lleva una «C» en la camiseta, y sus suplentes una «A». El portero no puede ser capitán.</p></div>
       </div>`);
     // cuánto dura: dos partes y 5 minutos de descanso; el reloj se para
@@ -2778,7 +2792,7 @@
         <div class="nv-dur-b"><i style="flex:${m}">${m}'</i><i class="d" style="flex:5">5'</i><i style="flex:${m}">${m}'</i><i class="hueco" style="flex:${25 - m}"></i></div></div>`).join('')}</div>
       <div class="cal-ley"><span class="l-por">Partes</span><span class="l-d">Descanso</span></div>
       <div class="mt-tarjetas">
-        <div class="mt-tarj"><div class="ic">⏸</div><b>Tiempo de juego real</b><p>El reloj se para cada vez que se para el juego y vuelve a correr cuando el árbitro suelta el disco. Por eso un partido senior ocupa una hora y media de pista.</p></div>
+        <div class="mt-tarj"><div class="ic">${IC.reloj}</div><b>Tiempo de juego real</b><p>El reloj se para cada vez que se para el juego y vuelve a correr cuando el árbitro suelta el disco. Por eso un partido senior ocupa una hora y media de pista.</p></div>
         <div class="mt-tarj"><div class="ic">1'</div><b>Un tiempo muerto</b><p>Cada equipo puede pedir uno de un minuto en cada parte, con el juego parado.</p></div>
         <div class="mt-tarj"><div class="ic">0</div><b>Sin empates</b><p>Si acaba empatado, se tiran penaltis en ese momento. Lo explicamos más abajo.</p></div>
       </div>`);
@@ -2786,9 +2800,9 @@
     const s4 = sec('material', '04', 'EL MATERIAL', 'Un disco, no una bola', `
       <div class="mt-tarjetas">
         <div class="mt-tarj"><div class="ic"><span class="nv-disco" aria-hidden="true"></span></div><b>El disco</b><p>De plástico, de 7,7 cm y unos 125 gramos, con unos pequeños tacos debajo para que se deslice por el suelo. En Madrid se juega con un modelo concreto, el Stilmat.</p></div>
-        <div class="mt-tarj"><div class="ic">⟋</div><b>El stick</b><p>Como mucho 1,57 m. La pala, curvada al gusto de cada uno.</p></div>
-        <div class="mt-tarj"><div class="ic">●●●●</div><b>Los patines</b><p>En línea, de tres o cuatro ruedas. Los porteros pueden llevar cinco, más pequeñas.</p></div>
-        <div class="mt-tarj"><div class="ic">⛑</div><b>Las protecciones</b><p>Casco, guantes, coderas, espinilleras y protección de la cara. Los menores de 19 años la llevan completa; los mayores, al menos una visera.</p></div>
+        <div class="mt-tarj"><div class="ic">${IC.stick}</div><b>El stick</b><p>Como mucho 1,57 m. La pala, curvada al gusto de cada uno.</p></div>
+        <div class="mt-tarj"><div class="ic">${IC.patin}</div><b>Los patines</b><p>En línea, de tres o cuatro ruedas. Los porteros pueden llevar cinco, más pequeñas.</p></div>
+        <div class="mt-tarj"><div class="ic">${IC.casco}</div><b>Las protecciones</b><p>Casco, guantes, coderas, espinilleras y protección de la cara. Los menores de 19 años la llevan completa; los mayores, al menos una visera.</p></div>
       </div>`);
     // goles: ¿vale o no vale? (se toca para ver la respuesta)
     const quiz = [['El disco rebota sin querer en el patín de un atacante y entra.', true, 'Vale. Lo que no vale es empujarlo a propósito con el patín.'],
@@ -2827,13 +2841,13 @@
       </div>`);
     // curiosidades
     const cur = [['0', 'fueras de juego', 'No existe el fuera de juego. Solo hay una línea, la del centro.'],
-      ['🦶', 'patada sí, gol no', 'Se puede jugar el disco con el patín por toda la pista, pero un gol de patada no vale.'],
-      ['✋', 'encima de la valla', 'Si el disco se queda quieto encima de la valla, sigue en juego y se puede coger con la mano.'],
-      ['💧', 'toalla y botella', 'El portero tiene su botella y su toalla en la portería: no puede ir al banquillo a beber.'],
+      [IC.patada, 'patada sí, gol no', 'Se puede jugar el disco con el patín por toda la pista, pero un gol de patada no vale.'],
+      [IC.valla, 'encima de la valla', 'Si el disco se queda quieto encima de la valla, sigue en juego y se puede coger con la mano.'],
+      [IC.botella, 'toalla y botella', 'El portero tiene su botella y su toalla en la portería: no puede ir al banquillo a beber.'],
       ['5', 'ruedas', 'Los porteros pueden llevar patines de cinco ruedas; el resto, de tres o cuatro.'],
-      ['✕', 'hombreras', 'Están prohibidas las hombreras de hockey hielo.'],
+      ['NO', 'hombreras', 'Están prohibidas las hombreras de hockey hielo.'],
       ['1', 'asistencia', 'Cada gol lleva como mucho una asistencia. En el hockey hielo pueden ser dos.'],
-      ['🥅', 'portería vacía', 'Se puede quitar al portero para meter un jugador más. Si con la portería vacía hacen falta al que va solo hacia ella, es gol directo.']];
+      [IC.vacia, 'portería vacía', 'Se puede quitar al portero para meter un jugador más. Si con la portería vacía hacen falta al que va solo hacia ella, es gol directo.']];
     const s8 = sec('curioso', '08', 'COSAS QUE SORPRENDEN', 'Lo que no esperabas', `
       <div class="nv-cur">${cur.map(([v, t, x]) => `<div class="nv-cu"><b>${v}</b><span class="etq">${t}</span><p>${x}</p></div>`).join('')}</div>`);
     // categorías 2026/27 por año de nacimiento
