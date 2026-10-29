@@ -277,8 +277,8 @@
   const escudo = (n, size, cls = '') => `<span class="esc ${cls}"${size ? ` style="width:${size}px;height:${size}px"` : ''}${crest(n) ? ` data-bg="${esc(crest(n))}"` : ''}></span>`;
   function heroHtml(m) {
     const P = m.derbi ? null : pronDe(m.ligaId, m.j, m.local, m.vis);
-    const chips = m.derbi ? '<span class="chip derbi">DERBI</span>' : m.casa ? '<span class="chip casa">EN CASA</span>' : '';
-    const nom = n => `<span class="hero-n${ours(n) ? ' mp' : ''}">${esc(largoEq(n, m.ligaId))}</span>`;
+    const chips = m.derbi ? '<span class="chip derbi">DERBI</span>' : '';   // en casa: la estrella junto a nuestro nombre
+    const nom = n => `<span class="hero-n${ours(n) ? ' mp' : ''}">${m.casa && n === m.local && ours(n) ? casaMarca() : ''}${esc(largoEq(n, m.ligaId))}</span>`;
     return `<a class="hero tarjeta" href="${hPar(m.ligaId, m.j, m.local, m.vis)}">
       <div class="hero-cab"><span class="hero-liga">${esc((m.L && m.L.corto) || '')}</span><span class="hero-chips">${chips}</span></div>
       <div class="hero-cuerpo">
@@ -293,7 +293,7 @@
     const fin = m.st === 'fin' || m.st === 'pendiente', P = m.derbi || fin ? null : pronDe(m.ligaId, m.j, m.local, m.vis);
     // rediseño final: sin «EN CASA» ni fondo rojo en la lista (lo de casa ya va en «En casa · ven a vernos»)
     const chips = m.st === 'pendiente' ? '<span class="chip ambar">ACTA PENDIENTE</span>' : fin ? '<span class="chip neutro">FINAL</span>' : m.derbi ? '<span class="chip derbi">DERBI</span>' : '';
-    const lado = n => `${escudo(n, 28)}<span class="ff-n${ours(n) && !fin ? ' mp' : ''}">${esc(etqEq(n, m.ligaId, true))}</span>`;
+    const lado = n => `${escudo(n, 28)}<span class="ff-n${ours(n) && !fin ? ' mp' : ''}">${m.casa && !fin && n === m.local && ours(n) ? casaMarca() : ''}${esc(etqEq(n, m.ligaId, true))}</span>`;
     let der;
     if (m.st === 'fin') {
       const sn = m.sn, [gl, gv] = sn && sn.estado === 'final' && !m.resultado ? [sn.gl || 0, sn.gv || 0] : m.resultado ? (([a, b]) => (m.casa ? [a, b] : [b, a]))(m.resultado.split('-').map(Number)) : [0, 0];
@@ -335,6 +335,8 @@
   const tgHtml = `<a class="tg-pil" href="${TELEGRAM}" target="_blank" rel="noopener"><span class="tg-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21.5 3.6 2.9 10.8c-1.3.5-1.3 1.2-.2 1.5l4.8 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.4l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.3-.5-1.8-1.4-1.5zM9.6 14.4l-.4 4-1.4-4.6 9.6-6.1-7.8 6.7z"/></svg></span><span>Canal de Telegram de eventos en directo</span></a>`;
   // estrella de 12 puntas de «en casa» (gira despacio; quieta con «reducir movimiento»)
   const ESTRELLA = '<svg viewBox="-10 -10 20 20" aria-hidden="true"><polygon points="' + Array.from({ length: 24 }, (_, i) => { const r = i % 2 ? 4.2 : 10, a = i * Math.PI / 12 - Math.PI / 2; return (r * Math.cos(a)).toFixed(2) + ',' + (r * Math.sin(a)).toFixed(2); }).join(' ') + '"/></svg>';
+  // marca de «jugamos en casa» junto a nuestro equipo (sustituye a la etiqueta EN CASA en Inicio y en el Calendario)
+  const casaMarca = () => `<span class="casa-m" role="img" aria-label="En casa" title="En casa">${ESTRELLA}</span>`;
   // ── en casa · ven a vernos: los días que jugamos en casa en ese fin de semana, con todos los partidos de la pista ──
   function casaHtml(F) {
     if (!AGE || !F.lista.length) return '';
@@ -2032,24 +2034,28 @@
     else if (!yaJugado && p.horaAnt) chips.push('<span class="chip ambar fuerte">CAMBIO DE HORA</span>');
     if (pend) chips.push('<span class="chip ambar">ACTA PENDIENTE</span>');
     else if (derbi && !jugado) chips.push('<span class="chip derbi">DERBI</span>');
-    if (p.casa && !jugado && !pend) chips.push('<span class="chip casa">EN CASA</span>');
-    const lado = n => `${escudo(n, 28)}<span class="ff-n${ours(n) && !jugado ? ' mp' : ''}">${esc(p.lid ? etqEq(n, p.lid, true) : abr(n))}</span>`;
+    // marcador centrado: el local hacia el centro desde la izquierda, el visitante desde la derecha y en medio el % o el resultado
+    const nom = n => `<span class="ff-n${ours(n) && !jugado ? ' mp' : ''}">${esc(p.lid ? etqEq(n, p.lid, true) : abr(n))}</span>`;
+    const enCasa = p.casa && !jugado && !pend;
     const hora = p.horaAnt && !yaJugado ? `<s>${esc(p.horaAnt)}</s> <b class="cambio">${esc(p.hora || 'hora por fijar')}</b>` : esc(p.hora || 'hora por fijar');
     const donde = [esc(p.liga), p.pista ? esc(pistaCal(p.pista)) : ''].filter(Boolean).join(' · ');
     const P = derbi || jugado || pend || ya ? null : pronDe(p.lid, p.j, p.local, p.visitante);
-    let der;
+    let centro, pie;
     if (jugado) {
       const usL = ours(p.local), nos = usL ? p.gl : p.gv, ell = usL ? p.gv : p.gl, ganaPen = p.pen ? ours(p.pen) : null;
       const r = derbi ? '' : nos > ell || (nos === ell && ganaPen) ? 'v' : 'd', b = '<span class="b-pen">B</span>';
-      der = `<span class="ff-res">${r ? `<span class="res-l ${r}">${r.toUpperCase()}</span>` : ''}${p.gl}${p.pen && p.pen === p.local ? b : ''}–${p.gv}${p.pen && p.pen === p.visitante ? b : ''}</span><span class="ff-l">Ver partido</span>`;
-    } else if (pend) der = '<span class="ff-res">—</span><span class="ff-l">sin resultado aún</span>';
-    else if (ya) der = '<span class="ff-falta">Ha empezado</span><span class="ff-l">aún sin datos del acta</span>';
-    else { const [a, b] = faltaTxt(x); der = `<span class="ff-falta"${p.hora ? ` data-falta="${x.ts}"` : ''}>${a}</span><span class="ff-l">${b}</span><span class="ff-previa">PREVIA</span>`; }
+      centro = `<span class="ff-res">${p.gl}${p.pen && p.pen === p.local ? b : ''}–${p.gv}${p.pen && p.pen === p.visitante ? b : ''}</span>${r ? `<span class="res-l ${r}">${r === 'v' ? 'VICTORIA' : 'DERROTA'}</span>` : ''}`;
+      pie = '<span class="ff-l">Ver partido</span>';
+    } else if (pend) { centro = '<span class="ff-res">—</span>'; pie = '<span class="ff-l">Sin resultado aún</span>'; }
+    else if (ya) { centro = '<span class="ff-g">vs</span>'; pie = '<span class="ff-falta">Ha empezado</span><span class="ff-l">aún sin datos del acta</span>'; }
+    else { const [a, b] = faltaTxt(x); centro = P ? `<span class="ff-pct">${P.g}%</span><span class="ff-l">ganar</span>` : '<span class="ff-g">vs</span>';
+      pie = `<span class="ff-falta"${p.hora ? ` data-falta="${x.ts}"` : ''}>${a}</span><span class="ff-l">${b}</span><span class="ff-previa">PREVIA</span>`; }
     const href = p.lid ? hPar(p.lid, p.j, p.local, p.visitante) : null;
     return `<${href ? `a href="${href}"` : 'div'} class="ff cal-ff${jugado ? ' fin' : ''}">
-      <div class="ff-t"><div class="ff-cuando"><span>${hora} · ${donde}</span>${chips.join('')}</div><div class="ff-eqs">${lado(p.local)}<span class="ff-g">vs</span>${lado(p.visitante)}</div></div>
-      <div class="ff-p">${P ? `<span class="ff-pct">${P.g}%</span><span class="ff-l">ganar</span>` : ''}</div>
-      <div class="ff-f">${der}</div></${href ? 'a' : 'div'}>`;
+      <div class="cf-cab"><span>${hora} · ${donde}</span>${chips.join('')}</div>
+      <div class="cf-mid"><div class="cf-eq l">${enCasa && ours(p.local) ? casaMarca() : ''}${nom(p.local)}${escudo(p.local, 32)}</div>
+        <div class="cf-c">${centro}</div><div class="cf-eq v">${escudo(p.visitante, 32)}${nom(p.visitante)}</div></div>
+      <div class="cf-pie">${pie}</div></${href ? 'a' : 'div'}>`;
   }
   const calFilas = ps => (ps.length ? `<div class="ff-lista cal-ffl${ps.length > 1 ? ' dos' : ''}">${ps.map(calFila).join('')}</div>` : '');
   let CAL_PEDIDO = false;
