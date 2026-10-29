@@ -298,7 +298,8 @@
     if (m.st === 'fin') {
       const sn = m.sn, [gl, gv] = sn && sn.estado === 'final' && !m.resultado ? [sn.gl || 0, sn.gv || 0] : m.resultado ? (([a, b]) => (m.casa ? [a, b] : [b, a]))(m.resultado.split('-').map(Number)) : [0, 0];
       const vid = sn && VID && VID[sn.idp], href = vid ? '#/video/' + encodeURIComponent(sn.idp) : sn ? '#/directo/' + encodeURIComponent(sn.idp) + '/resumen' : null;
-      der = `<span class="ff-res">${gl}–${gv}</span><span class="ff-l">${href ? '▶ Ver resumen' : 'Ver partido'}</span>`;
+      const pz = gl === gv ? (sn && sn.penaltis && sn.penaltis.ganador) || (m.mid && A.partidos[m.mid] && A.partidos[m.mid].pen ? (A.partidos[m.mid].pen === m.local ? 'L' : 'V') : null) : null;
+      der = `<span class="ff-res">${gl}${pz === 'L' ? '<span class="b-pen">B</span>' : ''}–${gv}${pz === 'V' ? '<span class="b-pen">B</span>' : ''}</span><span class="ff-l">${href ? '▶ Ver resumen' : 'Ver partido'}</span>`;
     } else if (m.st === 'pendiente') der = `<span class="ff-res">—</span><span class="ff-l">sin resultado aún</span>`;
     else if (m.st === 'ya') der = `<span class="ff-falta">Ha empezado</span><span class="ff-l">aún sin datos del acta</span>`;
     else { const [a, b] = faltaTxt(m); der = `<span class="ff-falta"${m.hora ? ` data-falta="${m.ts}"` : ''}>${a}</span><span class="ff-l">${b}</span><span class="ff-previa">PREVIA</span>`; }
@@ -556,7 +557,7 @@
       if (U.tiros && T.tiros && U.tiros.f && T.tiros.f) { fila('Tiros a puerta', U.tiros.f / U.tiros.pj, T.tiros.f / T.tiros.pj, 1, 1); fila('Paradas', (1 - U.gc / U.tiros.c) * 100, (1 - T.gc / T.tiros.c) * 100, 1, 0, ' %'); }
       if (U.disc && T.disc) fila('Minutos de sanción', U.disc.min / U.pj, T.disc.min / T.pj, -1, 1);
     }
-    const comp = filas.length ? `<div class="tarjeta pv-b"><div class="etq">Nosotros frente a ellos</div><div class="pv-cf pv-cf-cab"><span class="mp">${esc(etqEq(us, lid, true))}</span><span>por partido</span><span>${esc(etqEq(them, lid, true))}</span></div>${filas.join('')}</div>` : '';
+    const comp = filas.length ? `<div class="tarjeta pv-b"><div class="etq">${derbi ? 'Frente a frente' : 'Nosotros frente a ellos'}</div><div class="pv-cf pv-cf-cab"><span class="mp">${esc(etqEq(us, lid, true))}</span><span>por partido</span><span>${esc(etqEq(them, lid, true))}</span></div>${filas.join('')}</div>` : '';
     // pronóstico: frase, barra con el porcentaje junto a cada equipo y el marcador más probable (siempre local–visitante)
     let pron = '';
     if (P) {
@@ -572,10 +573,11 @@
     const hh = !derbi && (eU.h2h || []).find(y => y.rival === them), n2 = hh ? hh.v + hh.e + hh.d : 0, ult = hh && hh.partidos[0];
     const h2h = hh && n2 ? `<div class="tarjeta pv-b"><div class="etq">Cara a cara</div><div class="dest">${hh.v > hh.d ? 'Les hemos ganado más veces: ' : hh.v < hh.d ? 'Nos han ganado más veces: ' : 'Igualados: '}${hh.v} ${hh.v === 1 ? 'victoria' : 'victorias'} y ${hh.d} ${hh.d === 1 ? 'derrota' : 'derrotas'}${hh.e ? ', más ' + hh.e + ' en los penaltis' : ''}.</div>
       <div class="pv-h2h">${hh.v ? `<i class="v" style="width:${hh.v / n2 * 100}%">${hh.v} V</i>` : ''}${hh.e ? `<i class="e" style="width:${hh.e / n2 * 100}%">${hh.e} PEN</i>` : ''}${hh.d ? `<i class="d" style="width:${hh.d / n2 * 100}%">${hh.d} D</i>` : ''}</div>
-      ${ult ? `<div class="pv-nota">Último: ${ult.nosotros}–${ult.ellos} para ${ult.nosotros > ult.ellos ? 'nosotros' : ult.nosotros < ult.ellos ? 'ellos' : 'nadie'} · ${esc(ult.fecha)} (${esc(ult.temporada)})</div>` : ''}</div>` : '';
+      ${ult ? `<div class="pv-nota">Último: ${ult.nosotros}${ult.pen === 'nos' ? '<span class="b-pen">B</span>' : ''}–${ult.ellos}${ult.pen === 'ellos' ? '<span class="b-pen">B</span>' : ''} ${ult.nosotros > ult.ellos ? 'para nosotros' : ult.nosotros < ult.ellos ? 'para ellos' : ult.pen ? 'en los penaltis, para ' + (ult.pen === 'nos' ? 'nosotros' : 'ellos') : 'en los penaltis'} · ${esc(ult.fecha)} (${esc(ult.temporada)})</div>` : ''}</div>` : '';
     // cómo llegan: sus últimos resultados de esta temporada (los penaltis cuentan para quien ganó la tanda)
     const forma = n => (L.cal || []).filter(y => y.gl != null && y.fecha && (y.local === n || y.visitante === n)).sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(-5).map(y => {
       const mine = y.local === n ? y.gl : y.gv, oth = y.local === n ? y.gv : y.gl, pz = mine === oth && y.mid && A.partidos[y.mid] ? A.partidos[y.mid].pen : null, l = mine > oth || pz === n ? 'V' : 'D';
+      if (mine === oth && !pz) return '';   // empate con el acta pendiente: aún no se sabe quién ganó la tanda
       return `<span class="res-l ${l.toLowerCase()}" title="${esc(abr(y.local === n ? y.visitante : y.local) + ' ' + mine + '–' + oth)}">${l}</span>`; }).join('');
     const llegan = `<div class="tarjeta pv-b"><div class="etq">Cómo llegan</div>${[us, them].map(n => `<div class="pv-forma"><div><b class="${ours(n) ? 'mp' : ''}">${esc(etqEq(n, lid, true))}</b><span>${esc(pos(n))}</span></div><div class="pv-res">${forma(n) || '<span class="pv-nota">Aún no ha jugado</span>'}</div></div>`).join('')}</div>`;
     // a vigilar: sus 3 jugadores con más puntos por partido (mapa de la liga) y su portero, en cromos con su foto (solo
@@ -589,7 +591,9 @@
         <span class="pv-cr-p"><b class="pv-cr-n">${esc(y.n + ' ' + y.a)}</b><span class="pv-cr-t">${esc(d)}</span><span class="pv-cr-v"><b class="cifra">${v}</b><span>${u}</span></span></span></div>`; }).join('')}</div></div>` : '';
     // ese día en esta pista: solo si juega otro equipo nuestro
     const dia = AGE && ag.pista ? AGE.dias.find(d => d.fecha === c.fecha && d.pista === ag.pista) : null;
-    const nos = dia ? dia.nuestros.map(i => AGE.partidos[i]).filter(q => q).map(q => ({ q, actual: q.local === c.local && q.visitante === c.visitante })) : [];
+    const visto = new Set();   // un derbi está en el calendario de los dos equipos: una sola vez
+    const nos = dia ? dia.nuestros.map(i => AGE.partidos[i]).filter(q => q && !visto.has(q.local + '|' + q.visitante + '|' + q.hora) && visto.add(q.local + '|' + q.visitante + '|' + q.hora))
+      .map(q => ({ q, actual: q.local === c.local && q.visitante === c.visitante })) : [];
     let diaHtml2 = '';
     if (nos.length > 1) {
       nos.sort((a, b) => (a.q.hora || '99').localeCompare(b.q.hora || '99'));
@@ -738,15 +742,16 @@
         <span class="cromo-t"><b>${esc((j.nombre || '').split(' ')[0])}<br>${esc(ap.join(' '))}</b><span class="arq"${a ? ` style="color:${colArq(a.c)}"` : ''}>${a ? esc(a.n.toUpperCase()) : j.portero ? 'PORTERO' : 'SIN PERFIL TODAVÍA'}</span>
         <span class="cromo-c">${j.portero ? (t.pj || 0) + ' PJ esta temporada' : (t.goles || 0) + ' G · ' + (t.asistencias || 0) + ' A'}</span></span></a>`; };
     const grupo = (t, js) => js.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">${t}</span><span>${js.length} ${js.length === 1 ? 'jugador' : 'jugadores'}</span></div><div class="cromos2">${js.map(cromo).join('')}</div></div>` : '';
-    const movs = (e.altas || []).map(x => { const j = A.jugadores[x.k] || {}; return `<div class="mov"><span class="chip v">LLEGA</span><b>${esc(j.nombre ? j.nombre + ' ' + j.apellidos : x.k)}</b><span>${esc(x.desde ? 'Desde ' + (ours(x.desde) ? etqEq(x.desde, e.ligaId) || x.desde : x.desde) + (x.nota ? ' · ' + x.nota : '') : (x.nota || ''))}</span></div>`; })
-      .concat((e.bajas || []).map(x => `<div class="mov"><span class="chip d">SE VA</span><b>${esc(x.nombre + ' ' + x.apellidos)}</b><span>${esc(x.destino ? 'A ' + x.destino + (x.destinoLiga ? ' (' + x.destinoLiga + ')' : '') : '')}</span></div>`));
+    const movs = altasPre(e, L).map(x => { const j = A.jugadores[x.k] || {}; return `<div class="mov"><span class="chip v">LLEGA</span><b>${esc(j.nombre ? j.nombre + ' ' + j.apellidos : x.k)}</b><span>${esc(x.desde ? 'Desde ' + (ours(x.desde) ? etqEq(x.desde, e.ligaId) || x.desde : x.desde) + (x.nota ? ' · ' + x.nota : '') : (x.nota || ''))}</span></div>`; })
+      .concat(bajasPre(e, L).map(x => { const int = x.destino && ours(x.destino);
+        return `<div class="mov"><span class="chip ${int ? 'v' : 'd'}">${int ? 'PASA' : 'SE VA'}</span><b>${esc(x.nombre + ' ' + x.apellidos)}</b><span>${esc(x.destino ? 'A ' + (int ? x.destino.replace('MADRIDPATINA ', 'MP ') : x.destino) + (x.destinoLiga ? ' (' + x.destinoLiga + ')' : '') : '')}</span></div>`; }));
     const plantilla = cuerpo + grupo('Porteros', pl.filter(j => j.portero)) + grupo('Jugadores', pl.filter(j => !j.portero))
       + (movs.length ? `<details class="movs"><summary><span class="h2">Altas y bajas · ${movs.length}</span></summary>${movs.join('')}</details>` : '');
 
     // Historial: cara a cara con cada rival, todas las temporadas (los empates de antes cuentan como no ganados)
     const hist = (e.h2h || []).slice().sort((a, b) => (b.v + b.e + b.d) - (a.v + a.e + a.d)).map(h => { const n = h.v + h.e + h.d || 1, u = h.partidos[0];
       return `<div class="h2h tarjeta"><div class="h2h-r">${escudo(h.rival, 32)}<b>${esc(ours(h.rival) ? etqEq(h.rival, e.ligaId) : h.rival)}</b></div><div class="h2h-n"><span class="v">${h.v}</span><i>–</i><span>${h.e + h.d}</span></div>
-        <div class="h2h-b"><i style="width:${(h.v / n * 100).toFixed(1)}%"></i></div><div class="pv-nota">${u ? `Último: ${u.nosotros}–${u.ellos} · ${esc(u.fecha.slice(-4))}` : ''}</div></div>`; }).join('');
+        <div class="h2h-b"><i style="width:${(h.v / n * 100).toFixed(1)}%"></i></div><div class="pv-nota">${u ? `Último: ${u.nosotros}${u.pen === 'nos' ? '<span class="b-pen">B</span>' : ''}–${u.ellos}${u.pen === 'ellos' ? '<span class="b-pen">B</span>' : ''} · ${esc(u.fecha.slice(-4))}` : ''}</div></div>`; }).join('');
     const historial = hist ? `<div class="h2hs">${hist}</div>` : '<div class="pv-nota">Todavía no hemos jugado contra estos equipos.</div>';
     return `<div class="equipo">${pils}${cab}${T.nav}${T.panel('resumen', resumen)}${T.panel('partidos', partidos)}${T.panel('juega', juega)}${T.panel('plantilla', plantilla)}${T.panel('hist', historial)}</div>`;
   }
@@ -827,7 +832,7 @@
     // alineaciones, eventos y datos
     const alin = (al, por, n) => { const mp = ours(n), lista = (p[al] || []).slice().sort((a, b) => (b.portero ? 1 : 0) - (a.portero ? 1 : 0) || (+a.dorsal || 99) - (+b.dorsal || 99));
       return `<div class="al"><div class="al-t${mp ? ' mp' : ''}">${esc(nm(n))}</div>${lista.map(j => { const pt = (p[por] || []).find(x => x.k === j.k), href = mp && A.jugadores[j.k] ? hP(j.k) : null;
-        return `<${href ? `a href="${href}"` : 'div'} class="al-f"><span class="al-d${mp ? ' mp' : ''}">${esc(j.dorsal || '')}</span><span class="al-n"><b>${esc(nomCorto(j))}</b>${j.portero ? ' · portero' : j.capitan ? ' · C' : ''}</span><span class="al-c">${pt ? pt.par + '/' + pt.tiros + ' · ' + dec(pt.pct) + ' %' : [j.g ? j.g + 'G' : '', j.a ? j.a + 'A' : ''].filter(Boolean).join(' ')}</span></${href ? 'a' : 'div'}>`; }).join('')}</div>`; };
+        return `<${href ? `a href="${href}"` : 'div'} class="al-f"><span class="al-d${mp ? ' mp' : ''}">${esc(j.dorsal || '')}</span><span class="al-n"><b>${esc(nomCorto(j))}</b>${j.portero ? ' · portero' : j.capitan ? ' · C' : ''}</span><span class="al-c">${pt ? (pt.tiros ? pt.par + '/' + pt.tiros + ' · ' + dec(pt.pct) + ' %' : 'sin tiros') : [j.g ? j.g + 'G' : '', j.a ? j.a + 'A' : ''].filter(Boolean).join(' ')}</span></${href ? 'a' : 'div'}>`; }).join('')}</div>`; };
     const lados = derbi || usL ? [['alin_l', 'por_l', p.local], ['alin_v', 'por_v', p.visitante]] : [['alin_v', 'por_v', p.visitante], ['alin_l', 'por_l', p.local]];
     const alineaciones = `<div class="als">${lados.map(([a, b, n]) => alin(a, b, n)).join('')}</div>`;
     const eqC = l => nmC(l === 'local' ? p.local : p.visitante);
@@ -882,7 +887,7 @@
     const enPor = (j.partidos || []).filter(x => x.pct != null), tirY = enPor.reduce((s, x) => s + (x.tiros || 0), 0), parY = enPor.reduce((s, x) => s + (x.par || 0), 0);
     const tirH = ts.filter(t => t.rol === 'GOALIE').reduce((s, t) => s + (t.tiros || 0), 0), parH = ts.filter(t => t.rol === 'GOALIE' && t.tiros).reduce((s, t) => s + t.tiros - (t.gc || 0), 0);
     const par = parH + parY, tir = tirH + tirY, esPor = j.portero || (tir > 0 && !tot.g && !tot.a);
-    const kpis = esPor ? [[tot.pj, 'Partidos'], [par, 'Paradas'], [tir ? dec((par / tir * 100).toFixed(1)) + '%' : '–', '% paradas'], [tot.temps, 'Temporadas']] : [[tot.pj, 'Partidos'], [tot.g, 'Goles'], [tot.a, 'Asistencias'], [tot.temps, 'Temporadas']];
+    const kpis = esPor ? [[tot.pj, 'Partidos'], [par, 'Paradas'], [tir ? dec((par / tir * 100).toFixed(1)) + '%' : '–', '% paradas'], [tot.temps, tot.temps === 1 ? 'Temporada' : 'Temporadas']] : [[tot.pj, tot.pj === 1 ? 'Partido' : 'Partidos'], [tot.g, tot.g === 1 ? 'Gol' : 'Goles'], [tot.a, tot.a === 1 ? 'Asistencia' : 'Asistencias'], [tot.temps, tot.temps === 1 ? 'Temporada' : 'Temporadas']];
     const hs = H && eqs.length ? hitosDe(j) : [], h0 = hs.sort((x, y) => x.falta - y.falta)[0];
     const roles = [j.capitan ? (j.fem ? 'CAPITANA' : 'CAPITÁN') : '', j.asistente ? 'ASISTENTE' : '', esPor ? (j.fem ? 'PORTERA' : 'PORTERO') : ''].filter(Boolean);
     const cab = `<div class="fi-cab"><div class="fi-foto${ok ? '' : ' sin'}"><span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : ''}<span class="fi-dorsal cifra">${esc(j.dorsal || '')}</span></div>
@@ -903,25 +908,25 @@
     // en otros clubes (historico.json → fuera): equipo, competición y cifras de las actas de la FMP, la más reciente arriba
     const fz = (H && H.fuera && H.fuera[H.tok(j.nombre + ' ' + j.apellidos)]) || [];
     const ligaF = l => titulo(l).replace(/ Y /g, ' y ').replace(/ De /g, ' de ');
-    const fueraH = fz.length ? `<div class="fi-fuera"><div class="etq">${!lst.length || fz.every(x => x.t < lst[lst.length - 1].t) ? 'Antes de MADRIDPATINA' : 'En otros clubes'}</div>
+    const fueraH = fz.length ? `<div class="fi-fuera"><div class="etq">${!lst.length || fz.every(x => x.t < lst[lst.length - 1].t) ? 'Antes de llegar' : 'En otros clubes'}</div>
       <div class="fi-temps">${fz.slice().reverse().map(x => `<div class="fi-tf fuera"><b class="cifra">${esc(x.t)}</b><div><b>${esc(x.equipo)}</b><span>${esc(x.ligas.map(ligaF).join(' · '))}</span></div>
         <span class="fi-tv">${x.por ? x.pj + ' PJ' + (x.tiros ? ' · ' + dec(((x.tiros - x.gc) / x.tiros * 100).toFixed(1)) + ' %' : '') : x.pj + ' PJ · ' + x.g + ' G · ' + x.a + ' A'}</span></div>`).join('')}</div>
       <div class="pv-nota">Según las actas de la Federación Madrileña de Patinaje.</div></div>` : '';
     // Logros, agrupados por tipo
-    const eqS = n => n.replace('MADRIDPATINA ', 'MP '), ligaS = l => l.replace(/^LIGA /, '').toLowerCase().replace(/(^|\s)\S/g, m => m.toUpperCase());
+    const eqS = (n, liga) => (n === 'MADRIDPATINA' ? (/ALEV/i.test(liga || '') ? 'MP Alevín' : /INFANT/i.test(liga || '') ? 'MP Infantil' : 'MP') : n.replace('MADRIDPATINA ', 'MP ')), ligaS = l => l.replace(/^LIGA /, '').toLowerCase().replace(/(^|\s)\S/g, m => m.toUpperCase());
     const tsH = []; ts.forEach(t => { const y = tsH.find(z => z.temporada === t.temporada && z.equipo === t.equipo); if (!y) { tsH.push(Object.assign({}, t)); return; } ['pj', 'g', 'a', 'pim', 'tiros', 'gc', 'hattricks'].forEach(f => { y[f] = (y[f] || 0) + (t[f] || 0); }); });
     const G = [], todosH = H ? H.jugadores : [];
     const camp = H ? H.clasificaciones.filter(c => c.puesto === 1 && !/DESCENSO|PERMANENCIA|PROMOCI/i.test(c.liga + ' ' + (c.grupo || '')) && tsH.some(t => t.temporada === c.temporada && t.equipo === c.equipo && t.pj > 0)) : [];
-    if (camp.length) G.push({ t: camp.length === 1 ? 'Campeón' : 'Campeón ' + camp.length + ' veces', s: 'Primeros de la liga o del grupo, jugando en el equipo.', n: camp.length, k: 'oro', it: camp.map(c => [c.temporada, eqS(c.equipo) + ' · ' + ligaS(c.liga)]) });
+    if (camp.length) G.push({ t: camp.length === 1 ? 'Campeón' : 'Campeón ' + camp.length + ' veces', s: 'Primeros de la liga o del grupo, jugando en el equipo.', n: camp.length, k: 'oro', it: camp.map(c => [c.temporada, eqS(c.equipo, c.liga) + ' · ' + ligaS(c.liga)]) });
     const totL = { pj: tot.pj, g: tot.g, a: tot.a }, cif = [];
     Object.keys(UMBRAL).filter(x => (esPor ? x === 'pj' : x !== 'par')).forEach(x => UMBRAL[x].filter(u => u <= totL[x] && u >= (x === 'pj' ? 50 : 25)).forEach(u => cif.push([String(u), x === 'pj' ? 'PARTIDOS' : x === 'g' ? 'GOLES' : 'ASISTENCIAS'])));
-    if (cif.length) G.push({ t: 'Cifras redondas', s: 'Con MADRIDPATINA: ' + tot.pj + ' partidos' + (esPor ? '.' : ', ' + tot.g + ' goles y ' + tot.a + ' asistencias.'), n: cif.length, k: 'rojo', it: cif });
-    const top = (f, t, s) => { const it = tsH.filter(t2 => t2[f] > 0 && t2.pj >= 3 && todosH.every(x => x.temporadas.every(y => !(y.temporada === t2.temporada && y.equipo === t2.equipo) || (y[f] || 0) <= t2[f]))).map(t2 => [t2.temporada, eqS(t2.equipo) + ' · ' + t2[f]]); if (it.length) G.push({ t, s, n: it.length, k: 'gris', it }); };
+    if (cif.length) G.push({ t: 'Cifras redondas', s: 'Con nosotros: ' + tot.pj + ' partidos' + (esPor ? '.' : ', ' + tot.g + ' goles y ' + tot.a + ' asistencias.'), n: cif.length, k: 'rojo', it: cif });
+    const top = (f, t, s) => { const it = tsH.filter(t2 => t2[f] > 0 && t2.pj >= 3 && todosH.every(x => x.temporadas.every(y => !(y.temporada === t2.temporada && y.equipo === t2.equipo) || (y[f] || 0) <= t2[f]))).map(t2 => [t2.temporada, eqS(t2.equipo, t2.liga) + ' · ' + t2[f]]); if (it.length) G.push({ t, s, n: it.length, k: 'gris', it }); };
     if (!esPor) { top('g', j.fem ? 'Máxima goleadora del equipo' : 'Máximo goleador del equipo', 'Temporadas en las que nadie de su equipo marcó más.'); top('a', j.fem ? 'Máxima asistente del equipo' : 'Máximo asistente del equipo', 'Temporadas en las que nadie de su equipo dio más pases de gol.'); }
     const ht = tsH.filter(t => t.hattricks > 0), nHt = ht.reduce((x, t) => x + t.hattricks, 0);
     if (nHt) G.push({ t: 'Hat-tricks', s: 'Partidos con tres goles o más, por temporada.', n: nHt, k: 'gris', it: ht.map(t => [t.temporada, '× ' + t.hattricks]) });
     if (esPor) { const best = tsH.filter(t => t.rol === 'GOALIE' && t.tiros >= 100).map(t => [t, (t.tiros - t.gc) / t.tiros * 100]).filter(x => x[1] >= 85); if (best.length) G.push({ t: 'Por encima del 85 %', s: 'Temporadas con más del 85 % de paradas y al menos 100 tiros.', n: best.length, k: 'gris', it: best.map(([t, v]) => [t.temporada, dec(v.toFixed(1)) + ' %']) }); }
-    if (tot.temps >= 3) G.push({ t: 'Temporadas en el club', s: 'Desde ' + ([...temps0].sort()[0] || A.temporada) + (ya.pj ? ', y sigue.' : '.'), n: tot.temps, k: 'gris', it: [...new Set(tsH.map(t => eqS(t.equipo)))].map(x => [x, new Set(tsH.filter(t => eqS(t.equipo) === x).map(t => t.temporada)).size + ' temp.']) });
+    if (tot.temps >= 3) G.push({ t: 'Temporadas en el club', s: 'Desde ' + ([...temps0].sort()[0] || A.temporada) + (ya.pj ? ', y sigue.' : '.'), n: tot.temps, k: 'gris', it: [...new Set(tsH.map(t => eqS(t.equipo, t.liga)))].map(x => [x, new Set(tsH.filter(t => eqS(t.equipo, t.liga) === x).map(t => t.temporada)).size + ' temp.']) });
     const logK = [[camp.length, 'Títulos', 'oro'], [cif.length, 'Cifras redondas', 'rojo']].concat(esPor ? [] : [[nHt, 'Hat-tricks', 'gris']]).concat([[tot.temps, 'Temporadas', 'gris']]);
     const logros = G.length ? `<div class="lg-k">${logK.map(([v, l, c]) => `<div class="${c}"><b class="cifra">${v}</b><span class="etq">${l}</span></div>`).join('')}</div>
       <div class="lg-g">${G.map(g => `<div class="lg ${g.k}"><div class="lg-c"><span class="lg-m cifra">${g.n}</span><div><b class="h2">${esc(g.t)}</b><span>${esc(g.s)}</span></div></div><div class="lg-it">${g.it.map(([x, y]) => `<span><b class="cifra">${esc(x)}</b><i>${esc(y)}</i></span>`).join('')}</div></div>`).join('')}</div>`
@@ -962,7 +967,8 @@
      de jornadas, las cuatro ligas, el archivo de la pretemporada y cinco pestañas: Clasificación (con líderes),
      Jornadas (con pronóstico), Evolución, Mapa y ¿Acertamos? ── */
   let LG_PEDIDO = false;
-  const mpCortoN = (n, lid) => ours(n) ? largoEq(n, lid).replace('MADRIDPATINA ', 'MP ') : n;
+  const mpCortoN = (n, lid) => ours(n) ? largoEq(n, lid).replace('MADRIDPATINA ', 'MP ').replace('ALEVÍN', 'Alevín').replace('INFANTIL', 'Infantil') : n;
+  const tempAnt = () => { const y = +A.temporada.slice(0, 4) - 1; return y + '/' + String(y + 1).slice(2); };   // «2025/26» si estamos en 2026/27
   const ganadorDe = c => { if (c.gl == null) return null; if (c.gl !== c.gv) return c.gl > c.gv ? c.local : c.visitante; const p = c.mid && A.partidos[c.mid]; return p && p.pen ? p.pen : null; };
   // puesto de cada equipo después de la jornada «hasta» (victoria 3 · ganar en penaltis 2 · perder en penaltis 1)
   function puestosHasta(L, hasta) {
@@ -1087,12 +1093,12 @@
       const puntos = ord.map(j => `<button type="button" class="lg-mp-pt${j.nuestro ? ' nos' : ''}" style="left:${PX(j.x).toFixed(1)}%;bottom:${PY(j.y).toFixed(1)}%" data-mp="${esc(j.k)}" aria-label="${esc(j.n + ' ' + j.a)}"></button>`).join('');
       const nosJ = ML.jug.filter(j => j.nuestro).sort((a, b) => b.x - a.x), riv = jx.filter(j => !j.nuestro).sort((a, b) => b.x - a.x);
       const etq = (j, us) => { const x = PX(j.x); return `<span class="lg-mp-et${us ? ' nos' : ''}${x > 55 ? ' izq' : ''}" style="left:${x.toFixed(1)}%;bottom:${PY(j.y).toFixed(1)}%">${esc(nomCorto({ nombre: j.n, apellidos: j.a }))}</span>`; };
-      const cuad = [['Referentes', 'marcan y reparten', 'rd'], ['Pasadores', 'reparten más que marcan', 'ri'], ['Goleadores', 'marcan más que reparten', 'bd'], ['Apoyo', 'menos puntos', 'bi']]
+      const cuad = [['Goleadores', 'marcan más que reparten', 'rd'], ['Pasadores', 'reparten más que marcan', 'bd'], ['Apoyo', 'menos puntos', 'bi']]
         .map(([t, s2, c]) => `<span class="lg-mp-q ${c}"><b>${t}</b><span>${s2}</span></span>`).join('');
       // datos de cada punto para la línea de abajo (sin recargar)
       const info = Object.fromEntries(jx.map(j => [j.k, [nomCorto({ nombre: j.n, apellidos: j.a }), ours(j.eq) ? mpCortoN(j.eq, L.id) : j.eq, dec(j.x.toFixed(2)), j.zona || '', A.jugadores[j.k] && ours(j.eq) ? hP(j.k) : '']]));
       pMapa = `<div class="dest">Cada punto es un jugador de la liga con al menos 3 partidos. En rojo, los nuestros; con nombre, los que más destacan. Toca un punto para ver quién es.</div>
-        <div class="tarjeta lg-mp"><div class="lg-mp-y"><span>Reparte más juego ↑</span></div>
+        <div class="tarjeta lg-mp"><div class="lg-mp-y"><span>Más goleador ↑</span></div>
           <div class="lg-mp-c" role="img" aria-label="Mapa de jugadores de la liga" data-mapa-info="${esc(JSON.stringify(info))}">
             <div class="lg-mp-zona" style="left:${PX(avgX).toFixed(1)}%;bottom:${PY(avgY).toFixed(1)}%"></div><div class="lg-mp-vx" style="left:${PX(avgX).toFixed(1)}%"></div><div class="lg-mp-hx" style="bottom:${PY(avgY).toFixed(1)}%"></div>
             ${cuad}${puntos}${nosJ.slice(0, 3).map(j => etq(j, true)).join('')}${riv.slice(0, 2).map(j => etq(j, false)).join('')}
@@ -1195,7 +1201,7 @@
     const nuestros = eqs.filter(e => e.nuestro).map(e => {
       const altas = altasPre(e, L).map(x => { const j = Object.assign({}, A.jugadores[x.k] || {}, x), vuelve = /^Vuelve/.test(x.nota || ''), interno = x.desde && ours(x.desde);
         return cromo(j, x.desde ? (interno ? 'VIENE DE ' : 'LLEGA DE ') + mpN(x.desde) : vuelve ? 'VUELVE' : 'NUEVO', interno ? 'int' : 'v',
-          x.stats ? x.stats.goles + ' goles y ' + x.stats.asistencias + ' asist. en 2025/26' : vuelve ? x.nota.replace(/^Vuelve:\s*/, '') : (x.nota || 'Primera temporada en el club')); });
+          x.stats ? x.stats.goles + ' goles y ' + x.stats.asistencias + ' asist. en ' + tempAnt() : vuelve ? x.nota.replace(/^Vuelve:\s*/, '') : (x.nota || 'Primera temporada en el club')); });
       const bajas = bajasPre(e, L).map(b => { if (b.estado === 'se_va') { const interno = b.destino && ours(b.destino); return cromo(b, (interno ? 'PASA A ' : 'SE VA A ') + mpN(b.destino), interno ? 'int' : 'd', b.nota || (b.destinoLiga ? 'Juega en ' + b.destinoLiga : '')); }
         if (b.estado === 'otro_rol') return cromo(b, (b.nota || 'Otro papel').replace(/^Ahora es (nuestro|nuestra)\s*/i, '').toUpperCase(), 'am', 'Sigue en el club, ya no juega');
         return cromo(b, 'AÚN SIN JUGAR', 'gr', 'En ficha, sin partidos esta temporada', true); });
@@ -1205,7 +1211,7 @@
         ${g('Llegan', 'v', altas)}${g('Se van', 'd', bajas)}</section>`; }).join('');
     const vig = (P.vigilar || []).filter(j => !j.nuestro).slice(0, 5).map(j => `<div class="pre-l"><b class="cifra pre-l-d">${esc(j.dorsal || '')}</b><span class="pre-l-n"><b>${esc(nomCorto(j))}</b><span>${esc(j.equipo)}${j.nota ? ' · ' + esc(j.nota) : ''}</span></span><span class="pre-l-v"><b class="cifra">${dec((+j.ritmo).toFixed(2))}</b><span>PTS/PARTIDO</span></span></div>`).join('');
     const por = (P.porteros || []).slice(0, 5).map(j => { const h = j.nuestro && j.k && A.jugadores[j.k] ? hP(j.k) : null;
-      return `<${h ? `a href="${h}"` : 'div'} class="pre-l${j.nuestro ? ' nos' : ''}"><b class="cifra pre-l-d">${esc(j.dorsal || '')}</b><span class="pre-l-n"><b>${esc(nomCorto(j))}</b><span>${esc(mpCortoN(j.equipo, L.id))} · ${j.tiros} tiros en 2025/26</span></span><b class="cifra pre-l-v">${dec((+j.pct).toFixed(1))}%</b></${h ? 'a' : 'div'}>`; }).join('');
+      return `<${h ? `a href="${h}"` : 'div'} class="pre-l${j.nuestro ? ' nos' : ''}"><b class="cifra pre-l-d">${esc(j.dorsal || '')}</b><span class="pre-l-n"><b>${esc(nomCorto(j))}</b><span>${esc(mpCortoN(j.equipo, L.id))} · ${j.tiros} tiros</span></span><b class="cifra pre-l-v">${dec((+j.pct).toFixed(1))}%</b></${h ? 'a' : 'div'}>`; }).join('');
     return `<div class="pre2">${cab}${ctx ? `<div class="pre-ctxs">${ctx}</div>` : ''}${escH}${fzH}${nuestros}
       ${vig || por ? `<div class="pre-dos">${vig ? `<section class="pre-sec"><h2 class="h2">A vigilar</h2><div>${vig}</div></section>` : ''}${por ? `<section class="pre-sec"><h2 class="h2">Porteros</h2><div>${por}</div></section>` : ''}</div>` : ''}</div>`;
   }
@@ -1293,7 +1299,7 @@
       const SL = Math.min(96, Math.floor((W - 24) / nT)); CZ = Math.min(50, SL - 18); const x0 = Math.round((W - nT * SL) / 2) + Math.round((SL - CZ) / 2), RH = CZ + 66;
       const ys = Array.from({ length: nG + 1 }, (_, i) => i * (RH + 10)); H2 = (nG + 1) * (RH + 10) - 10;
       P2 = (band, col) => [x0 + col * SL, ys[band] + 30];
-      bandas = grupos.map((g, i) => ({ l: g.k + (g.k === 'EQUIPOS NUEVOS' ? '' : ' · 2025/26'), c: '', x: 0, w: W, y: ys[i], h: RH, lx: 12, lw: 400, ly: ys[i] + 9, ta: 'left' }))
+      bandas = grupos.map((g, i) => ({ l: g.k + (g.k === 'EQUIPOS NUEVOS' ? '' : ' · ' + tempAnt()), c: '', x: 0, w: W, y: ys[i], h: RH, lx: 12, lw: 400, ly: ys[i] + 9, ta: 'left' }))
         .concat([{ l: nom.toUpperCase() + ' · ' + A.temporada, c: 'liga', x: 0, w: W, y: ys[nG], h: RH, lx: 12, lw: 400, ly: ys[nG] + 9, ta: 'left' }]);
       nomD = true; nomW = SL - 4;
     } else {
@@ -1397,7 +1403,7 @@
       if (x.desde && ours(x.desde)) cambian.push(cromoJ(j, { c: '#D3202A', sub: mpCortoN(x.desde, (A.equipos.find(y => y.nombre === x.desde) || {}).ligaId).toUpperCase() + ' → ' + aqui, sc: '#FF6B63', cifra: cfr(j) }));
       else if (x.desde) llegan.push(cromoJ(j, { c: '#C9C9CE', sub: 'LLEGA DE ' + x.desde, sc: '#C9C9CE', cifra: cfr(j), tag: ['NUEVO', 'r'] }));
       else if (/^Vuelve/.test(x.nota || '')) vuelven.push(cromoJ(j, { c: '#1E8A4C', sub: 'VUELVE A ' + aqui, sc: '#3DD27E', cifra: cfr(j), tag: ['VUELVE', 'v'] }));
-      else sinPrev.push(cromoJ(j, { c: '#3A3A40', sub: aqui + ' · SIN PARTIDOS EN 2025/26', sc: '#A6A6AD', cifra: cfr(j) })); }));
+      else sinPrev.push(cromoJ(j, { c: '#3A3A40', sub: aqui + ' · SIN PARTIDOS EN ' + tempAnt(), sc: '#A6A6AD', cifra: cfr(j) })); }));
     const gMov = [['Rookies · primera temporada en la FMP', rook], ['Vuelven', vuelven], ['Cambian de equipo en el club', cambian], ['Llegan de otros clubes', llegan], ['Sin partidos la temporada pasada', sinPrev]]
       .filter(x => x[1].length).map(([t, l]) => `<div class="pl-g" data-movg><div class="pl-t"><span class="h2">${t}</span><span>${l.length} ${l.length === 1 ? 'jugador' : 'jugadores'}</span></div><div class="cromos2">${l.join('')}</div></div>`).join('');
     const pMov = gMov || '<div class="pv-nota">Sin movimientos esta temporada.</div>';
@@ -1599,28 +1605,28 @@
 
   /* ── Arquetipos (los del Wrapped; scripts/reporte/mapa.py decide cuál toca, comparando con la liga) ───────────────── */
   const ARQ = {
-    sniper: ['Sniper', 'el francotirador', 'la francotiradora', '#a8281f', 'El gol es lo suyo. Cuando aparece, hay peligro en la portería rival. No persigue el puck: el puck le llega al stick.'],
-    playmaker: ['Playmaker', 'el cerebro', 'el cerebro', '#2f6db3', 'No firma los goles, los inventa. Ve líneas que el resto no ve y descose defensas con un pase.'],
-    momentum: ['Momentum', 'el motor', 'el motor', '#c2520a', 'Cuando entra, el partido cambia. Goles, asistencias, intensidad: empuja al equipo cuando hace falta.'],
-    wildcard: ['Wildcard', 'el espectáculo', 'el espectáculo', '#d4a73b', 'Goles, faltas, intensidad pura. Donde está, pasa algo. El equipo lo agradece; el árbitro lo nota.'],
-    steady: ['Steady', 'el consistente', 'la consistente', '#8a4fb5', 'Sale, marca, asiste. Sin estridencias, con presencia. Lo que se espera, lo cumple.'],
-    ghost: ['Ghost', 'el fugaz', 'la fugaz', '#b8324a', 'Apariciones breves por ahora. Cada partido cuenta, aunque la cuenta sea corta.'],
-    wall: ['Wall', 'el ancla', 'el ancla', '#4a6a9e', 'No sale en los highlights. Sale en los partidos ganados. Sostiene desde donde nadie mira.'],
-    workhorse: ['Workhorse', 'el currante', 'la currante', '#6B6B70', 'Cada partido, cada turno. Sin números espectaculares, pero el equipo no rueda sin su trabajo.'],
-    game_changer: ['Game Changer', 'el decisivo', 'la decisiva', '#e89a2b', 'Sus goles no son uno más: ponen por delante y deciden partidos.'],
-    comeback_king: ['Comeback King', 'el remontador', 'la remontadora', '#7b4ff2', 'Cuando el equipo va perdiendo, aparece. Sus goles empiezan remontadas.'],
-    hot_streak: ['Hot Streak', 'en racha', 'en racha', '#f57f3b', 'Cuando enciende el modo gol, no para: partidos seguidos marcando.'],
-    one_man_show: ['One Man Show', 'el solista', 'la solista', '#1f8fd8', 'Buena parte de los goles del equipo pasan por su stick.'],
-    mixed_player: ['Polivalente', 'campo y portería', 'campo y portería', '#4caaaa', 'Ha jugado de campo y bajo palos. No todos hacen las dos cosas.'],
-    rookie_phenom: ['Rookie Phenom', 'la promesa', 'la promesa', '#9d6cc0', 'Acaba de llegar a senior y ya pesa en el equipo.'],
-    veteran_loyal: ['Veterano', 'el de toda la vida', 'la de toda la vida', '#4a6a9e', 'Temporadas y temporadas en el club. Parte del esqueleto del equipo.'],
-    legend_alltime: ['Leyenda', 'del club histórico', 'del club histórico', '#d4a73b', 'Su nombre está entre los 3 primeros de la historia del club.'],
-    iron_curtain: ['Iron Curtain', 'la cortina de hierro', 'la cortina de hierro', '#2f6db3', 'De los mejores porcentajes de paradas de su liga. Quien intenta marcarle se lo piensa dos veces.'],
-    reactive_wall: ['Reactive Wall', 'el reflejo', 'el reflejo', '#4a6a9e', 'Recibe tiros sin parar y los resuelve. El equipo aguanta porque aguanta antes.'],
-    embattled: ['Embattled', 'el bombardeado', 'la bombardeada', '#c2520a', 'El rival no para de probarle. Bajo presión constante, cada parada cuenta el doble.'],
-    undershot: ['Undershot', 'el bien defendido', 'la bien defendida', '#8a4fb5', 'Su equipo trabaja delante: le llegan pocos tiros, y los importantes los para.'],
-    workhorse_g: ['Workhorse', 'el titular indiscutible', 'la titular indiscutible', '#a8281f', 'Partido tras partido en la portería. Esta temporada, la portería lleva su nombre.'],
-    shadow: ['Shadow', 'el suplente puntual', 'la suplente puntual', '#6B6B70', 'Cuando hubo que entrar, entró. Apariciones breves pero firmadas con su nombre.'],
+    sniper: ['Sniper', 'el francotirador', 'la francotiradora', '#a8281f', 'Está entre los que más goles marcan por partido en su liga, y marca más de lo que asiste.'],
+    playmaker: ['Playmaker', 'el cerebro', 'el cerebro', '#2f6db3', 'Está entre los que más asistencias dan por partido en su liga, y asiste al menos tanto como marca.'],
+    momentum: ['Momentum', 'el motor', 'el motor', '#c2520a', 'Está entre los que más puntos hacen por partido en su liga, sumando goles y asistencias.'],
+    wildcard: ['Wildcard', 'el espectáculo', 'el espectáculo', '#d4a73b', 'Marca más que la mitad de su liga y está entre los que más minutos de sanción tienen por partido.'],
+    steady: ['Steady', 'el consistente', 'la consistente', '#8a4fb5', 'Hace más puntos por partido que la mitad de su liga.'],
+    ghost: ['Ghost', 'el fugaz', 'la fugaz', '#b8324a', 'Lleva pocos partidos (7 o menos): su perfil todavía puede cambiar.'],
+    wall: ['Wall', 'el ancla', 'el ancla', '#4a6a9e', 'Juega mucho (12 partidos o más), hace pocos puntos y casi no tiene sanciones.'],
+    workhorse: ['Workhorse', 'el currante', 'la currante', '#6B6B70', 'Juega con regularidad, sin números que destaquen en goles ni asistencias.'],
+    game_changer: ['Game Changer', 'el decisivo', 'la decisiva', '#e89a2b', 'Ha marcado 3 goles o más que dieron la victoria a su equipo.'],
+    comeback_king: ['Comeback King', 'el remontador', 'la remontadora', '#7b4ff2', 'Ha marcado 5 goles o más con su equipo por detrás en el marcador.'],
+    hot_streak: ['Hot Streak', 'en racha', 'en racha', '#f57f3b', 'Ha marcado en 5 partidos seguidos o más.'],
+    one_man_show: ['One Man Show', 'el solista', 'la solista', '#1f8fd8', 'Marca o da el pase en el 35 % o más de los goles de su equipo.'],
+    mixed_player: ['Polivalente', 'campo y portería', 'campo y portería', '#4caaaa', 'Ha jugado de portero y de jugador de campo.'],
+    rookie_phenom: ['Rookie Phenom', 'la promesa', 'la promesa', '#9d6cc0', 'Primera temporada en senior y ya hace más puntos que la mitad de su liga.'],
+    veteran_loyal: ['Veterano', 'el de toda la vida', 'la de toda la vida', '#4a6a9e', 'Lleva 5 temporadas o más en el club.'],
+    legend_alltime: ['Leyenda', 'del club histórico', 'del club histórico', '#d4a73b', 'Está entre los 3 primeros de la historia del club en goles, asistencias o partidos.'],
+    iron_curtain: ['Iron Curtain', 'la cortina de hierro', 'la cortina de hierro', '#2f6db3', 'De los mejores porcentajes de paradas de su liga.'],
+    reactive_wall: ['Reactive Wall', 'el reflejo', 'el reflejo', '#4a6a9e', 'Recibe muchos tiros por partido y para más que la mitad de los porteros de su liga.'],
+    embattled: ['Embattled', 'el bombardeado', 'la bombardeada', '#c2520a', 'De los porteros que más tiros reciben por partido en su liga.'],
+    undershot: ['Undershot', 'el bien defendido', 'la bien defendida', '#8a4fb5', 'De los porteros que menos tiros reciben por partido en su liga.'],
+    workhorse_g: ['Workhorse', 'el titular indiscutible', 'la titular indiscutible', '#a8281f', 'Ha jugado 10 partidos o más en la portería.'],
+    shadow: ['Shadow', 'el suplente puntual', 'la suplente puntual', '#6B6B70', 'Lleva pocos partidos en la portería (4 o menos).'],
   };
   const chipArq = (k, fem, grande) => ARQ[k] ? `<span style="display:inline-flex;align-items:center;gap:6px;font-size:${grande ? 14 : 12}px;font-weight:700;letter-spacing:.04em;padding:${grande ? '5px 10px' : '2px 8px'};border-radius:4px;background:#1E1E22;box-shadow:inset 3px 0 0 ${ARQ[k][3]};color:#F4F4F5;white-space:nowrap"><span>${esc(ARQ[k][0].toUpperCase())}</span><span style="font-weight:500;color:#A6A6AD;letter-spacing:0">${esc(fem ? ARQ[k][2] : ARQ[k][1])}</span></span>` : '';
   const LEY = { goles: 'goles', asistencias: 'asistencias', partidos: 'partidos' };
@@ -1848,7 +1854,7 @@
     const yo = ANA.equipos[e.id]; if (!yo || (!yo.temp && !yo.prev)) return '';
     const pjT = (yo.temp || {}).pj || 0, pjP = (yo.prev || {}).pj || 0;
     const sel = ANA_SEL[e.id] || (pjT >= 6 || !pjP ? 'temp' : 'prev'), x = yo[sel] || yo.temp || yo.prev, alc = yo[sel] ? sel : yo.temp ? 'temp' : 'prev';
-    const tPrev = '2025/26', nomT = alc === 'temp' ? 'esta temporada' : tPrev;
+    const tPrev = tempAnt(), nomT = alc === 'temp' ? 'esta temporada' : tPrev;
     const liga = Object.values(ANA.equipos).filter(o => o.liga === e.ligaId && o[alc]);
     const tog = pjP ? `<div class="an-togs">${anTog(alc === 'temp', `data-ana-eq="${e.id}" data-ana-t="temp"`, `Esta temporada · ${pjT} PJ`)}${anTog(alc === 'prev', `data-ana-eq="${e.id}" data-ana-t="prev"`, `${tPrev} · ${pjP} PJ`)}</div>` : '';
     const poco = x.pj < 6 ? `<div class="an-nota">Con ${x.pj} ${x.pj === 1 ? 'partido' : 'partidos'} todavía dice poco${pjP && alc === 'temp' ? '; la temporada pasada da una idea más completa' : ''}.</div>` : '';
@@ -1914,7 +1920,7 @@
     const pel = MAPA && MAPA.ligas[e.ligaId] ? MAPA.ligas[e.ligaId].jug.filter(r => r.eq === nx.rival && r.pj >= 3 && r.x != null).sort((p, q) => q.x - p.x).slice(0, 3) : [];
     return `${lab('PRÓXIMO RIVAL · ' + esc(nx.rival), 'margin:28px 0 6px')}
       <div class="card an-c" style="max-width:760px"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px">${disc(crest(nx.rival), 40)}<div><div style="font-weight:700;font-size:16px">${esc(fd(nx.fecha))}${nx.hora ? ' · ' + esc(nx.hora) : ''} · ${nx.casa ? 'en casa' : 'fuera'}</div>
-        <div style="font-size:13px;color:#A6A6AD">${alc === 'temp' ? 'Números de esta temporada' : 'Números de 2025/26 (esta temporada aún llevan pocos partidos)'}${h2h ? ` · historial contra ellos: ${h2h.v}-${h2h.e}-${h2h.d}` : ''}</div></div></div>
+        <div style="font-size:13px;color:#A6A6AD">${alc === 'temp' ? 'Números de esta temporada' : 'Números de ' + tempAnt() + ' (esta temporada aún llevan pocos partidos)'}${h2h ? ` · historial contra ellos: ${h2h.v}-${h2h.e}-${h2h.d}` : ''}</div></div></div>
         <div class="an-cmp cab"><b>${esc(mpAbr(e.nombre))}</b><span></span><b>${esc(abr(nx.rival))}</b></div>
         ${fila('Goles a favor por partido', z => n(z.gf / z.pj), mas)}${fila('Goles en contra por partido', z => n(z.gc / z.pj), menos)}
         ${fila('Tiros a puerta por partido', z => n(z.tiros.pj ? z.tiros.f / z.tiros.pj : null), mas)}${fila('Acierto', z => pc(z.tiros.pj ? z.tiros.gf / z.tiros.f : null), mas)}
@@ -2127,7 +2133,8 @@
       const chips = ps.map(p => { const derbi = p.derbi && p.eqs.length > 1, eqT = derbi ? p.eqs.map(x => 'MP ' + x).join('·') : 'MP ' + p.eq;
         if (p.gl == null) return `<span class="cm por"><i></i><b>${esc(eqT)}</b> ${esc(p.hora || '')}</span>`;
         const usL = ours(p.local), n = usL ? p.gl : p.gv, o = usL ? p.gv : p.gl, r = derbi ? 'n' : n > o || (n === o && p.pen && ours(p.pen)) ? 'v' : 'd';
-        return `<span class="cm ${r}"><i></i><b>${esc(eqT)}</b> ${derbi ? p.gl + '–' + p.gv : n + '–' + o}</span>`; }).join('');
+        const bL = p.pen && p.pen === p.local ? '<span class="b-pen">B</span>' : '', bV = p.pen && p.pen === p.visitante ? '<span class="b-pen">B</span>' : '';
+        return `<span class="cm ${r}"><i></i><b>${esc(eqT)}</b> ${derbi || usL ? p.gl + bL + '–' + p.gv + bV : p.gv + bV + '–' + p.gl + bL}</span>`; }).join('');
       const marcas = evd.map(e => `<span class="cme ${e.tipo}"><i></i><b>${esc(e.tipo === 'fest' ? e.t : e.tipo === 'cumple' ? e.t.replace('Cumple ', '') : 'Cambio de hora')}</b></span>`).join('');
       celdas.push(`<button type="button" class="cal-c${ps.length ? ' con' : ''}${casa ? ' casa' : ''}${iso === hoy ? ' hoy' : ''}${CAL.dia === iso ? ' sel' : ''}${iso < hoy && !ps.length ? ' pasado' : ''}" data-cal-dia="${iso}"${ps.length || evd.length ? '' : ' tabindex="-1"'}><span class="cal-n">${dn}</span>${marcas}${chips}</button>`);
     }
@@ -2317,7 +2324,7 @@
     const yo = entradaMapa(k), el = otro && entradasMapa(otro)[0];
     if (!yo) return '';
     const cant = !!MAPA.ligas[yo.liga].cantera, todos = [];   // senior con senior y cantera con cantera
-    Object.entries(MAPA.ligas).filter(([, L]) => !!L.cantera === cant).forEach(([id, L]) => L.jug.forEach(r => { if (r.k !== k && r.y != null) todos.push({ k: r.k, t: `${corto({ nombre: r.n, apellidos: r.a })} · ${r.eq} · ${L.nombre.replace('Liga ', '')}` }); }));
+    Object.entries(MAPA.ligas).filter(([, L]) => !!L.cantera === cant).forEach(([id, L]) => L.jug.forEach(r => { if (r.k !== k && r.y != null) todos.push({ k: r.k, t: `${corto({ nombre: r.n, apellidos: r.a })} · ${mpCortoN(r.eq, id)} · ${L.nombre.replace('Liga ', '')}` }); }));
     todos.sort((a, b) => a.t.localeCompare(b.t, 'es'));
     const opts = `<option value="">Elige un jugador…</option>` + todos.map(x => `<option value="${esc(x.k)}"${x.k === otro ? ' selected' : ''}>${esc(x.t)}</option>`).join('');
     const ligaN = r => (MAPA.ligas[r.liga] || {}).nombre || '';
@@ -2327,7 +2334,7 @@
       const nn = (v, d = 2) => ({ n: v, t: v == null ? '—' : dec((+v).toFixed(d)) }), mas = (x, y) => x > y + 1e-9;
       const nomR = r => corto({ nombre: r.n, apellidos: r.a });
       tabla = `<div class="an-cmp cab"><b>${esc(nomR(yo))}</b><span></span><b>${esc(nomR(el))}</b></div>
-        <div class="an-cmp"><b style="font-size:14px">${esc(yo.eq)}<br><span style="color:#A6A6AD;font-weight:600">${esc(ligaN(yo).replace('Liga ', ''))}</span></b><span>Equipo</span><b style="font-size:14px">${esc(el.eq)}<br><span style="color:#A6A6AD;font-weight:600">${esc(ligaN(el).replace('Liga ', ''))}</span></b></div>
+        <div class="an-cmp"><b style="font-size:14px">${esc(mpCortoN(yo.eq, yo.liga))}<br><span style="color:#A6A6AD;font-weight:600">${esc(ligaN(yo).replace('Liga ', ''))}</span></b><span>Equipo</span><b style="font-size:14px">${esc(mpCortoN(el.eq, el.liga))}<br><span style="color:#A6A6AD;font-weight:600">${esc(ligaN(el).replace('Liga ', ''))}</span></b></div>
         ${fila('Partidos que cuentan', r => ({ n: null, t: r.pj + (r.antes ? '*' : '') }))}
         ${fila('Goles por partido', r => nn(r.gl), mas)}${fila('Asistencias por partido', r => nn(r.al), mas)}
         ${fila('Puntos por partido, en su liga', r => nn(r.x), mas)}
@@ -2684,12 +2691,12 @@
     const tabla = (cab, filas) => `<div class="mt-tabla"><table><thead><tr>${cab.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${filas.join('')}</tbody></table></div>`;
 
     // 1 · los datos
-    const datos = sec('datos', '01', 'LOS DATOS', 'De dónde salen', 'Todos los números salen de las actas de la Federación Madrileña de Patinaje (FMP), desde la temporada 2016/17. La web se actualiza cada semana, y los partidos en directo, mientras se juegan.', `
+    const datos = sec('datos', '01', 'LOS DATOS', 'De dónde salen', 'Todos los resultados, goles, asistencias, sanciones y paradas salen de las actas de la Federación Madrileña de Patinaje (FMP), desde la temporada 2016/17. La web se actualiza cada noche y, mientras se juega, el directo va leyendo el acta del partido.', `
       <div class="mt-dos">
         <div class="mt-caja"><h3 style="color:#3DD27E">LO QUE TRAE EL ACTA</h3>${lista(['Quién marca y quién asiste (una asistencia por gol)', 'Las expulsiones, con su minuto y su duración', 'Tiempos muertos y cambios de portero', 'De cada portero, los tiros que recibe y los goles que encaja'], '✓', '#3DD27E')}</div>
-        <div class="mt-caja"><h3 style="color:#FF6B63">LO QUE NO TRAE</h3>${lista(['Más/menos', 'Minutos jugados', 'Quién estaba en pista en cada gol', 'Los tiros de los jugadores de campo'], '✕')}<p class="mt-nota">Por eso no publicamos ninguno de esos datos.</p></div>
+        <div class="mt-caja"><h3 style="color:#FF6B63">LO QUE NO TRAE</h3>${lista(['Minutos jugados', 'Quién estaba en pista en cada gol', 'Los tiros de cada jugador'], '✕')}<p class="mt-nota">Los minutos no los publicamos. Quién estaba en pista y los tiros de cada jugador solo salen en los partidos en los que los apunta nuestro delegado desde el banquillo o los marcamos viendo el vídeo.</p></div>
       </div>
-      ${lista(['De los menores de edad no publicamos ni foto ni edad.'])}`);
+      ${lista(['De los menores de edad, y de quien no sabemos la fecha de nacimiento, no publicamos ni foto ni edad.'])}`);
 
     // 2 · FMPe
     const barras = ['S1', 'S2', 'S3', 'S4'].filter(k => fac[k]).map(k => { const x = fac[k], w = Math.min(100, x.f * 100);
@@ -2703,11 +2710,11 @@
     const fmpe = sec('fmpe', '02', 'FMPe', 'Los puntos de cada liga, en la misma escala', 'El FMPe pasa los puntos (goles + asistencias) de cualquier liga senior a puntos de Liga Senior 1. Sirve para comparar a jugadores de ligas distintas. La NHL, la liga norteamericana de hockey sobre hielo, usa la misma idea para comparar ligas.', `
       <div class="mt-formula"><div class="eq">FMPe =</div><div class="c"><b>Puntos ÷ PJ</b><span>sus puntos por partido en su liga</span></div><div class="op">×</div>
         <div class="c r"><b>Factor de liga</b><span>cuánto vale un punto de su liga en Senior 1</span></div><div class="op">×</div><div class="c"><b>${PJ}</b><span>partidos de una temporada de Senior 1</span></div></div>
-      ${barras ? H('Factor de cada liga') + `<div class="mt-barras">${barras}</div><div class="mt-leyenda"><span><i class="l1"></i>factor</span><span><i class="l2"></i>margen: 8 de cada 10 cálculos con otra muestra de jugadores caen dentro</span></div>` : ''}
+      ${barras ? H('Factor de cada liga') + `<div class="mt-barras">${barras}</div><div class="mt-leyenda"><span><i class="l1"></i>factor</span><span><i class="l2"></i>margen: si repetimos la cuenta con otros jugadores sacados al azar, 8 de cada 10 veces el factor cae en esta franja</span></div>` : ''}
       ${cambio ? `<div class="mt-k">10 puntos de Senior 1 equivalen a…</div><div class="mt-cambio">${cambio}</div>` : ''}
       ${fac.S4 && fac.S4.provisional ? `<p class="mt-nota">* Senior 4 empezó en 2026/27 y todavía no hay suficientes jugadores que hayan jugado en ella y en otra liga. Hasta entonces se usa el factor de la antigua Senior 3, que reunía a los equipos de las dos. Se recalculará cuando haya datos.</p>` : ''}
       ${H('Cómo se calculan los factores')}
-      ${P(`Con los jugadores que han jugado en dos ligas distintas. Comparamos sus puntos por partido en cada una: como es el mismo jugador, la diferencia indica cuánto más difícil es una liga que otra. Usamos <b>${F.casos || '—'} cambios de liga de ${F.jugadores || '—'} jugadores de campo</b>, de ${F.desde || '—'} a ${F.hasta || '—'}, con al menos 6 partidos en cada liga.`)}
+      ${P(`Con los jugadores de campo que han jugado en dos ligas senior, de una temporada a la siguiente o en la misma temporada. Como es la misma persona, la diferencia entre sus puntos por partido en una liga y en otra nos dice cuánto más difícil es cada una. Usamos <b>${F.casos || '—'} cambios de liga de ${F.jugadores || '—'} jugadores de campo</b>, de ${F.desde || '—'} a ${F.hasta || '—'}. Hacen falta 6 partidos en cada liga, o 3 si las dos son de la misma temporada.`)}
       ${P('Calculamos por separado a los que suben de liga y a los que bajan, y hacemos la media de los dos casos. Quien sube suele estar mejorando y quien baja, empeorando; con la media se compensa.')}
       ${dir.length ? tabla(['Cambio de liga', 'Casos', 'Puntos por partido, antes → después'], dir) : ''}
       ${f2 ? H('Un ejemplo') + `<p class="mt-p">Un jugador de Senior 2 con 29 goles y 18 asistencias: 47 puntos en 18 partidos.</p>
@@ -2715,18 +2722,18 @@
           <div class="mt-paso"><div class="t"><b>Pasados a Senior 1</b><small>${d2(ppg)} × ${fx(f2, 3)}</small></div><div class="r">${fx(ppg * f2, 3)}</div></div>
           <div class="mt-paso fin"><div class="t"><b>Una temporada de Senior 1</b><small>${fx(ppg * f2, 3)} × ${PJ}</small></div><div class="r">${d1(ppg * f2 * PJ)}<small>FMPe</small></div></div></div>` : ''}
       <div class="mt-dos">
-        <div class="mt-caja"><h3 style="color:#3DD27E">DÓNDE SALE</h3>${lista(['En la ficha de cada jugador, en cada temporada senior con 3 partidos o más', 'En la pretemporada: la fuerza de cada plantilla y los más peligrosos', 'En la presentación del directo, para ordenar a los rivales peligrosos', 'En el pronóstico de la temporada'], '→', '#3DD27E')}</div>
-        <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['No mide la defensa ni nada que no esté en el acta', 'Con pocos partidos, el dato es poco fiable', `Antes de ${F.desde || '2021/22'} se usan los mismos factores, calculados con las temporadas recientes`, 'No se calcula para porteros'], '!')}</div>
+        <div class="mt-caja"><h3 style="color:#3DD27E">DÓNDE SALE</h3>${lista(['En el mapa de cada liga y en «Comparar» de la ficha, para juntar puntos de ligas senior distintas', 'En la pretemporada: la fuerza de cada plantilla y «A vigilar»', 'En la presentación del directo, para elegir a los rivales peligrosos'], '→', '#3DD27E')}</div>
+        <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['No mide la defensa ni nada que no esté en el acta', 'Con pocos partidos, el dato es poco fiable', 'No se calcula para porteros'], '!')}</div>
       </div>`);
 
     // 3 · pretemporada
     const tarj = (ic, t, x) => `<div class="mt-tarj"><div class="ic">${ic}</div><b>${t}</b><p>${x}</p></div>`;
     const pre = sec('pretemporada', '03', 'PRETEMPORADA', 'Cómo llega cada equipo', 'Antes de empezar la temporada, con lo que hizo cada jugador la temporada pasada y el equipo en el que juega este año.', `
       <div class="mt-tarjetas">
-        ${tarj('▮▮▯', 'Fuerza de cada plantilla', 'Los puntos de la temporada pasada de los jugadores de este año, pasados al nivel de esta liga con el FMPe. Los que siguen cuentan lo que hicieron con el equipo; los que llegan, lo de su equipo anterior. Los que aún no han jugado este año cuentan la mitad (la parte oscura de la barra). Es una estimación: no tiene en cuenta quién juega cada partido.')}
-        ${tarj('⚠', 'Jugadores más peligrosos', 'Puntos por partido de la temporada pasada más la mitad de los de la anterior, pasados al nivel de esta liga con el FMPe, con 4 partidos o más. Se toman los cinco con más puntos de cada equipo y, de ellos, salen los 10 mejores de la liga.')}
-        ${tarj('%', 'Porteros más fiables', 'Paradas entre tiros recibidos. La temporada pasada cuenta entera y la anterior a la mitad, y hacen falta unos 150 tiros (unos cinco partidos) para entrar en la lista.')}
-        ${tarj('↻', 'Renovación de plantillas', 'Qué parte de los puntos que hizo el equipo la temporada pasada siguen en la plantilla de este año, y cuántas caras nuevas hay.')}
+        ${tarj('▮▮▯', '¿Quién tiene más plantilla?', 'Sumamos los puntos que hicieron la temporada pasada los jugadores de cada equipo, pasados al nivel de esta liga con el FMPe. De los que siguen contamos lo que hicieron con el equipo; de los que llegan, toda su temporada pasada (o la anterior, si no jugaron). Los del año pasado que todavía no han jugado esta temporada cuentan la mitad: es la parte rayada de la barra. Es una estimación: no sabe quién jugará cada partido.')}
+        ${tarj('⚠', 'A vigilar', 'Los 5 jugadores rivales de la liga con más puntos por partido. La temporada pasada cuenta entera y la anterior, a la mitad, con los puntos pasados al nivel de esta liga con el FMPe. Hacen falta 4 partidos entre las dos temporadas.')}
+        ${tarj('%', 'Porteros', 'Los 5 con mejor % de paradas: de cada 100 tiros que reciben, cuántos paran. La temporada pasada cuenta entera y la anterior, a la mitad. Hacen falta unos 150 tiros, más o menos cinco partidos.')}
+        ${tarj('↻', 'Quién sigue, quién llega y quién se va', 'En nuestros equipos, cuántos jugadores de este año ya estaban la temporada pasada, cuántos llegan y cuántos se han ido a otro equipo. Arriba, qué equipos han subido o bajado de liga.')}
       </div>`);
 
     // 4 · en directo
@@ -2734,67 +2741,67 @@
     const hito = (t, x) => `<div class="mt-hito"><span class="dv-hito">${t}</span><span>${x}</span></div>`;
     const directo = sec('directo', '04', 'EN DIRECTO', 'Qué marca el directo', 'Durante el partido, y después en su resumen, el minuto a minuto indica en qué situación se marcó cada gol, sus hitos y los rivales con más puntos.', `
       ${H('Superioridad e inferioridad')}
-      <div class="mt-dos al"><div>${pista}</div><div>${lista(['Las expulsiones de 1\'30\'\', 2 y 5 minutos dejan al equipo con uno menos; las de 10 no, porque entra otro.', 'Si coinciden dos, se suman.', 'La de 2 minutos o menos se acaba si marca el que está con uno más.', 'Si no ha acabado al descanso, sigue en la segunda parte.', '«Portería vacía», cuando el acta apunta que sale el portero y no entra otro.'])}</div></div>
+      <div class="mt-dos al"><div>${pista}</div><div>${lista(['Las expulsiones de menos de 10 minutos (1\'30\'\', 2, 4 o 5) dejan al equipo con uno menos. Las de 10 no, porque entra otro jugador.', 'Si coinciden dos, se suman.', 'La de 2 minutos o menos se acaba si marca el que está con uno más.', 'Si no ha acabado al descanso, sigue en la segunda parte.', '«Portería vacía», cuando el acta apunta que sale el portero y no entra otro.', 'El acta no publica el reloj. El minuto con «≈» lo estimamos con el último apunte del acta y puede ir uno o dos minutos desviado.'])}</div></div>
       ${H('Hitos de cada gol')}
       <div class="mt-hitos">
         ${hito('SU PRIMER GOL', 'El primero que tenemos de esa persona en la FMP, desde 2016/17.')}
         ${hito('1.er GOL DE LA TEMPORADA', 'El primero de esa persona esta temporada, en cualquier categoría.')}
-        ${hito('HAT TRICK', 'El tercer gol del mismo jugador en el partido. Luego vienen <span class="dv-hito">PÓKER</span> y <span class="dv-hito">MANITA</span>.')}
-        ${hito('SUPERA SU MEDIA', 'Cuando llega a 2 goles o más y al menos al doble de su media por partido (la temporada pasada y esta antes del partido, con 5 partidos o más). Lo mismo con las asistencias.')}
+        ${hito('HAT TRICK', 'El tercer gol de la misma persona en el partido. Con el cuarto, <span class="dv-hito">PÓKER</span>, y con el quinto, <span class="dv-hito">MANITA</span>.')}
+        ${hito('SUPERA SU MEDIA', 'Cuando marca su segundo gol o más y ya lleva al menos el doble de lo que marca de media por partido. La media cuenta la temporada pasada y esta hasta el día anterior, y hacen falta 5 partidos. Lo mismo con las asistencias.')}
       </div>
       <p class="mt-nota">Salen en el minuto a minuto, en la escena de cada gol y en la pantalla final del resumen. Si no tenemos datos recientes del jugador, no se dice nada de su historial.</p>
       ${H('Rivales peligrosos en la presentación')}
-      <div class="mt-dos al"><div class="mt-riv" aria-hidden="true"><div class="j"><b>22</b><span>Rival 1<small>PELIGRO · 1,15 puntos por partido en 2025/26</small></span></div><div class="j otro"><b>7</b><span>Rival 2</span></div><div class="j"><b>4</b><span>Rival 3<small>PELIGRO · 0,93 puntos por partido en 2025/26</small></span></div></div>
-        <div>${P('Los 3 jugadores del rival con más puntos por partido, sumando esta temporada antes del partido y la pasada (4 partidos o más, o 2 de esta temporada), siempre que pasen de 0,4. En senior cuentan todas las ligas senior, pasadas a la del partido con el FMPe. Al lado se muestran sus números reales.')}</div></div>
+      <div class="mt-dos al"><div class="mt-riv" aria-hidden="true"><div class="j"><b>22</b><span>Rival 1<small>PELIGRO · 1,15 puntos por partido en ${tempAnt()}</small></span></div><div class="j otro"><b>7</b><span>Rival 2</span></div><div class="j"><b>4</b><span>Rival 3<small>PELIGRO · 0,93 puntos por partido en ${tempAnt()}</small></span></div></div>
+        <div>${P('Marcamos a los 3 jugadores del rival con más puntos por partido, si pasan de 0,4. Contamos esta temporada hasta el partido y la pasada, y hacen falta 4 partidos entre las dos (o 2 de esta). En senior juntamos todas las ligas senior y pasamos los puntos al nivel de la liga del partido con el FMPe. Al lado ponemos sus números de verdad, sin ajustar.')}</div></div>
       ${H('El resumen de un partido')}
-      ${P('Reproduce el partido con los minutos del acta. Los tiros y las paradas de cada portero solo se ven al final, porque el acta definitiva no dice cuándo fue cada tiro.')}
+      ${P('Vuelve a jugar el partido en unos segundos con los minutos del acta. Si tenemos los tiros minuto a minuto, el % de paradas de cada portero cambia con cada tiro; si no, sale al final, con el acta.')}
       ${H('Tiros a puerta minuto a minuto')}
-      ${P('Durante el partido, el acta digital va subiendo los tiros de cada portero cada uno o dos minutos. Desde octubre de 2026 un programa las guarda cada minuto mientras se juega, y la página del partido dibuja los tiros de cada equipo a lo largo del partido. El acta no publica el reloj, así que el minuto se estima con la hora de cada apunte (los goles, faltas y tiempos muertos llevan su minuto): puede ir uno o dos minutos arriba o abajo. Si el acta deja de subir los tiros un rato y luego los apunta de golpe, ese tramo sale en discontinuo. El total siempre se comprueba con el acta definitiva.')}
+      ${P('Durante el partido, el acta digital va subiendo los tiros que recibe cada portero cada uno o dos minutos. Desde octubre de 2026 los guardamos cada minuto y en la página del partido dibujamos los tiros de cada equipo. Como el acta no publica el reloj, el minuto lo estimamos con la hora de cada apunte (los goles, las faltas y los tiempos muertos sí llevan minuto), así que puede ir uno o dos minutos desviado. Si el acta deja de subir tiros un rato y luego los apunta de golpe, ese tramo sale en discontinuo.')}
       ${H('La afición y el banquillo')}
-      ${lista(['<b>La grada</b>: en el directo, cualquiera puede mandar emojis (aplauso, fuego, sorpresa, ánimo, corazón). Se cuentan todos.', '<b>El mejor del partido</b>: en nuestros partidos se vota a un jugador nuestro hasta 7 días después. Un voto por móvil.', '<b>En pista</b>: el delegado apunta desde el banquillo quién estaba en pista en cada gol (con el PIN del banquillo), o se marca después en el vídeo. Con eso salen el más/menos de cada jugador (goles de su equipo y en contra mientras jugaba) y, con el vídeo, desde dónde se marcó.'])}`);
+      ${lista(['<b>La grada</b>: en el vídeo de cada partido, cualquiera puede mandar emojis (aplauso, fuego, sorpresa, ánimo, corazón). Se cuentan todos.', '<b>El mejor del partido</b>: en nuestros partidos se vota a un jugador nuestro hasta 7 días después. Un voto por móvil.', '<b>En pista</b>: en nuestros partidos, el delegado apunta desde el banquillo quién estaba en pista en cada gol, o lo marcamos después viendo el vídeo. Con eso sale en la ficha «En pista en los goles»: los goles de su equipo y los que encajó mientras jugaba. En los partidos con vídeo también marcamos desde dónde fue cada gol y, a veces, cada tiro (gol, parada, fuera o bloqueado).'])}`);
 
     // 5 · ficha del jugador
-    const ficha = sec('ficha', '05', 'FICHA DEL JUGADOR', 'Con el equipo', 'En la ficha de cada jugador nuestro, su peso en los goles del equipo. Solo con datos del acta y a partir de 3 partidos.', `
+    const ficha = sec('ficha', '05', 'FICHA DEL JUGADOR', 'Con el equipo', 'En la ficha de cada jugador nuestro, su peso en los goles del equipo. Sale la temporada más reciente en la que lleva 5 partidos o más.', `
       <div class="mt-dos al">
-        <div class="mt-ficha" aria-hidden="true"><div class="cab"><span class="t">2025/26</span><span class="p">43,5%</span><span class="x">de los goles del equipo llevan su gol o su asistencia (47 de 108, en 18 PJ)</span></div>
-          <div><span class="k">Sus goles:</span> 27 en igualdad · 1 en superioridad · 1 en inferioridad</div><div><span class="k">Le asisten más:</span> un compañero <span class="g">5</span></div><div class="pie">Ejemplo</div></div>
-        <div>${lista(['<b>Participación</b>: de los goles que marcó su equipo en los partidos que jugó, en cuántos marcó o asistió.', '<b>Sus goles</b>: cuántos fueron en igualdad, en superioridad y en inferioridad, contados como en el directo.', '<b>Le asisten más / asiste más a</b>: con quién combina en los goles (dos veces o más) y con cuántos compañeros distintos ha combinado alguna vez.'])}</div>
+        <div class="mt-ficha" aria-hidden="true"><div class="cab"><span class="t">${tempAnt()}</span><span class="p">43,5%</span><span class="x">de los goles del equipo pasan por él (47 de 108, en 18 PJ)</span></div>
+          <div><span class="k">Sus goles:</span> 27 en igualdad · 1 en superioridad · 1 en inferioridad</div><div><span class="k">Le dan el pase:</span> un compañero <span class="g">5</span></div><div class="pie">Ejemplo</div></div>
+        <div>${lista(['<b>Participación</b>: de los goles que marcó su equipo en los partidos que jugó, en cuántos marcó o dio el pase.', '<b>Sus goles, según cómo estábamos en pista</b>: cuántos marcó en igualdad, con uno más y con uno menos, contados como en el directo.', '<b>Le dan el pase / Se la da a</b>: los dos compañeros con los que más goles ha hecho (dos o más).', '<b>Penaltis y sanciones</b>: los penaltis que ha marcado en las tandas y las faltas que más le pitan con el club.'])}</div>
       </div>`);
 
-    // 6 · mapa de jugadores y «se parece a»
+    // 6 · mapa de jugadores y «comparar»
     const mapaM = sec('mapa', '06', 'MAPA Y ARQUETIPOS', 'Dónde está cada jugador de la liga', 'En cada liga, un mapa con todos los jugadores de campo: hacia la derecha, más puntos por partido; hacia arriba, más parte de sus puntos son goles. Los nuestros, en rojo.', `
-      ${lista(['<b>Puntos por partido</b>: goles más asistencias, entre partidos jugados. En senior se pasan a la escala de Senior 1 con el FMPe, para poder juntar temporadas y ligas. En el mapa de una liga se enseñan en la escala de esa liga; en «Todas las ligas senior», en la de Senior 1.', '<b>Parte de goles</b>: de sus puntos, cuántos son goles. El resto son asistencias.', '<b>Qué partidos cuentan</b>: los de esta temporada en esa liga y, hasta que el jugador lleva 6, también los de la temporada pasada (en la cantera, solo los de la misma categoría, porque muchos juegan en Alevín e Infantil). Hacen falta 3 partidos en total para salir.', '<b>Porteros</b>, en su propio mapa: % de paradas y tiros recibidos por partido.'])}
+      ${lista(['<b>Puntos por partido</b>: goles más asistencias, entre partidos jugados. En el mapa van en la escala de esa liga; si juntamos partidos de otra liga senior de la temporada pasada, los pasamos a esta escala con el FMPe.', '<b>Parte de goles</b>: de sus puntos, cuántos son goles. El resto son asistencias.', '<b>Qué partidos cuentan</b>: los de esta temporada en esa liga y, hasta que el jugador lleva 6, también los de la temporada pasada (en la cantera, solo los de la misma categoría, porque muchos juegan en Alevín e Infantil). Hacen falta 3 partidos en total para salir.', '<b>Porteros</b>: no salen en el mapa. Para su arquetipo usamos el % de paradas y los tiros que reciben por partido (hacen falta 3 partidos y 40 tiros).'])}
       ${H('Zonas')}
       ${lista(['<b>Referentes</b>: el 15 % de la liga con más puntos por partido.', '<b>Goleadores</b> y <b>Pasadores</b>: del resto, los que están por encima de la mitad de la liga en puntos por partido. Goleadores si su parte de goles es mayor que la de la mitad de la liga; pasadores si es menor.', '<b>Apoyo</b>: los que están por debajo de la mitad de la liga en puntos por partido.'])}
       ${H('Arquetipos')}
       ${P('Los mismos datos dan a cada jugador un arquetipo, comparándolo con los jugadores de su liga. Se mira en este orden y se queda con el primero que cumple:')}
-      ${lista(['<b>Sniper</b>: está en el 15 % de su liga con más goles por partido y marca más que asiste.', '<b>Playmaker</b>: está en el 15 % con más asistencias por partido y asiste al menos tanto como marca.', '<b>Momentum</b>: está en el 15 % con más puntos por partido.', '<b>Wildcard</b>: marca más que la mitad de su liga y está en el 15 % con más minutos de sanción por partido.', '<b>Ghost</b>: 7 partidos o menos.', '<b>Steady</b>: por encima de la mitad de su liga en puntos por partido.', '<b>Wall</b>: 12 partidos o más, en la cuarta parte de su liga con menos puntos y casi sin sanción.', '<b>Workhorse</b>: el resto.'])}
-      ${P('Rasgos, que se suman al arquetipo:')}
-      ${lista(['<b>Game Changer</b>: 3 goles o más que dieron la victoria (el gol que deja al ganador con uno más de los que acabó marcando el rival).', '<b>Comeback King</b>: 5 goles o más con su equipo por detrás en el marcador.', '<b>Hot Streak</b>: marcó en 5 partidos seguidos o más.', '<b>One Man Show</b>: participa en el 35 % o más de los goles de su equipo (desde 6 partidos).', '<b>Polivalente</b>: ha jugado en portería y en campo.', '<b>Rookie Phenom</b>: primera temporada en senior y por encima de la mitad de su liga.', '<b>Veterano</b>: 5 temporadas o más en el club.', '<b>Leyenda</b>: entre los 3 primeros de la historia del club en goles, asistencias o partidos.'])}
-      ${P('Porteros, comparados con los porteros de su liga: <b>Shadow</b> (4 partidos o menos), <b>Iron Curtain</b> (el 25 % con mejor % de paradas), <b>Reactive Wall</b> (el 25 % que más tiros recibe y para más que la mitad), <b>Embattled</b> (el 25 % que más tiros recibe), <b>Undershot</b> (el 25 % que menos tiros recibe) y <b>Workhorse</b> (10 partidos o más).')}
-      ${H('Se parece a')}
-      ${P('En la ficha de cada jugador nuestro salen los 3 jugadores de otros clubes con los números más parecidos: goles y asistencias por partido (en la escala de Senior 1), parte de los goles de su equipo en los que participa y minutos de sanción por partido. Cada número pesa lo mismo. Senior se compara con senior, la cantera con la cantera y los porteros con porteros, por % de paradas y tiros por partido.')}
+      ${lista(['<b>Sniper</b> (el francotirador): está en el 15 % de su liga con más goles por partido y marca más que asiste.', '<b>Playmaker</b> (el cerebro): está en el 15 % con más asistencias por partido y asiste al menos tanto como marca.', '<b>Momentum</b> (el motor): está en el 15 % con más puntos por partido.', '<b>Wildcard</b> (el espectáculo): marca más que la mitad de su liga y está en el 15 % con más minutos de sanción por partido.', '<b>Ghost</b> (el fugaz): 7 partidos o menos.', '<b>Steady</b> (el consistente): por encima de la mitad de su liga en puntos por partido.', '<b>Wall</b> (el ancla): 12 partidos o más, en la cuarta parte de su liga con menos puntos y casi sin sanción.', '<b>Workhorse</b> (el currante): el resto.'])}
+      ${P('Porteros, comparados con los de su liga, en este orden: <b>Shadow</b> (4 partidos o menos), <b>Iron Curtain</b> (el 25 % con mejor % de paradas), <b>Reactive Wall</b> (el 25 % que más tiros recibe y para más que la mitad), <b>Embattled</b> (el 25 % que más tiros recibe), <b>Undershot</b> (el 25 % que menos tiros recibe) y <b>Workhorse</b> (10 partidos o más). Quien no encaja en ninguno queda como Shadow.')}
+      ${H('Comparar')}
+      ${P('En la pestaña «Comparar» de la ficha salen los 3 jugadores de su liga, de cualquier equipo, con los números más parecidos en puntos por partido y en la parte de sus puntos que son goles. Solo cuentan los que llevan 5 partidos o más. A los porteros los comparamos con los porteros de su liga por el % de paradas. Debajo se puede elegir a cualquier otro jugador y ver sus números al lado.')}
       <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['No mide la defensa ni nada que no esté en el acta', 'Con pocos partidos, el punto de cada jugador se mueve mucho', 'En la cantera no hay factor entre ligas: los números van tal cual'], '!')}</div>`);
 
-    // 7 · probabilidades y análisis del equipo
+    // 7 · probabilidades, pronósticos y análisis del equipo
     if (!ANA) cargarAnalisis().then(d => { if (d && /^#\/metodo/.test(location.hash)) render(); });
     const T7 = ANA && ANA.prob && ANA.prob.senior, cel = (d, q) => { const r = T7.tabla[d][q]; return `${Math.round(r[0] * 100)} % · ${Math.round(r[1] * 100)} % · ${Math.round(Math.max(0, 1 - r[0] - r[1]) * 100)} %`; };
-    const probM = sec('probabilidad', '07', 'PROBABILIDADES Y ANÁLISIS', 'Qué pasa normalmente con cada marcador', 'Con todos los partidos de la FMP desde 2016/17 sabemos cuántas veces acaba ganando el que va por delante según la ventaja y los minutos que quedan. Con eso se dibuja el gráfico de cada partido, las opciones de ganar del directo y la simulación de la liga.', `
-      ${T7 ? H('Senior: el que va ganando… gana · empata (penaltis) · pierde') + tabla(['Ventaja', 'Quedan 10 min', 'Quedan 5 min', 'Quedan 2 min'], [1, 2, 3].map(d => `<tr>${td(d === 3 ? '3 goles o más' : d + (d === 1 ? ' gol' : ' goles'))}${td(cel(d, 10), 'n')}${td(cel(d, 5), 'n')}${td(cel(d, 2), 'n')}</tr>`)) + `<p class="mt-nota">Con ${T7.partidos} partidos senior completos (con el minuto de todos los goles). La cantera tiene su propia tabla, con partes de 20 minutos.</p>` : ''}
-      ${lista(['<b>Gráfico del partido</b>: en cada momento, con el marcador y los minutos que quedan, cuántas veces gana cada equipo y cuántas se va a los penaltis. No sabe quién juega ni cómo va el partido: solo el marcador y el reloj. No cuenta el factor campo.', '<b>Opciones de ganar en el directo</b>: lo mismo, con el minuto del último apunte del acta (el acta no publica el reloj en marcha).', '<b>¿Dónde puede acabar cada equipo?</b>: jugamos 4.000 veces los partidos que quedan. Los goles de cada partido salen al azar según lo que marca y encaja cada equipo esta temporada, acercado a la media de la liga como si llevara 8 partidos más «normales» (así, con pocas jornadas, un resultado no pesa de más). Un empate se decide a los penaltis al 50 %.'])}
+    const probM = sec('probabilidad', '07', 'PRONÓSTICOS Y ANÁLISIS', 'Qué pasa normalmente con cada marcador', 'Con todos los partidos de la FMP desde 2016/17 sabemos cuántas veces acaba ganando el que va por delante, según los goles de ventaja y los minutos que quedan. Con eso dibujamos las opciones de ganar de cada partido y del directo.', `
+      ${T7 ? H('Senior: el que va ganando… gana · empata y va a los penaltis · pierde') + tabla(['Ventaja', 'Quedan 10 min', 'Quedan 5 min', 'Quedan 2 min'], [1, 2, 3].map(d => `<tr>${td(d + (d === 1 ? ' gol' : ' goles'))}${td(cel(d, 10), 'n')}${td(cel(d, 5), 'n')}${td(cel(d, 2), 'n')}</tr>`)) + `<p class="mt-nota">Con ${T7.partidos} partidos senior completos (con el minuto de todos los goles). La cantera tiene su propia tabla, con partes de 20 minutos.</p>` : ''}
+      ${lista(['<b>Opciones de ganar, minuto a minuto</b>: en la página de cada partido, nuestras opciones en cada minuto según el marcador y lo que queda. Un empate cuenta como medio, porque se decide en los penaltis. En un derbi, las del equipo de casa. Solo mira el marcador y el reloj: no sabe quién juega ni cuenta jugar en casa.', '<b>Opciones de ganar en el directo</b>: lo mismo, con el minuto estimado del directo.', '<b>Pronóstico de cada partido</b>: de cada 10 veces, cuántas gana cada equipo, cuántas se va a los penaltis y el marcador más probable. Sale de los goles que marca y encaja cada equipo esta temporada. Para que un resultado suelto no pese de más al principio, a cada equipo le sumamos 8 partidos con la media de la liga. No cuenta jugar en casa. Se recalcula hasta la víspera y el día del partido queda fijo.', '<b>¿Acertamos?</b>: en cada liga, cuántas veces ganó el que tenía más opciones en nuestro pronóstico. Solo cuentan los pronósticos guardados antes del día del partido, y los penaltis cuentan para quien ganó la tanda. «Sorpresa» es cuando pierde un favorito que pasaba del 55 %. También miramos si los porcentajes se cumplen (de los partidos que dimos a más del 60 %, cuántos se ganaron) y si acertamos más que dar por ganador al que iba por delante en la clasificación.'])}
+      ${H('Antes de cada partido')}
+      ${lista(['<b>Nosotros frente a ellos</b>: compara, por partido y esta temporada, goles a favor y en contra, tiros, % de paradas y minutos de sanción.', '<b>Cara a cara</b>: todos los partidos entre los dos con el club, con los decididos en los penaltis aparte.', '<b>A vigilar</b>: sus 3 jugadores con más puntos por partido (los del mapa) y su portero con más partidos.'])}
       ${H('Cómo juega cada equipo')}
-      ${lista(['<b>Cuándo marca y cuándo encaja</b>: los goles de cada tramo de 5 minutos, con el minuto del acta. Si al acta le falta el minuto de algún gol, ese partido no entra.', '<b>Ventajas y remontadas</b>: partidos en los que fue por delante y no ganó en el tiempo de juego (un empate que se gana en los penaltis cuenta como no ganado), los que ganó yendo por detrás y cómo acaba cuando marca o encaja primero.', '<b>Tiros a puerta</b>: los que recibe cada portero, que es lo único que apunta el acta. Así sabemos los tiros de cada equipo, pero no quién tira. Acierto = goles ÷ tiros.', '<b>Con uno más y con uno menos</b>: los goles marcados con superioridad o inferioridad, contados como en el directo.', '<b>Quién asiste a quién</b>: las parejas que han hecho goles juntas (uno asiste y otro marca). Desde 2025/26 el acta solo da el dorsal de quien asiste; se busca en la alineación de ese partido.', '<b>Próximo rival</b>: los mismos números de los dos equipos, de esta temporada si los dos llevan 4 partidos o más; si no, de la temporada pasada.'])}
+      ${lista(['<b>Cuándo marca y cuándo encaja</b>: los goles de cada tramo de 5 minutos, con el minuto del acta. Si al acta le falta el minuto de algún gol, ese partido no entra.', '<b>Marcador</b>: cuántos partidos gana cuando marca primero y cuando encaja primero, las remontadas (ganar yendo por detrás) y las ventajas que se escaparon (ir por delante y no ganar en el tiempo de juego; un empate ganado en los penaltis cuenta como no ganado).', '<b>Tiros</b>: tiros a favor y en contra por partido. El acta solo apunta los que recibe cada portero, así que sabemos los tiros de cada equipo pero no quién tira. Acierto: de cada 100 tiros, cuántos son gol.', '<b>Disciplina</b>: faltas, minutos de sanción por partido y las faltas que más nos pitan.', '<b>Asistencias</b>: quién da más pases de gol en el equipo esta temporada.', '<b>Jugadores clave</b>: los 4 de la plantilla con más puntos con ese equipo esta temporada, sin porteros. Si nadie ha marcado todavía, los de la temporada pasada.'])}
       ${H('Hitos a la vista y agenda')}
-      ${lista(['<b>Hitos a la vista</b>: a quién le faltan como mucho 3 goles o 3 asistencias, 2 partidos o 40 paradas para una cifra redonda (10, 25, 50, 75, 100, 150…) con el club, contando todas sus temporadas.', '<b>Pista de cada partido</b>: la del calendario de la FMP. Si la FMP no la pone (el calendario de Infantil 2 no la publica), la pista habitual del equipo local.', '<b>Calendarios para el móvil</b>: los mismos partidos, en un enlace que Google Calendar, el iPhone u Outlook vuelven a leer cada pocas horas.'])}
-      <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['Son frecuencias del pasado, no una predicción de lo que va a pasar', 'No sabe de bajas, lesiones ni fichajes', 'Con pocos partidos jugados, los números de cada equipo se mueven mucho'], '!')}</div>`);
+      ${lista(['<b>Hitos a la vista</b>: a quién le faltan como mucho 3 goles, 3 asistencias, 2 partidos o 40 paradas para una cifra redonda con el club, contando todas sus temporadas. Goles y asistencias: 10, 25, 50, 75, 100, 150…; partidos: 25, 50, 100, 150…; paradas: 100, 250, 500…', '<b>Lo mejor de la semana</b>: lo más destacado de nuestros partidos de la semana. Para el portero o la portera de la semana, el mejor % de paradas en un partido, con 10 tiros o más.', '<b>Pista de cada partido</b>: la que pone el calendario de la FMP.', '<b>Calendarios para el móvil</b>: los mismos partidos, en un enlace que Google Calendar, el iPhone u Outlook vuelven a leer cada pocas horas.'])}
+      <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['Las opciones de ganar dicen lo que pasó otras veces con ese marcador; el pronóstico, lo que sale con los goles de esta temporada. Ninguno es seguro', 'No saben de bajas, lesiones ni fichajes', 'Con pocos partidos jugados, los números de cada equipo se mueven mucho'], '!')}</div>`);
 
     const indice = [['datos', '01', 'Los datos', 'De dónde sale cada número'], ['fmpe', '02', 'FMPe', 'Los puntos de cada liga, en la misma escala'],
-      ['pretemporada', '03', 'Pretemporada', 'Fuerza, peligrosos y porteros de cada liga'], ['directo', '04', 'En directo', 'Hitos, superioridades y rivales peligrosos'],
-      ['ficha', '05', 'Ficha del jugador', 'Con quién combina cada uno'], ['mapa', '06', 'Mapa y arquetipos', 'Dónde está cada uno, su arquetipo y a quién se parece'],
-      ['probabilidad', '07', 'Probabilidades y análisis', 'Opciones de ganar, simulación de la liga y cómo juega cada equipo']]
+      ['pretemporada', '03', 'Pretemporada', 'Fuerza de cada plantilla, a quién vigilar y porteros'], ['directo', '04', 'En directo', 'Avisos del directo, hitos y rivales peligrosos'],
+      ['ficha', '05', 'Ficha del jugador', 'Su parte en los goles del equipo y con quién combina'], ['mapa', '06', 'Mapa y arquetipos', 'Dónde está cada uno, su arquetipo y con quién se compara'],
+      ['probabilidad', '07', 'Pronósticos y análisis', 'Pronósticos, opciones de ganar y cómo juega cada equipo']]
       .map(([id, n, t, x]) => `<a class="blk" href="#/metodo/${id}"><span class="n">${n}</span><b>${t}</b><span class="x">${x}</span></a>`).join('');
     return `<div class="mt-hero"><div class="lab" style="color:#FF6B63">MADRIDPATINA · MÉTODO</div><h1>Cómo lo calculamos</h1>
-        <p>Qué mide cada número de la web, de dónde sale y cómo se calcula. Todo son cuentas con los datos de las actas de la federación.</p></div>
+        <p>Qué mide cada número de la web y cómo lo calculamos. Casi todo sale de las actas de la Federación Madrileña de Patinaje; lo que no, lo decimos en su sitio.</p></div>
       <nav class="mt-indice" aria-label="Apartados">${indice}</nav>
       ${datos}${fmpe}${pre}${directo}${ficha}${mapaM}${probM}`;
   }
@@ -2949,7 +2956,8 @@
     else if (v === 'directo') html = parts[2] === 'resumen' ? vResumen(parts[1]) : vVivo(parts[1]);   // rediseño final: resumen sin vídeo y directo
     else if (v === 'metodo') html = vMetodo();
     else if (v === 'sincronizar') html = vSincronizar(parts[1]);
-    else if (v === 'banquillo') html = parts[1] ? vBanquillo(parts[1]) : '<div class="sy"><div class="lab" style="color:#FF6B63">BANQUILLO</div><p class="sy-ayuda">Entra desde el directo del partido (botón «Banquillo»).</p></div>';
+    else if (v === 'banquillo' && !parts[1]) { history.replaceState(null, '', '#/'); return render(); }
+    else if (v === 'banquillo') html = vBanquillo(parts[1]);
     else if (v === 'video') html = vVideo(parts[1], parts[2]);
     else if (v === 'calendario') html = vCalendario();
     else if (v === 'apodo') html = vApodo();
@@ -4900,7 +4908,7 @@
   function rsHtml(m) {
     const derbi = ours(m.local) && ours(m.visitante), lid = m.liga, nm = n => largoEq(n, lid);
     const L = lgOf(lid) || {}, ligaJ = ((L.nombre || m.ligaNombre || '').replace(/^Liga /, '') + (m.jornada ? ' · J' + m.jornada : '')).toUpperCase();
-    const cuando = `<div class="rs-cuando"><b>${esc(fd(m.fecha).toUpperCase())}<i>/</i>${esc(m.hora || 'Hora por fijar')}</b><span>${esc(m.pista ? pistaBonita(m.pista).replace(/-Pista \d+$/i, '').replace(/^Polid\. Municipal /i, 'Polideportivo ') : 'Pista por confirmar')}</span></div>`;
+    const cuando = `<div class="rs-cuando"><b>${esc(fd(m.fecha).toUpperCase())}<i>/</i>${esc(m.hora || 'Hora por fijar')}</b><span>${esc(m.pista ? pistaBonita(m.pista).replace(/-Pista \d+$/i, '').replace(/^Polid\. Municipal /i, 'Polideportivo ') : '')}</span></div>`;
     // alineaciones: los nuestros como cromos (foto o iniciales), el rival en fichas de dorsal y apellido
     const orden = l => (l || []).slice().sort((a, b) => (b.portero ? 1 : 0) - (a.portero ? 1 : 0) || (b.capitan ? 1 : 0) - (a.capitan ? 1 : 0) || (b.asistente ? 1 : 0) - (a.asistente ? 1 : 0) || (+a.dorsal || 99) - (+b.dorsal || 99));
     const entr = (j, l) => (m.staff[l] || []).some(s => rsMismo(s, j));
