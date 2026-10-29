@@ -3334,3 +3334,50 @@ a.fi-mejor:hover { box-shadow: inset 0 0 0 1px #3A3A40; }
 .fav-l b { font-size: 15px; color: #F4F4F5; }
 .fav-h { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #C9C9CE; }
 .fav-h b { font-size: 28px; line-height: 1; color: #FF6B63; }
+
+/* ── club rival (#/club/<slug>) ── */
+.cl-cab { display: flex; align-items: center; gap: 16px; margin-top: 24px; }
+.cl-cab .esc { flex: none; }
+.cl-cab .h1 { margin: 4px 0 0; }
+.cl-cab .sub { margin-top: 6px; font-size: 14px; color: #A6A6AD; }
+.cl-sec { margin-top: 28px; }
+.cl-bal { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; max-width: 560px; }
+.cl-bal > div { padding: 12px 14px; border-radius: 12px; background: #18181B; border-top: 3px solid #3A3A40; }
+.cl-bal > div.v { border-top-color: #1E8A4C; }
+.cl-bal > div.d { border-top-color: #D3202A; }
+.cl-bal b { display: block; font-size: 36px; line-height: 1; color: #F4F4F5; }
+.cl-bal span { display: block; margin-top: 4px; font-size: 12.5px; color: #A6A6AD; }
+.cl-prox { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; max-width: 560px; border-top: 3px solid #D3202A; color: #C9C9CE; font-size: 13.5px; }
+.cl-prox b { font-size: 17px; color: #F4F4F5; }
+.cl-ps { display: grid; gap: 6px; margin-top: 12px; max-width: 760px; }
+.cl-p { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: #18181B; }
+.cl-p .res-l { width: 26px; height: 26px; font-family: 'IBM Plex Sans Condensed', sans-serif; font-size: 13px; font-weight: 700; }
+.cl-p b { display: block; font-size: 14.5px; color: #F4F4F5; }
+.cl-p > span:last-child > span { display: block; margin-top: 2px; font-size: 12.5px; color: #8A8A8F; }
+a.cl-p:hover, a.cl-eq:hover, a.cl-c:hover { box-shadow: inset 0 0 0 1px #3A3A40; }
+.cl-mas { margin-top: 8px; max-width: 760px; }
+.cl-mas summary { cursor: pointer; padding: 10px 0; min-height: 44px; font-size: 14px; font-weight: 600; color: #A6A6AD; }
+.cl-eqs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 8px; margin-top: 12px; }
+.cl-eq { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #18181B; }
+.cl-eq.nuestra { box-shadow: inset 3px 0 0 #D3202A; }
+.cl-eq b { display: block; font-size: 15px; color: #F4F4F5; }
+.cl-eq > span:first-child > span, .cl-pu span { display: block; margin-top: 2px; font-size: 12.5px; color: #A6A6AD; }
+.cl-pu { text-align: right; flex: none; }
+.cl-pu b { font-size: 24px; line-height: 1; color: #F4F4F5; }
+.cl-pista { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; max-width: 560px; font-size: 14px; color: #C9C9CE; }
+.cl-pista b { font-size: 16px; color: #F4F4F5; }
+.cl-vig { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 8px; margin-top: 12px; }
+.cl-vig > div { display: flex; align-items: center; gap: 12px; }
+.cl-ini { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #26262A; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 17px; color: #C9C9CE; }
+.cl-vig b { display: block; font-size: 15px; color: #F4F4F5; }
+.cl-vig > div > span:nth-child(2) { flex: 1; min-width: 0; }
+.cl-vig > div > span:nth-child(2) > span { display: block; margin-top: 2px; font-size: 12.5px; color: #A6A6AD; }
+.cl-val { flex: none; text-align: right; }
+.cl-val b { font-size: 22px; line-height: 1; color: #FF6B63; }
+.cl-val span { display: block; font-size: 11.5px; color: #8A8A8F; }
+.cl-com { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 8px; margin-top: 12px; }
+.cl-c { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: 10px; background: #18181B; font-size: 13px; color: #A6A6AD; }
+.cl-c b { font-size: 15px; color: #F4F4F5; }
+a.pv-club { text-decoration: underline; text-decoration-color: #55555B; text-underline-offset: 4px; }
+a.pv-club:hover { text-decoration-color: #F4F4F5; }
+@media (max-width: 520px) { .cl-bal b { font-size: 28px; } }

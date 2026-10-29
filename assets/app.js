@@ -582,7 +582,7 @@
     const x = { fecha: c.fecha, hora: c.hora || null, ts: c.fecha ? tsDe(c.fecha, c.hora || '23:59') : 0 };
     const P = derbi ? null : pronDe(lid, c.j, c.local, c.visitante);
     const pos = n => { const r = L.clasif.find(y => y.equipo === n); return r ? r.puesto + 'º de ' + L.clasif.length + ' · ' + r.pts + (r.pts === 1 ? ' punto' : ' puntos') : ''; };
-    const lado = n => `<div class="pv-eq">${escudo(n, 0, 'pv')}<span class="pv-n${ours(n) ? ' mp' : ''}">${esc(etqEq(n, lid))}</span><span class="pv-pos">${esc(pos(n))}</span></div>`;
+    const lado = n => { const hc = hClub(n); return `<div class="pv-eq">${escudo(n, 0, 'pv')}${hc ? `<a class="pv-n pv-club" href="${hc}">${esc(etqEq(n, lid))}</a>` : `<span class="pv-n${ours(n) ? ' mp' : ''}">${esc(etqEq(n, lid))}</span>`}<span class="pv-pos">${esc(pos(n))}</span></div>`; };
     const pasado = c.fecha && c.fecha < hoyISO(), conRes = c.gl != null;
     const chips = (pasado ? `<span class="chip ambar pv-chip">${conRes ? 'ACTA PENDIENTE' : 'SIN RESULTADO'}</span>` : '<span class="chip neutro pv-chip">PREVIA</span>') + (derbi ? '<span class="chip derbi pv-chip">DERBI</span>' : ours(c.local) ? '<span class="chip casa pv-chip">EN CASA</span>' : '<span class="chip neutro pv-chip">FUERA</span>');
     const avisos = pasado ? '' : [!c.hora && c.fecha ? 'La FMP aún no ha puesto la hora. La cuenta atrás cuenta solo los días hasta entonces.' : ''].filter(Boolean).join(' ');
@@ -1114,7 +1114,7 @@
     // Clasificación: G y P con los penaltis (victoria 3, ganar en penaltis 2, perder en penaltis 1) y la barra de puntos
     const top = Math.max(1, L.clasif[0] ? L.clasif[0].pts : 1);
     const filas = L.clasif.map(c => { const pw = Math.max(0, Math.min(c.e || 0, c.pts - 3 * c.v - (c.e || 0))), pl = (c.e || 0) - pw, mv = c.cambio_puesto || 0;
-      return `<a class="lg-f${c.nuestro ? ' nos' : ''}${c.puesto <= 3 ? ' top' : ''}${c.puesto === 1 ? ' uno' : ''}" href="${hT(c.equipo) || hLg(L.id)}"><span class="lg-f-p"><b class="cifra">${c.puesto}</b>${mv ? `<span class="${mv > 0 ? 'sube' : 'baja'}">${mv > 0 ? '▲' + mv : '▼' + -mv}</span>` : ''}</span>
+      return `<a class="lg-f${c.nuestro ? ' nos' : ''}${c.puesto <= 3 ? ' top' : ''}${c.puesto === 1 ? ' uno' : ''}" href="${hT(c.equipo) || hClub(c.equipo) || hLg(L.id)}"><span class="lg-f-p"><b class="cifra">${c.puesto}</b>${mv ? `<span class="${mv > 0 ? 'sube' : 'baja'}">${mv > 0 ? '▲' + mv : '▼' + -mv}</span>` : ''}</span>
         <span class="lg-f-e">${escL(c.equipo, 28)}<b>${esc(largoEq(c.equipo, L.id))}</b></span><span class="lg-f-n">${c.pj}</span><span class="lg-f-n g">${c.v + pw}</span><span class="lg-f-n p">${c.d + pl}</span>
         <span class="lg-f-n gl">${c.gf}–${c.gc}</span><b class="cifra lg-f-pts">${c.pts}</b><span class="lg-f-bar"><i data-bx style="--i:${c.puesto - 1};width:${(c.pts / top * 100).toFixed(1)}%"></i></span></a>`; }).join('');
     const clasif = `<div class="lg-tabla" data-dib><div class="lg-f cab"><span></span><span>Equipo</span><span class="lg-f-n">PJ</span><span class="lg-f-n">G</span><span class="lg-f-n">P</span><span class="lg-f-n gl">Goles</span><span class="lg-f-pts">Pts</span></div>${filas}
@@ -2921,6 +2921,72 @@
       <p class="mt-nota nv-fuente">Según las Reglas de juego de hockey línea (junio de 2026) y las Bases de la Federación Madrileña de Patinaje para ${esc(A.temporada)}.</p>`;
   }
 
+  /* ── Club rival (#/club/<slug>): sus equipos de esta temporada y su pista (data/clubes.json), el balance contra nosotros
+     (historico.json + app.json), a quién vigilar (mapa.json) y los jugadores que han pasado por los dos clubes ───────── */
+  let CLB = null, clbP = null, CLB_PEDIDO = false;
+  const cargarClubes = () => clbP || (clbP = fetch('data/clubes.json?v=' + encodeURIComponent(A.actualizado || ''))
+    .then(r => r.json()).then(d => (CLB = d)).catch(() => { clbP = null; return null; }));
+  const slugClub = n => (n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  let clubBase = null;
+  const clubDeEq = n => { if (!n || ours(n) || !H || !H.clubes) return null;
+    if (!clubBase) { clubBase = {}; Object.entries(H.clubes).forEach(([e, c]) => { clubBase[e.replace(/ [A-Z]$/, '')] = clubBase[e.replace(/ [A-Z]$/, '')] || c; }); }
+    return H.clubes[n] || clubBase[n.replace(/ [A-Z]$/, '')] || clubBase[n] || null; };
+  const hClub = n => { const c = clubDeEq(n); return c ? '#/club/' + slugClub(c) : null; };
+  function vClub(sl) {
+    if (!CLB_PEDIDO && (!CLB || !MAPA)) { CLB_PEDIDO = true; const h = location.hash;
+      Promise.all([cargarClubes(), cargarMapa()]).then(() => { if (location.hash === h) render(); });
+      return '<div class="carga" role="status" aria-label="Cargando"><div class="sk" style="height:140px;margin-top:24px"></div><div class="carga-tarjetas"><div class="sk"></div><div class="sk"></div></div></div>'; }
+    const C = CLB && CLB.clubes[sl];
+    if (!C) return casoHtml('Club', 'No encontramos este club', 'Puede que todavía no hayamos jugado contra él.', '?', 'neutro', [['Ir a Inicio', '#/']]);
+    const club = C.club, deEste = n => clubDeEq(n) === club;
+    const unEq = (C.equipos[0] || {}).equipo || Object.keys(H.clubes).find(e => H.clubes[e] === club) || club;
+    const fLarga = f => f ? +f.slice(8, 10) + '/' + +f.slice(5, 7) + '/' + f.slice(0, 4) : '';
+    const mpDe = (n, liga) => (n === 'MADRIDPATINA' ? (/ALEV/i.test(liga || '') ? 'MP Alevín' : /INFANT/i.test(liga || '') ? 'MP Infantil' : 'MP') : n.replace('MADRIDPATINA ', 'MP '));
+    // contra nosotros: temporadas cerradas (historico.json) y esta (app.json); los empates, para quien ganó la tanda
+    const cur = Object.values(A.partidos).filter(p => p.gl != null && (ours(p.local) !== ours(p.visitante))).map(p => ({ temporada: A.temporada, fecha: p.fecha, local: p.local, visitante: p.visitante, gl: p.gl, gv: p.gv, ganador: p.gl !== p.gv ? (p.gl > p.gv ? p.local : p.visitante) : p.pen, liga: p.ligaNombre || '', mid: p.mid }));
+    const ps = H.partidos.filter(p => ours(p.local) !== ours(p.visitante)).concat(cur).filter(p => deEste(ours(p.local) ? p.visitante : p.local))
+      .map(p => { const L = ours(p.local), n = L ? p.gl : p.gv, o = L ? p.gv : p.gl; return Object.assign({}, p, { n, o, us: L ? p.local : p.visitante, rival: L ? p.visitante : p.local, gano: n > o || (n === o && ours(p.ganador)), pen: n === o }); })
+      .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+    const v = ps.filter(p => p.gano).length, vp = ps.filter(p => p.gano && p.pen).length, dp = ps.filter(p => !p.gano && p.pen).length, d = ps.length - v;
+    const fila = p => { const h = p.mid ? hM(p.mid) : null;
+      return `<${h ? `a href="${h}"` : 'div'} class="cl-p ${p.gano ? 'v' : 'd'}"><span class="res-l ${p.gano ? 'v' : 'd'}">${p.gano ? 'V' : 'D'}</span><span><b>${esc(mpDe(p.us, p.liga))} ${p.n}${p.pen && p.gano ? '<span class="b-pen">B</span>' : ''}–${p.o}${p.pen && !p.gano ? '<span class="b-pen">B</span>' : ''} ${esc(p.rival)}</b><span>${esc(fLarga(p.fecha))} · ${esc(p.temporada)}</span></span></${h ? 'a' : 'div'}>`; };
+    const hoy = hoyISO(), px = partidosNuestros().find(m => !m.resultado && m.fecha >= hoy && deEste(ours(m.local) ? m.vis : m.local));
+    const prox = px ? `<a class="tarjeta cl-prox" href="${hPar(px.ligaId, px.j, px.local, px.vis)}"><span class="etq">Próximo partido</span><b>${esc(etqEq(px.local, px.ligaId, true))} – ${esc(etqEq(px.vis, px.ligaId, true))}</b><span>${esc(fdLarga(px.fecha))}${px.hora ? ' · ' + esc(px.hora) : ''}</span></a>` : '';
+    const balance = ps.length ? `<section class="cl-sec"><h2 class="h2">Contra nosotros</h2>
+        <div class="cl-bal"><div class="v"><b class="cifra">${v}</b><span>${v === 1 ? 'victoria nuestra' : 'victorias nuestras'}</span></div><div class="d"><b class="cifra">${d}</b><span>${d === 1 ? 'derrota' : 'derrotas'}</span></div><div><b class="cifra">${ps.length}</b><span>partidos desde ${esc(ps[ps.length - 1].temporada)}</span></div></div>
+        ${vp + dp ? `<p class="pre-p">${vp + dp} se decidieron en los penaltis: ${vp} para nosotros y ${dp} para ellos.</p>` : ''}
+        ${prox}<div class="cl-ps">${ps.slice(0, 6).map(fila).join('')}</div>
+        ${ps.length > 6 ? `<details class="cl-mas"><summary>Ver los ${ps.length - 6} anteriores</summary><div class="cl-ps">${ps.slice(6).map(fila).join('')}</div></details>` : ''}</section>`
+      : `<section class="cl-sec"><h2 class="h2">Contra nosotros</h2><p class="pre-p">Todavía no hemos jugado contra ellos.</p>${prox}</section>`;
+    // sus equipos de esta temporada (los de nuestras ligas, con enlace a la liga)
+    const ligaNuestra = n => A.ligas.find(L => L.clasif.some(c => c.equipo === n));
+    const equipos = C.equipos.length ? `<section class="cl-sec"><h2 class="h2">Sus equipos en ${esc(A.temporada)}</h2>
+        <div class="cl-eqs">${C.equipos.map(e => { const L = ligaNuestra(e.equipo), h = L ? hLg(L.id) : null;
+          return `<${h ? `a href="${h}"` : 'div'} class="cl-eq${L ? ' nuestra' : ''}"><span><b>${esc(e.equipo)}</b><span>${esc(e.liga)}${L ? ' · en nuestra liga' : ''}</span></span><span class="cl-pu"><b class="cifra">${e.puesto}º</b><span>de ${e.de} · ${e.pts} ${e.pts === 1 ? 'punto' : 'puntos'}</span></span></${h ? 'a' : 'div'}>`; }).join('')}</div></section>` : '';
+    const pista = C.pista ? `<section class="cl-sec"><h2 class="h2">Su pista</h2><div class="tarjeta cl-pista"><b>${esc(C.pista.nombre)}</b>${C.pista.direccion ? `<span>${esc(C.pista.direccion)}</span>` : ''}</div>
+        <p class="pv-nota">La que más usan sus equipos como locales esta temporada.</p></section>` : '';
+    // a quién vigilar: en nuestras ligas, sus jugadores con más puntos por partido y su portero con más partidos (mapa.json)
+    const vj = [], vp2 = [];
+    Object.entries((MAPA && MAPA.ligas) || {}).forEach(([lid, ML]) => { (ML.jug || []).filter(y => deEste(y.eq) && (y.pj || 3) >= 3).forEach(y => vj.push([y, lid])); (ML.por || []).filter(y => deEste(y.eq)).forEach(y => vp2.push([y, lid])); });
+    vj.sort((a, b) => b[0].x - a[0].x); vp2.sort((a, b) => b[0].pj - a[0].pj);
+    const vig = vj.slice(0, 4).map(([y, lid]) => [y, lid, dec(y.x.toFixed(1)), 'puntos por partido']).concat(vp2.slice(0, 1).map(([y, lid]) => [y, lid, dec(y.pct.toFixed(1)) + ' %', 'de paradas · portero']));
+    const vigilar = vig.length ? `<section class="cl-sec"><h2 class="h2">A quién vigilar</h2>
+        <div class="cl-vig">${vig.map(([y, lid, val, u]) => `<div class="tarjeta"><span class="cl-ini">${esc(ini(y.n, y.a))}</span><span><b>${esc(y.n + ' ' + y.a)}</b><span>${esc(y.eq)} · ${esc((lgOf(lid) || {}).corto || '')}</span></span><span class="cl-val"><b class="cifra">${val}</b><span>${u}</span></span></div>`).join('')}</div>
+        <p class="pv-nota">De sus equipos que juegan en nuestras ligas, con 3 partidos o más.</p></section>` : '';
+    // jugadores en común: los que jugaron con nosotros y ahora están allí, y los nuestros que vienen de allí
+    const comun = [], actuales = new Set(Object.values(A.jugadores).filter(j => equiposDe(j).length).map(j => H.tok(j.nombre + ' ' + j.apellidos)));
+    (H.jugadores || []).forEach(j => { const a = (j.ahora || []).find(x => deEste(x.equipo)); if (!a || actuales.has(j.tok)) return;
+      const ts = [...new Set(j.temporadas.filter(t => ours(t.equipo)).map(t => t.temporada))].sort();
+      if (ts.length) comun.push({ n: j.nombre, t: 'Jugó con nosotros' + (ts.length > 1 ? ' de ' + ts[0] + ' a ' + ts[ts.length - 1] : ' en ' + ts[0]), x: 'Ahora en ' + a.equipo }); });
+    Object.values(A.jugadores).forEach(j => { if (!equiposDe(j).length) return; const fz = ((H.fuera || {})[H.tok(j.nombre + ' ' + j.apellidos)] || []).filter(x => deEste(x.equipo) && x.t < A.temporada); if (!fz.length) return;
+      comun.push({ n: j.nombre + ' ' + j.apellidos, h: hP(j.k), t: 'Antes en ' + [...new Set(fz.map(x => x.equipo))].join(' y ') + ' (' + fz[0].t + (fz.length > 1 ? ' a ' + fz[fz.length - 1].t : '') + ')', x: 'Ahora en ' + equiposDe(j).map(mpCorto).join(' y ') }); });
+    const comunH = comun.length ? `<section class="cl-sec"><h2 class="h2">Jugadores en común</h2>
+        <div class="cl-com">${comun.map(c => `<${c.h ? `a href="${c.h}"` : 'div'} class="cl-c"><b>${esc(c.n)}</b><span>${esc(c.t)}</span><span>${esc(c.x)}</span></${c.h ? 'a' : 'div'}>`).join('')}</div></section>` : '';
+    return `<div class="club"><div class="cl-cab">${escudo(unEq, 72)}<div><div class="lab" style="color:#FF6B63">CLUB RIVAL</div><h1 class="h1">${esc(club)}</h1>
+        <div class="sub">${C.equipos.length ? C.equipos.length + (C.equipos.length === 1 ? ' equipo' : ' equipos') + ' esta temporada' : 'Sin equipos esta temporada'}${ps.length ? ' · ' + ps.length + (ps.length === 1 ? ' partido' : ' partidos') + ' contra nosotros' : ''}</div></div></div>
+      ${balance}${vigilar}${equipos}${pista}${comunH}</div>`;
+  }
+
   function vMetodo() {
     const F = A.fmpe || {}, fac = F.factores || {}, f = k => (fac[k] || {}).f, PJ = F.pj_temporada || 18;
     const fx = (x, n) => x.toFixed(n).replace('.', ','), d2 = x => fx(x, 2), d1 = x => fx(x, 1);
@@ -3117,8 +3183,8 @@
     jugadores: '<path d="M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M17.2 6.4a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2zM16.5 14.1c2.8.3 5 2.3 5 5.9"/>',
   };
   // a qué sección del menú pertenece cada página (Pretemporada vive en Ligas; el directo y los resúmenes, en Inicio)
-  const TOP = { inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', nuevo: 'metodo', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', buzon: 'inicio' };
-  const TITLES = { inicio: 'Inicio', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', nuevo: '¿Nuevo en el hockey línea?', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
+  const TOP = { inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', nuevo: 'metodo', club: 'ligas', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', buzon: 'inicio' };
+  const TITLES = { inicio: 'Inicio', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', nuevo: '¿Nuevo en el hockey línea?', club: 'Club rival', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
   // migas: el título de sección se toca para subir un nivel («EQUIPOS / MP A»); la última es la página en la que se está
   const migasHtml = xs => `<nav class="migas" aria-label="Estás en">${xs.map(([t, h], i) => (i ? '<i aria-hidden="true">/</i>' : '') + (h && i < xs.length - 1 ? `<a href="${h}">${esc(t)}</a>` : `<span class="act" aria-current="page">${esc(t)}</span>`)).join('')}</nav>`;
   const mpCorto = e => e.cantera ? (e.id === 'AL' ? 'MP Alevín' : 'MP Infantil') : 'MP ' + e.id;
@@ -3144,6 +3210,7 @@
     if (v === 'video') return [['Inicio', '#/'], ['Resumen en vídeo']];
     if (v === 'metodo') return [['Inicio', '#/'], ['Cómo lo calculamos']];
     if (v === 'nuevo') return [['Inicio', '#/'], ['¿Nuevo en el hockey línea?']];
+    if (v === 'club') return [['Inicio', '#/'], [(CLB && CLB.clubes[parts[1]] && CLB.clubes[parts[1]].club) || 'Club rival']];
     if (v === 'apodo') return [['Inicio', '#/'], ['Tu apodo']];
     return null;
   }
@@ -3201,6 +3268,7 @@
     else if (v === 'directo') html = parts[2] === 'resumen' ? vResumen(parts[1]) : vVivo(parts[1]);   // rediseño final: resumen sin vídeo y directo
     else if (v === 'metodo') html = vMetodo();
     else if (v === 'nuevo') html = vNuevo();
+    else if (v === 'club') html = vClub(parts[1]);
     else if (v === 'sincronizar') html = vSincronizar(parts[1]);
     else if (v === 'banquillo' && !parts[1]) { history.replaceState(null, '', '#/'); return render(); }
     else if (v === 'banquillo') html = vBanquillo(parts[1]);
