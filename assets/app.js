@@ -2738,18 +2738,27 @@
   /* ── ¿Nuevo en el hockey línea? (#/nuevo): lo básico para seguir un partido, con las Reglas de juego 2026 y las Bases
      de la FMP 2026/27 (duraciones, empates, categorías). Sin datos de nadie: solo el reglamento. ─────────────────── */
   function vNuevo() {
-    const ico = d => `<svg class="nv-ico" viewBox="0 0 48 48" aria-hidden="true">${d}</svg>`;
-    const PATIN = '<path d="M9 7h13v13l12 4c4 1.3 6 3.6 6 7v2H9z"/><path d="M7 37h35"/><circle cx="12" cy="42" r="3.5"/><circle cx="21" cy="42" r="3.5"/><circle cx="30" cy="42" r="3.5"/><circle cx="39" cy="42" r="3.5"/>';
+    // dibujos de línea con el trazo de la web (currentColor); «t» = relleno suave, «f» = relleno, «w» = trazo blanco
+    const ico = d => `<svg class="nv-ico" viewBox="0 0 64 64" aria-hidden="true">${d}</svg>`;
+    // disco de hockey línea: plástico, con tacos («pines») en las dos caras para que deslice
+    const pin = (x, y, r = 1.9) => `<circle class="f" cx="${x}" cy="${y}" r="${r}"/>`;
+    const DISCO = (cx, cy, k = 1) => { const rx = 21 * k, ry = 8 * k, h = 8 * k, pr = 1.9 * k;
+      const top = (k < .6 ? [0, 90, 180, 270] : [0, 45, 90, 135, 180, 225, 270, 315]).map(a => pin((cx + 14.5 * k * Math.cos(a * Math.PI / 180)).toFixed(1), (cy + 5.6 * k * Math.sin(a * Math.PI / 180)).toFixed(1), pr)).join('');
+      const bot = (k < .6 ? [-10, 10] : [-15, -5, 5, 15]).map(dx => pin((cx + dx * k).toFixed(1), (cy + h + ry * Math.sqrt(1 - (dx / 21) ** 2) + 1.6 * k).toFixed(1), pr)).join('');
+      return `<path class="t" d="M${cx - rx} ${cy}v${h}a${rx} ${ry} 0 0 0 ${2 * rx} 0v-${h}"/><ellipse class="t" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/>${top}${bot}<ellipse cx="${cx}" cy="${cy}" rx="${6 * k}" ry="${2.3 * k}"/>`; };
+    const PATIN = '<path class="t" d="M14 6h16v20l13 4.5c6 2 9.5 5.5 9.5 10.5v3H14z"/><path d="M14 14h16"/><path class="w" d="M30 18l5 1.5M30 22.5l7 2.3M30 27l8 2.6"/><path d="M11 46h45"/><path d="M15 44v2M52 44v2"/>'
+      + [18, 28.5, 39, 49.5].map(x => `<circle class="t" cx="${x}" cy="52" r="5.5"/><circle class="f" cx="${x}" cy="52" r="1.6"/>`).join('');
     const IC = {
-      cambio: ico('<path d="M7 16h30M30 9l7 7-7 7"/><path d="M41 32H11M18 25l-7 7 7 7"/>'),
-      reloj: ico('<circle cx="24" cy="27" r="16"/><path d="M20 6h8M24 6v5M36 13l3-3"/><path d="M20 21v12M28 21v12"/>'),
-      stick: ico('<path d="M37 3 20 36"/><path class="g" d="M20 36c-2 4-5 5-9 5H4"/>'),
+      disco: ico(DISCO(32, 24)),
+      cambio: ico('<path d="M9 22h40"/><path d="M41 13l9 9-9 9"/><path d="M55 44H15"/><path d="M23 35l-9 9 9 9"/>'),
+      reloj: ico('<circle class="t" cx="32" cy="37" r="20"/><path d="M27 8h10M32 8v9M48 20l4-4"/><path d="M32 20v3M32 51v3M15 37h3M46 37h3"/><rect class="f" x="25" y="29" width="4.5" height="16" rx="1"/><rect class="f" x="34.5" y="29" width="4.5" height="16" rx="1"/>'),
+      stick: ico('<path class="g" d="M52 4 27 47"/><path class="gw" d="M52 4l-4.5 7.7"/><path class="t" d="M29 43l-5 9c-2.5 4.4-6.5 6-12 6H5v-5h7c3.6 0 5.8-1.1 7.4-3.9l4.6-8.1z"/><path class="w" d="M13 53v5M17.5 52v5.6M22 49.5l2.4 4"/>'),
       patin: ico(PATIN),
-      casco: ico('<path d="M8 29a16 16 0 0 1 32 0v3H8z"/><path d="M13 32v8h22v-8M19 32v8M25 32v8M31 32v8"/><path d="M24 13v8"/>'),
-      patada: ico('<g transform="translate(-4 2) scale(.8)">' + PATIN + '</g><ellipse class="f" cx="40" cy="37" rx="6" ry="2.6"/><path d="M33 31l4 2"/>'),
-      valla: ico('<rect x="3" y="28" width="42" height="15" rx="2"/><path d="M3 34h42"/><ellipse class="f" cx="24" cy="24" rx="9" ry="3.4"/><path d="M24 8v8M20 12l4 4 4-4"/>'),
-      botella: ico('<path d="M20 4h8v5l4 5v27a3 3 0 0 1-3 3H19a3 3 0 0 1-3-3V14l4-5z"/><path d="M16 24c3-2 5 2 8 0s5 2 8 0"/><path d="M8 18h4M8 26h4M8 34h4"/>'),
-      vacia: ico('<path d="M5 42V12h38v30"/><path d="M5 12l8 8h22l8-8M13 20v22M35 20v22"/><path class="g" d="M19 30l10 0M24 25v10" transform="rotate(45 24 30)"/>'),
+      casco: ico('<path class="t" d="M12 35a20 20 0 0 1 40 0v4H12z"/><path class="w" d="M26 17v7M32 15v9M38 17v7"/><path d="M16 39v11c0 5 4 8 9 8h14c5 0 9-3 9-8V39"/><path d="M24 39v19M32 39v19M40 39v19M16 46h32M17 52h30"/><path d="M12 39l-3 9"/>'),
+      patada: ico('<g transform="translate(-2 6) scale(.78)">' + PATIN + '</g>' + DISCO(52, 47, .42) + '<path class="w" d="M38 36h6M40 41h5"/>'),
+      valla: ico('<rect class="t" x="4" y="38" width="56" height="18" rx="2"/><path d="M4 43h56M24 43v13M44 43v13"/>' + DISCO(32, 27, .55) + '<path class="w" d="M32 4v11M27 10l5 5 5-5"/>'),
+      botella: ico('<rect class="f" x="18" y="4" width="13" height="6" rx="1.5"/><path class="t" d="M19 10h11v6l4 5v33a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4V21l4-5z"/><path class="w" d="M15 32h19M15 40h19"/><path class="t" d="M40 16h17v34l-5-3-3.5 3-3.5-3-5 3z"/><path class="w" d="M40 23h17M40 28h17"/>'),
+      vacia: ico('<path class="t" d="M14 48l6-9h24l6 9z"/><path d="M20 39V24M44 39V24M20 24l-6-6M44 24l6-6"/><path class="n" d="M26 24v15M32 24v15M38 24v15M20 29h24M20 34h24M14 18l6 6M50 18l-6 6"/><path class="g" d="M8 52V18h48v34"/>'),
     };
     const sec = (id, n, k, t, cuerpo) => `<section id="n-${id}" class="mt-sec nv-sec" data-anim="mpUp .45s cubic-bezier(.2,.8,.2,1)">
         <div class="mt-cab"><span class="n">${n}</span><div><div class="k">${k}</div><h2>${t}</h2></div></div>${cuerpo}</section>`;
@@ -2799,7 +2808,7 @@
     // el material
     const s4 = sec('material', '04', 'EL MATERIAL', 'Un disco, no una bola', `
       <div class="mt-tarjetas">
-        <div class="mt-tarj"><div class="ic"><span class="nv-disco" aria-hidden="true"></span></div><b>El disco</b><p>De plástico, de 7,7 cm y unos 125 gramos, con unos pequeños tacos debajo para que se deslice por el suelo. En Madrid se juega con un modelo concreto, el Stilmat.</p></div>
+        <div class="mt-tarj"><div class="ic">${IC.disco}</div><b>El disco</b><p>De plástico, de 7,7 cm y unos 125 gramos, con unos pequeños tacos debajo para que se deslice por el suelo. En Madrid se juega con un modelo concreto, el Stilmat.</p></div>
         <div class="mt-tarj"><div class="ic">${IC.stick}</div><b>El stick</b><p>Como mucho 1,57 m. La pala, curvada al gusto de cada uno.</p></div>
         <div class="mt-tarj"><div class="ic">${IC.patin}</div><b>Los patines</b><p>En línea, de tres o cuatro ruedas. Los porteros pueden llevar cinco, más pequeñas.</p></div>
         <div class="mt-tarj"><div class="ic">${IC.casco}</div><b>Las protecciones</b><p>Casco, guantes, coderas, espinilleras y protección de la cara. Los menores de 19 años la llevan completa; los mayores, al menos una visera.</p></div>
