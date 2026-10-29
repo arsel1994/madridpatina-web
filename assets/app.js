@@ -473,6 +473,43 @@
     return `<section class="mejor"><h2 class="h2">Lo mejor de la semana</h2><div class="mejor-grid">${html}</div></section>`;
   }
 
+  // ── jugadores que sigue cada persona: se guardan solo en este navegador (sin cuentas); en Inicio, su próximo partido,
+  //    cómo le fue el último y el hito que tiene más cerca ──
+  const FAV_K = 'mp-favs', FAV_MAX = 6;
+  const favs = () => (leeLS(FAV_K, []) || []).filter(k => A.jugadores[k]);
+  const esFav = k => favs().includes(k);
+  const ESTR5 = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.2l-5.8 3.2 1.2-6.5L2.6 9.4l6.5-.8z"/></svg>';
+  const favBoton = k => { const on = esFav(k); return `<button type="button" class="fi-fav${on ? ' on' : ''}" data-fav="${esc(k)}" aria-pressed="${on}">${ESTR5}<span>${on ? 'Siguiendo' : 'Seguir'}</span></button>`; };
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-fav]'); if (!b) return;
+    const k = b.dataset.fav, xs = favs(), on = xs.includes(k);
+    ponLS(FAV_K, on ? xs.filter(x => x !== k) : xs.concat(k).slice(-FAV_MAX));
+    b.outerHTML = favBoton(k);
+  });
+  function favsHtml() {
+    const ks = favs(); if (!ks.length) return '';
+    const hoy = hoyISO(), todos = partidosNuestros();
+    const card = k => {
+      const j = A.jugadores[k], eqs = equiposDe(j), f = fotoOK(j) ? j.foto : null;
+      // próximo partido de su equipo (o de cualquiera de sus equipos)
+      const px = todos.find(m => !m.resultado && m.fecha >= hoy && (eqs.includes(m.e) || (m.otro && eqs.includes(m.otro))));
+      const rival = px ? (px.derbi ? 'MP ' + (eqs.includes(px.e) ? px.otro : px.e).id : ours(px.local) ? px.vis : px.local) : '';
+      const prox = px ? `<a class="fav-l" href="${hPar(px.ligaId, px.j, px.local, px.vis)}"><span class="etq">Próximo partido</span><b>${esc(fdLarga(px.fecha))}${px.hora ? ' · ' + esc(px.hora) : ''}</b><span>Contra ${esc(rival)}</span></a>` : '';
+      // su último partido: resultado del equipo y lo que hizo
+      const ux = (j.partidos || []).slice().reverse().find(x => A.partidos[x.mid]);
+      let ult = '';
+      if (ux) { const pm = A.partidos[ux.mid], mio = [pm.alin_l, pm.por_l, pm.gol_l].some(l => (l || []).some(y => y.k === j.k)) ? pm.local : pm.visitante, R = resLado(pm, mio);
+        const suyo = ux.pct != null ? (ux.par || 0) + ' paradas de ' + (ux.tiros || 0) : [ux.g ? ux.g + (ux.g === 1 ? ' gol' : ' goles') : '', ux.a ? ux.a + (ux.a === 1 ? ' asistencia' : ' asistencias') : ''].filter(Boolean).join(' y ') || 'sin goles ni asistencias';
+        ult = `<a class="fav-l" href="${hM(ux.mid)}"><span class="etq">Último partido</span><b>${R.r === 'V' ? 'Ganamos' : 'Perdimos'}${R.pen ? ' en los penaltis' : ''} ${R.nos}–${R.ell}</b><span>Contra ${esc(ux.rival)} · ${esc(suyo)}</span></a>`; }
+      const h = H && eqs.length ? hitosDe(j).sort((x, y) => x.falta - y.falta)[0] : null;
+      const hito = h ? `<div class="fav-h"><b class="cifra">${h.falta}</b><span>${UNI[h.k][h.falta === 1 ? 0 : 1]} para ${h.k === 'a' || h.k === 'par' ? 'las' : 'los'} ${h.u} con el club</span></div>` : '';
+      return `<div class="tarjeta fav"><a class="fav-cab" href="${hP(k)}"><span class="fav-f">${f ? `<span class="ph" data-bg="${esc(f)}"></span>` : esc(ini(j.nombre, j.apellidos))}</span>
+          <span><b>${esc(nomCorto(j))}</b><span>${esc(eqs.map(mpCorto).join(' · '))}${j.dorsal ? ' · #' + esc(j.dorsal) : ''}</span></span></a>
+        <div class="fav-d">${prox}${ult}</div>${hito}</div>`;
+    };
+    return `<section class="favs"><div class="favs-cab"><h2 class="h2">${ks.length === 1 ? 'Tu jugador' : 'Tus jugadores'}</h2><span>Los que sigues desde su ficha. Se guardan solo en este dispositivo.</span></div>
+      <div class="favs-grid">${ks.map(card).join('')}</div></section>`;
+  }
   // ── hitos a la vista, en carrusel (histórico + esta temporada; salen también los que no tienen foto) ──
   const UNI = { g: ['gol', 'goles'], a: ['asistencia', 'asistencias'], pj: ['partido', 'partidos'], par: ['parada', 'paradas'] };
   function hitosCarrusel() {
@@ -512,7 +549,7 @@
       out.push(`<section class="directo-ini"><div class="finde-cab"><div class="dir-t"><i class="punto"></i><h1 class="h1">En directo</h1></div>${tgHtml}</div>
         <div class="vivos${vivos.length > 1 ? ' dos' : ''}">${vivos.map(vivoHtml).join('')}</div></section>`);
       out.push(findeHtml(F, 'Lo que queda del fin de semana', false, false));
-      return `<div class="inicio">${apodoCta()}${out.join('')}</div>`;
+      return `<div class="inicio">${apodoCta()}${favsHtml()}${out.join('')}</div>`;
     }
     const fin = F.momento === 'fin', ultSem = F.semanaJugada.reduce((a, m) => (m.fecha > a ? m.fecha : a), '0');
     const semFresca = fin && A.semanas[0] && A.semanas[0].hasta >= ultSem;
@@ -524,7 +561,7 @@
     out.push(casaHtml(F));
     if (!semFresca) { out.push(semanaHtml(wi)); out.push(mejorHtml(wi)); }
     out.push(hitosCarrusel());
-    return `<div class="inicio">${apodoCta()}${out.join('')}</div>`;
+    return `<div class="inicio">${apodoCta()}${favsHtml()}${out.join('')}</div>`;
   }
 
   /* ── Partido · previa (antes de jugarse; la misma dirección lleva luego al acta) ───────────────────────────────────── */
@@ -916,7 +953,7 @@
     const roles = [j.capitan ? (j.fem ? 'CAPITANA' : 'CAPITÁN') : '', j.asistente ? 'ASISTENTE' : '', esPor ? (j.fem ? 'PORTERA' : 'PORTERO') : ''].filter(Boolean);
     const cab = `<div class="fi-cab"><div class="fi-foto${ok ? '' : ' sin'}"><span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : ''}<span class="fi-dorsal cifra">${esc(j.dorsal || '')}</span></div>
       <div class="fi-t"><h1 class="h1 fi-n">${esc((j.nombre + ' ' + j.apellidos).toUpperCase())}</h1><div class="sub">${esc(eqs.map(nomEqLargo).join(' · ') || j.equipo || '')}${e0.liga ? ' · ' + esc(e0.liga.replace(/^Liga /, '')) : ''}</div>
-        <div class="fi-chips">${a ? `<span class="fi-arq" style="background:${a.c}" title="${esc(a.d)}">${esc(a.n.toUpperCase())}</span>` : ''}${roles.map(r => `<span class="fi-rol">${r}</span>`).join('')}</div>
+        <div class="fi-chips">${a ? `<span class="fi-arq" style="background:${a.c}" title="${esc(a.d)}">${esc(a.n.toUpperCase())}</span>` : ''}${roles.map(r => `<span class="fi-rol">${r}</span>`).join('')}${equiposDe(j).length ? favBoton(j.k) : ''}</div>
         <div class="fi-kpis">${kpis.map(([v, l]) => `<div><b class="cifra">${v}</b><span class="etq">${l}</span></div>`).join('')}</div>
         ${h0 ? `<div class="fi-hito"><b class="cifra">${h0.falta}</b><span>${UNI[h0.k][h0.falta === 1 ? 0 : 1]} para ${h0.k === 'a' || h0.k === 'par' ? 'las' : 'los'} ${h0.u} con el club</span></div>` : ''}</div></div>`;
     // Temporadas: barras de goles y asistencias (porteros: partidos y % de paradas)

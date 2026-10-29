@@ -3311,3 +3311,26 @@ a.fi-mejor:hover { box-shadow: inset 0 0 0 1px #3A3A40; }
 .nv-sec .mt-tarj .ic .nv-ico { color: #FF6B63; }
 .nv-cu > b .nv-ico { width: 60px; height: 60px; color: #FF6B63; }
 .nv-ico .n { stroke-width: 1.3; stroke-opacity: .55; }
+
+/* ── jugadores que sigue cada persona (estrella en la ficha; tarjetas en Inicio) ── */
+.fi-fav { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border-radius: 999px; border: 1px solid #3A3A40; background: none; font: inherit; font-size: 13px; font-weight: 700; color: #C9C9CE; cursor: pointer; }
+.fi-fav svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.fi-fav:hover { border-color: #8A8A8F; color: #FFFFFF; }
+.fi-fav.on { border-color: #D3202A; background: #D3202A; color: #FFFFFF; }
+.fi-fav.on svg { fill: currentColor; }
+.favs { margin-top: 24px; }
+.favs-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.favs-cab > span { font-size: 13px; color: #8A8A8F; }
+.favs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; margin-top: 12px; }
+.fav { display: flex; flex-direction: column; gap: 12px; border-top: 3px solid #D3202A; }
+.fav-cab { display: flex; align-items: center; gap: 12px; color: #F4F4F5; }
+.fav-cab b { display: block; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 24px; line-height: 1; text-transform: uppercase; }
+.fav-cab > span:last-child > span { display: block; margin-top: 4px; font-size: 13px; color: #A6A6AD; }
+.fav-f { position: relative; flex: none; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: #26262A; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 20px; color: #C9C9CE; }
+.fav-f .ph { position: absolute; inset: 0; background: center 20% / cover no-repeat; }
+.fav-d { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 8px; }
+.fav-l { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 10px; background: #18181B; color: #C9C9CE; font-size: 13px; }
+.fav-l:hover { box-shadow: inset 0 0 0 1px #3A3A40; }
+.fav-l b { font-size: 15px; color: #F4F4F5; }
+.fav-h { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #C9C9CE; }
+.fav-h b { font-size: 28px; line-height: 1; color: #FF6B63; }
