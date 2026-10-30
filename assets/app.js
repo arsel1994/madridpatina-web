@@ -2406,9 +2406,66 @@
     const tirosHtml = pjT ? `<div style="margin-top:12px">${lab('SUS TIROS', 'margin-bottom:2px')}<div class="an-nota" style="margin:0 0 6px">En ${pjT === 1 ? 'el partido' : 'los ' + pjT + ' partidos'} con todos los tiros marcados en el vídeo.</div>
       <div class="an-ks" style="max-width:520px;grid-template-columns:repeat(4,minmax(0,1fr))">${anK('Tiros', tir)}${anK('A puerta', puerta)}${anK('Goles', gol, '', '#FF6B63')}${anK('Acierto', puerta ? pct(gol / puerta) : '—', 'goles entre tiros a puerta')}</div>
       ${misTiros.some(t => t.xy) ? `<div style="width:min(100%,260px);margin-top:8px">${mediaPista(misTiros.filter(t => t.xy).map(t => t.r === 'gol' ? `<circle cx="${t.xy[0] * PISTA_W}" cy="${t.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>` : t.r === 'parada' ? `<circle cx="${t.xy[0] * PISTA_W}" cy="${t.xy[1] * PISTA_H}" r="7" fill="none" stroke="#D3202A" stroke-width="2.5"/>` : `<g stroke="#8A8A8F" stroke-width="2.5"><line x1="${t.xy[0] * PISTA_W - 5}" y1="${t.xy[1] * PISTA_H - 5}" x2="${t.xy[0] * PISTA_W + 5}" y2="${t.xy[1] * PISTA_H + 5}"/><line x1="${t.xy[0] * PISTA_W + 5}" y1="${t.xy[1] * PISTA_H - 5}" x2="${t.xy[0] * PISTA_W - 5}" y2="${t.xy[1] * PISTA_H + 5}"/></g>`).join(''), 'width="100%" role="img" aria-label="Sus tiros marcados en el vídeo"')}</div><div class="an-nota">● gol · ○ parada · ✕ fuera o bloqueado</div>` : ''}</div>` : '';
-    if (!yo.length) return pm + tirosHtml;
-    return `${lab('SUS GOLES EN VÍDEO', 'margin-bottom:6px')}<div style="display:flex;gap:8px;flex-wrap:wrap">${yo.map(g => `<a class="dv-alin" href="#/video/${encodeURIComponent(g.idp)}/${Math.max(0, Math.round(g.s - ANTES_JUGADA))}">▶ ${esc(g.m ? g.m.replace('-', '–') : 'Gol')} · ${g.p}ª parte ${esc(g.t)} · vs ${esc(abr(g.rival))}</a>`).join('')}</div>${mapa}${tirosHtml}${pm}`;
+    // la galería: cada gol y cada tiro suyo marcado en el vídeo, para verlo solo (los partidos más recientes, primero)
+    const clips = [];
+    (p.partidos || []).forEach(x => { const m = A.partidos[x.mid], v = m && m.idp && VID[m.idp]; if (!v) return;
+      const enL = [m.alin_l, m.por_l, m.gol_l].some(l => (l || []).some(y => y.k === p.k)), lado = enL ? 'L' : 'V';
+      const fila = ((enL ? m.alin_l : m.alin_v) || []).concat((enL ? m.gol_l : m.gol_v) || []).find(y => y.k === p.k), dors = String((fila && fila.dorsal) || p.dorsal || '');
+      const base = { idp: m.idp, yt: v.yt, rival: lado === 'L' ? m.visitante : m.local, fecha: m.fecha }, parte = s => (v.partes && v.partes['2'] && s >= v.partes['2'] ? 2 : 1);
+      Object.values(v.ev || {}).filter(e => e.tipo === 'GOL' && e.lado === lado && (e.q || '').startsWith('#' + dors + ' ')).forEach(e => clips.push(Object.assign({ s: e.s, r: 'gol', m: e.m, p: e.p, t: e.t, xy: e.xy }, base)));
+      (v.tiros || []).filter(t => t.lado === lado && String(t.dorsal) === dors).forEach(t => clips.push(Object.assign({ s: t.s, r: t.r, p: parte(t.s), xy: t.xy }, base))); });
+    clips.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || a.s - b.s);
+    GALV = clips;
+    const gal = clips.length ? `${lab('SUS JUGADAS EN VÍDEO', 'margin-bottom:2px')}<div class="an-nota" style="margin:0 0 8px">Toca una para verla: solo ese momento, con unos segundos antes y después.</div>
+      <div class="galv">${clips.map((c, i) => `<button type="button" class="galv-c ${c.r}" data-clip="${i}"><span class="galv-p">${mediaPista(c.xy ? marcaTiro(c) : '', 'width="100%" aria-hidden="true"')}</span>
+        <span class="galv-t"><b>${esc(etqClip(c))}</b><span>vs ${esc(abr(c.rival))} · ${c.p}ª parte${c.t ? ' · ' + esc(c.t) : ''}</span><span>${esc(fd(c.fecha))}</span></span><span class="galv-v" aria-hidden="true">▶</span></button>`).join('')}</div>` : '';
+    return `${gal}${mapa}${tirosHtml}${pm}`;
   }
+  /* Galería de jugadas: cada una se ve sola, desde unos segundos antes hasta poco después, en una ventana encima de la ficha.
+     Al acabar una sigue la siguiente; «Ver el partido entero» lleva al vídeo del partido en ese momento. */
+  let GALV = [];
+  const GAL = { el: null, pl: null, listo: false, i: 0 }, CLIP_ANTES = 6, CLIP_DESPUES = 3;
+  const etqClip = c => c.r === 'gol' ? 'GOL' + (c.m ? ' · ' + c.m.replace('-', '–') : '') : 'TIRO · ' + ({ parada: 'PARADA', fuera: 'FUERA', bloqueado: 'BLOQUEADO' }[c.r] || '');
+  const marcaTiro = c => { const [x, y] = [c.xy[0] * PISTA_W, c.xy[1] * PISTA_H];
+    return c.r === 'gol' ? `<circle cx="${x}" cy="${y}" r="16" fill="#D3202A" stroke="#FFFFFF" stroke-width="4"/>` : c.r === 'parada' ? `<circle cx="${x}" cy="${y}" r="14" fill="none" stroke="#D3202A" stroke-width="5"/>`
+      : `<g stroke="#A6A6AD" stroke-width="5"><line x1="${x - 11}" y1="${y - 11}" x2="${x + 11}" y2="${y + 11}"/><line x1="${x + 11}" y1="${y - 11}" x2="${x - 11}" y2="${y + 11}"/></g>`; };
+  const inicioClip = c => Math.max(0, Math.round(c.s - CLIP_ANTES));
+  function abrirClip(i) {
+    if (!GALV[i]) return;
+    GAL.i = i;
+    if (!GAL.el) {
+      const el = GAL.el = document.createElement('div');
+      el.className = 'galv-m'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Jugada en vídeo');
+      el.innerHTML = `<div class="galv-caja"><div class="galv-cab"><div class="galv-tit" id="galv-tit"></div><button class="galv-x" type="button" data-galv="x" aria-label="Cerrar">✕</button></div>
+        <div class="galv-vid"><div id="galv-player"></div></div>
+        <div class="galv-pie"><button type="button" class="btn s" data-galv="ant" aria-label="Jugada anterior">◀</button><span id="galv-n"></span><button type="button" class="btn s" data-galv="sig" aria-label="Jugada siguiente">▶</button></div>
+        <div class="galv-acc"><button type="button" class="btn s" data-galv="otra">Verla otra vez</button><a class="btn s" id="galv-ent">Ver el partido entero</a></div></div>`;
+      el.addEventListener('click', e => { const b = e.target.closest('[data-galv]'), a = b ? b.dataset.galv : e.target === el ? 'x' : null;
+        if (a === 'x') cerrarClip(); else if (a === 'ant') abrirClip(GAL.i - 1); else if (a === 'sig') abrirClip(GAL.i + 1); else if (a === 'otra') abrirClip(GAL.i); });
+      document.body.appendChild(el); document.documentElement.classList.add('galv-abierta');
+      cargarYT().then(() => { if (!GAL.el) return; const c = GALV[GAL.i];
+        GAL.pl = new YT.Player('galv-player', { host: 'https://www.youtube-nocookie.com', videoId: c.yt, playerVars: { rel: 0, playsinline: 1, autoplay: 1, start: inicioClip(c), end: Math.round(c.s + CLIP_DESPUES) },
+          events: { onReady: () => { GAL.listo = true; ponClip(); },
+            onStateChange: e => { if (e.data === 0 && GAL.i < GALV.length - 1) { const k = GAL.i; setTimeout(() => { if (GAL.el && GAL.i === k) abrirClip(k + 1); }, 900); } } } }); });
+    }
+    pintarClip(); if (GAL.listo) ponClip();
+  }
+  function ponClip() { const c = GALV[GAL.i]; if (GAL.pl && c) GAL.pl.loadVideoById({ videoId: c.yt, startSeconds: inicioClip(c), endSeconds: Math.round(c.s + CLIP_DESPUES) }); }
+  function pintarClip() {
+    const c = GALV[GAL.i], el = GAL.el; if (!c || !el) return;
+    $('#galv-tit').innerHTML = `<b>${esc(etqClip(c))}</b><span>vs ${esc(abr(c.rival))} · ${c.p}ª parte${c.t ? ' · ' + esc(c.t) : ''} · ${esc(fd(c.fecha))}</span>`;
+    $('#galv-n').textContent = (GAL.i + 1) + ' de ' + GALV.length;
+    el.querySelector('[data-galv="ant"]').disabled = GAL.i === 0; el.querySelector('[data-galv="sig"]').disabled = GAL.i === GALV.length - 1;
+    $('#galv-ent').href = `#/video/${encodeURIComponent(c.idp)}/${inicioClip(c)}`;
+  }
+  function cerrarClip() {
+    if (!GAL.el) return;
+    try { if (GAL.pl && GAL.pl.destroy) GAL.pl.destroy(); } catch (e) { /* ya cerrado */ }
+    GAL.el.remove(); document.documentElement.classList.remove('galv-abierta');
+    Object.assign(GAL, { el: null, pl: null, listo: false });
+  }
+  window.addEventListener('hashchange', cerrarClip);
+  document.addEventListener('keydown', e => { if (!GAL.el) return; if (e.key === 'Escape') cerrarClip(); else if (e.key === 'ArrowRight') abrirClip(GAL.i + 1); else if (e.key === 'ArrowLeft') abrirClip(GAL.i - 1); });
   const CMP = {};
   function compararHtml(k, otro) {
     const yo = entradaMapa(k), el = otro && entradasMapa(otro)[0];
@@ -2446,6 +2503,7 @@
   function rellenarVideoFicha() {
     const el = view.querySelector('[data-goles-video]'); if (!el) return;
     const pon = () => { const p = A.jugadores[el.dataset.golesVideo], h = p ? golesVideo(p) : ''; if (h) el.innerHTML = h; else el.remove(); };
+    el.addEventListener('click', e => { const b = e.target.closest('[data-clip]'); if (b) abrirClip(+b.dataset.clip); });
     Promise.all([VID ? VID : cargarVideos(), PIS ? PIS : cargarPistas()]).then(pon);
   }
 
@@ -3072,7 +3130,7 @@
       ${H('Tiros a puerta minuto a minuto')}
       ${P('Durante el partido, el acta digital va subiendo los tiros que recibe cada portero cada uno o dos minutos. Desde octubre de 2026 los guardamos cada minuto y en la página del partido dibujamos los tiros de cada equipo. Como el acta no publica el reloj, el minuto lo estimamos con la hora de cada apunte (los goles, las faltas y los tiempos muertos sí llevan minuto), así que puede ir uno o dos minutos desviado. Si el acta deja de subir tiros un rato y luego los apunta de golpe, ese tramo sale en discontinuo.')}
       ${H('La afición y el banquillo')}
-      ${lista(['<b>La grada</b>: en el vídeo de cada partido, cualquiera puede mandar emojis (aplauso, fuego, sorpresa, ánimo, corazón). Se cuentan todos.', '<b>El mejor del partido</b>: en nuestros partidos se vota a un jugador nuestro hasta 7 días después. Un voto por móvil.', '<b>En pista</b>: en nuestros partidos, el delegado apunta desde el banquillo quién estaba en pista en cada gol, o lo marcamos después viendo el vídeo. Con eso sale en la ficha «En pista en los goles»: los goles de su equipo y los que encajó mientras jugaba. En los partidos con vídeo también marcamos desde dónde fue cada gol y, a veces, cada tiro (gol, parada, fuera o bloqueado).'])}`);
+      ${lista(['<b>La grada</b>: en el directo de cada partido, cualquiera puede mandar emojis (aplauso, fuego, sorpresa, ánimo, corazón). Se cuentan todos.', '<b>El mejor del partido</b>: en nuestros partidos se vota a un jugador nuestro hasta 7 días después. Un voto por móvil.', '<b>En pista</b>: en nuestros partidos, el delegado apunta desde el banquillo quién estaba en pista en cada gol, o lo marcamos después viendo el vídeo. Con eso sale en la ficha «En pista en los goles»: los goles de su equipo y los que encajó mientras jugaba. En los partidos con vídeo también marcamos desde dónde fue cada gol y, a veces, cada tiro (gol, parada, fuera o bloqueado).'])}`);
 
     // 5 · ficha del jugador
     const ficha = sec('ficha', '05', 'FICHA DEL JUGADOR', 'Con el equipo', 'En la ficha de cada jugador nuestro, su peso en los goles del equipo. Sale la temporada más reciente en la que lleva 5 partidos o más.', `
@@ -4103,9 +4161,7 @@
           <button type="button" class="tv-full" data-tv="full" title="Pantalla completa" aria-label="Pantalla completa">${ICO_FULL}${ICO_SALIR}</button>
           ${modo === 'resumen' ? `<div class="tv-ctrl"><button type="button" data-tv="prev" aria-label="Atrasar evento" title="Atrasar evento">${ICO_ANT}</button><button type="button" data-tv="next" aria-label="Adelantar evento" title="Adelantar evento">${ICO_SIG}</button></div>
           <button type="button" class="tv-empieza" id="tv-empieza" data-tv="empieza"><b aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg></b><span>Ver el resumen</span><small>En el móvil se verá a pantalla completa y en horizontal</small></button>` : ''}
-        </div></div></div></div>
-      ${(() => { const pm = Object.values(A.partidos).find(x => x.idp === idp); setTimeout(() => cargarReac(idp, true), 0);
-        return `<div class="an-grid dos tv-aficion" style="margin-top:12px"><div data-reac-caja="${esc(idp)}"></div>${pm && pm.nuestro ? `<div data-voto="${esc(pm.mid)}"></div>` : ''}</div>`; })()}`;
+        </div></div></div></div>`;   // la grada y el mejor del partido, de momento fuera del vídeo
   }
   /* Música de fondo del resumen: siete canciones de Pixabay (licencia de contenido de Pixabay: uso libre y sin citar), en
      assets/audio/musica-resumen*.mp3 a 128 kbps y con el volumen nivelado (-15 LUFS):

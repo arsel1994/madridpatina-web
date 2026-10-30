@@ -3379,3 +3379,29 @@ a.pv-club:hover { text-decoration-color: #F4F4F5; }
 .cl-links a { display: inline-flex; align-items: center; min-height: 36px; padding: 6px 12px; border-radius: 999px; border: 1px solid #3A3A40; font-size: 13px; font-weight: 600; color: #F4F4F5; }
 .cl-links a:hover { border-color: #8A8A8F; }
 .pv-nota a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+/* galería de jugadas en vídeo (ficha): cada gol o tiro suyo, para verlo solo */
+.galv { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 8px; max-width: 980px; }
+.galv-c { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 12px 8px 8px; border: 0; border-radius: 10px; background: #18181B; color: #C9C9CE; font: inherit; text-align: left; cursor: pointer; }
+.galv-c:hover { box-shadow: inset 0 0 0 1px #3A3A40; }
+.galv-c.gol { box-shadow: inset 3px 0 0 #D3202A; }
+.galv-c.gol:hover { box-shadow: inset 3px 0 0 #D3202A, inset 0 0 0 1px #3A3A40; }
+.galv-p { flex: none; width: 56px; line-height: 0; }
+.galv-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; color: #A6A6AD; }
+.galv-t b { font-size: 14px; letter-spacing: .04em; color: #F4F4F5; }
+.galv-c.gol .galv-t b { color: #FF6B63; }
+.galv-v { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #26262A; color: #F4F4F5; font-size: 12px; }
+.galv-c:hover .galv-v { background: #D3202A; }
+.galv-m { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(13, 13, 14, .88); }
+.galv-caja { width: min(100%, 960px, calc((100dvh - 200px) * 16 / 9)); min-width: min(100%, 320px); display: flex; flex-direction: column; gap: 10px; }
+.galv-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.galv-tit { display: flex; flex-direction: column; gap: 2px; font-size: 13.5px; color: #A6A6AD; }
+.galv-tit b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 26px; line-height: 1; letter-spacing: .02em; color: #F4F4F5; }
+.galv-x { flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: #26262A; color: #F4F4F5; font-size: 18px; cursor: pointer; }
+.galv-x:hover { background: #3A3A40; }
+.galv-vid { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: #000; }
+.galv-vid iframe, .galv-vid > div { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.galv-pie { display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 14px; color: #A6A6AD; }
+.galv-pie .btn { width: 48px; padding: 0; }
+.galv-acc { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+html.galv-abierta { overflow: hidden; }
