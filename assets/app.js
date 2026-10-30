@@ -572,9 +572,9 @@
   }
   let PREV_PEDIDO = false;
   function vPrevia(L, c) {
-    if (!PREV_PEDIDO && (!AGE || !PRON || !ANA || !MAPA)) {
+    if (!PREV_PEDIDO && (!AGE || !PRON || !ANA || !MAPA || !CLB)) {
       PREV_PEDIDO = true; const h = location.hash;
-      Promise.all([cargarAgenda(), cargarPron(), cargarAnalisis(), cargarMapa()]).then(() => { if (location.hash === h) render(); });
+      Promise.all([cargarAgenda(), cargarPron(), cargarAnalisis(), cargarMapa(), cargarClubes()]).then(() => { if (location.hash === h) render(); });
       return '<div class="carga" role="status" aria-label="Cargando"><div class="sk" style="height:180px;margin-top:32px"></div><div class="carga-tarjetas"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></div>';
     }
     const lid = L.id, derbi = ours(c.local) && ours(c.visitante), us = ours(c.local) ? c.local : c.visitante, them = us === c.local ? c.visitante : c.local;
@@ -589,7 +589,7 @@
     const cab = `<div class="pv-chips">${chips}</div>
       <div class="pv-cab">${lado(c.local)}<div class="pv-c">${pasado && conRes ? `<span class="pv-hora cifra">${c.gl}–${c.gv}</span>` : `<span class="pv-hora cifra">${esc(c.hora || '—')}</span>`}<span class="pv-dia">${esc(c.fecha ? fd(c.fecha) : 'Fecha por fijar')}</span>
         ${c.fecha && !pasado ? `<div class="pv-ca"><span class="etq">${c.hora ? 'Empieza en' : 'Faltan · hora por fijar'}</span>${cuentaHtml(x, 'peque')}</div>` : ''}</div>${lado(c.visitante)}</div>
-      <div class="pv-pista">${esc(ag.pista || '')}</div>
+      <div class="pv-pista">${esc(ag.pista || '')}${ag.pista && CLB && CLB.medidas && CLB.medidas[ag.pista] ? ` · ${CLB.medidas[ag.pista][0]} × ${CLB.medidas[ag.pista][1]} m` : ''}</div>
       ${pasado ? casoHtml('Partido', conRes ? 'Acta pendiente de la FMP' : 'Sin resultado todavía', conRes ? 'El partido ya se jugó, pero la federación no ha subido el acta. El resultado y los datos saldrán solos esta noche.' : 'La FMP todavía no ha publicado el resultado. Si se ha aplazado, lo avisamos en Telegram en cuanto haya fecha nueva.', 'PENDIENTE', 'ambar') : avisos ? `<div class="aviso">${esc(avisos)}</div>` : ''}`;
     // nosotros frente a ellos (por partido, esta temporada), con barras: lo mejor de cada fila en blanco
     const eU = eqDeLiga(us, lid) || {}, U = ANA && ANA.equipos[eU.id] && ANA.equipos[eU.id].temp;
@@ -2963,7 +2963,7 @@
     const equipos = C.equipos.length ? `<section class="cl-sec"><h2 class="h2">Sus equipos en ${esc(A.temporada)}</h2>
         <div class="cl-eqs">${C.equipos.map(e => { const L = ligaNuestra(e.equipo), h = L ? hLg(L.id) : null;
           return `<${h ? `a href="${h}"` : 'div'} class="cl-eq${L ? ' nuestra' : ''}"><span><b>${esc(e.equipo)}</b><span>${esc(e.liga)}${L ? ' · en nuestra liga' : ''}</span></span><span class="cl-pu"><b class="cifra">${e.puesto}º</b><span>de ${e.de} · ${e.pts} ${e.pts === 1 ? 'punto' : 'puntos'}</span></span></${h ? 'a' : 'div'}>`; }).join('')}</div></section>` : '';
-    const pista = C.pista ? `<section class="cl-sec"><h2 class="h2">Su pista</h2><div class="tarjeta cl-pista"><b>${esc(C.pista.nombre)}</b>${C.pista.direccion ? `<span>${esc(C.pista.direccion)}</span>` : ''}</div>
+    const pista = C.pista ? `<section class="cl-sec"><h2 class="h2">Su pista</h2><div class="tarjeta cl-pista"><b>${esc(C.pista.nombre)}</b>${C.pista.direccion ? `<span>${esc(C.pista.direccion)}</span>` : ''}${C.pista.medidas ? `<span class="cl-med">${C.pista.medidas[0]} × ${C.pista.medidas[1]} m</span>` : ''}</div>
         <p class="pv-nota">La que más usan sus equipos como locales esta temporada.</p></section>` : '';
     // a quién vigilar: en nuestras ligas, sus jugadores con más puntos por partido y su portero con más partidos (mapa.json)
     const vj = [], vp2 = [];
