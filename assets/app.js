@@ -4112,8 +4112,8 @@
        musica-resumen.mp3 «Energetic Sport» de MondaMusic · -2 «Energetic Action Sport» de AlexGrohl ·
        -3 «Uplifting Action Sport Energetic Rock» de ikoliks · -4 «Sport» de lNPLUSMUSIC · -5 «Sport» de vaitsez ·
        -6 «Sport» de GR0ZA · -7 «Energetic» de iepmusic.
-     Cada resumen empieza por una al azar (distinta de la última que sonó) y, al acabar una, sigue la siguiente. Suena baja,
-     y se para y sigue con el vídeo. El volumen va por Web Audio (en el iPhone el del <audio> no se puede cambiar). */
+     Cada resumen lleva una, elegida al azar al abrirlo (distinta de la última que sonó). Suena baja y en bucle, y se para
+     y sigue con el vídeo. El volumen va por Web Audio (en el iPhone el del <audio> no se puede cambiar). */
   const MUS = { ctx: null, gain: null, el: null, quiere: false, nivel: 0.14 };
   // más alta en el mapa y la presentación y otra vez al decidirse el ganador; durante el partido, bajita
   const MUS_VOL = 0.14, MUS_BAJO = 0.045;
@@ -4132,14 +4132,8 @@
     MUS.quiere = on;
     if (on && !MUS.el) {
       try {
-        let i = pistaM();
-        const el = new Audio(MUS_PISTAS[i]);
-        el.preload = 'auto';
-        el.addEventListener('ended', () => {   // la siguiente canción
-          i = (i + 1) % MUS_PISTAS.length; el.src = MUS_PISTAS[i];
-          try { localStorage.setItem('mp-musica', String(i)); } catch (e) { /* sin almacenamiento */ }
-          if (MUS.quiere) el.play().catch(() => {});
-        });
+        const el = new Audio(MUS_PISTAS[pistaM()]);
+        el.loop = true; el.preload = 'auto';
         MUS.el = el;
         const AC = window.AudioContext || window.webkitAudioContext;
         if (AC) { const c = new AC(), g = c.createGain(); g.gain.value = 0.0001; c.createMediaElementSource(el).connect(g); g.connect(c.destination); Object.assign(MUS, { ctx: c, gain: g }); }
