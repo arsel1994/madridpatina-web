@@ -2412,10 +2412,11 @@
     (p.partidos || []).forEach(x => { const m = A.partidos[x.mid], v = m && m.idp && VID[m.idp]; if (!v) return;
       const enL = [m.alin_l, m.por_l, m.gol_l].some(l => (l || []).some(y => y.k === p.k)), lado = enL ? 'L' : 'V';
       const fila = ((enL ? m.alin_l : m.alin_v) || []).concat((enL ? m.gol_l : m.gol_v) || []).find(y => y.k === p.k), dors = String((fila && fila.dorsal) || p.dorsal || '');
-      const base = { idp: m.idp, yt: v.yt, rival: lado === 'L' ? m.visitante : m.local, fecha: m.fecha }, parte = s => (v.partes && v.partes['2'] && s >= v.partes['2'] ? 2 : 1);
-      Object.values(v.ev || {}).filter(e => e.tipo === 'GOL' && e.lado === lado && (e.q || '').startsWith('#' + dors + ' ')).forEach(e => clips.push(Object.assign({ s: e.s, r: 'gol', m: e.m, p: e.p, t: e.t, xy: e.xy }, base)));
-      (v.tiros || []).filter(t => t.lado === lado && String(t.dorsal) === dors).forEach(t => clips.push(Object.assign({ s: t.s, r: t.r, p: parte(t.s), xy: t.xy }, base))); });
-    clips.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || a.s - b.s);
+      const base = { idp: m.idp, rival: lado === 'L' ? m.visitante : m.local, fecha: m.fecha }, parte = s => (v.partes && v.partes['2'] && s >= v.partes['2'] ? 2 : 1);
+      const clip = (s, x) => { const r = enVid(v.yt, v.yt2, s); clips.push(Object.assign({ s: r.s, sv: s, yt: r.yt }, x, base)); };
+      Object.values(v.ev || {}).filter(e => e.tipo === 'GOL' && e.lado === lado && (e.q || '').startsWith('#' + dors + ' ')).forEach(e => clip(e.s, { r: 'gol', m: e.m, p: e.p, t: e.t, xy: e.xy }));
+      (v.tiros || []).filter(t => t.lado === lado && String(t.dorsal) === dors).forEach(t => clip(t.s, { r: t.r, p: parte(t.s), xy: t.xy })); });
+    clips.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || a.sv - b.sv);
     GALV = clips;
     const gal = clips.length ? `${lab('SUS JUGADAS EN VÍDEO', 'margin-bottom:2px')}<div class="an-nota" style="margin:0 0 8px">Toca una para verla: solo ese momento, con unos segundos antes y después.</div>
       <div class="galv">${clips.map((c, i) => `<button type="button" class="galv-c ${c.r}" data-clip="${i}"><span class="galv-p">${mediaPista(c.xy ? marcaTiro(c) : '', 'width="100%" aria-hidden="true"')}</span>
@@ -2457,7 +2458,7 @@
     $('#galv-tit').innerHTML = `<b>${esc(etqClip(c))}</b><span>vs ${esc(abr(c.rival))} · ${c.p}ª parte${c.t ? ' · ' + esc(c.t) : ''} · ${esc(fd(c.fecha))}</span>`;
     $('#galv-n').textContent = (GAL.i + 1) + ' de ' + GALV.length;
     el.querySelector('[data-galv="ant"]').disabled = GAL.i === 0; el.querySelector('[data-galv="sig"]').disabled = GAL.i === GALV.length - 1;
-    $('#galv-ent').href = `#/video/${encodeURIComponent(c.idp)}/${inicioClip(c)}`;
+    $('#galv-ent').href = `#/video/${encodeURIComponent(c.idp)}/${Math.round(atras(c.sv, CLIP_ANTES))}`;
   }
   function cerrarClip() {
     if (!GAL.el) return;
@@ -3987,7 +3988,7 @@
       TV.finHasta = Math.min(total ? total - 1 : desde + CELEBRA, desde + CELEBRA);
       return;
     }
-    const destino = Math.max(0, x.s - (x.ancla ? 2 : x.desc ? 1 : ANTES_JUGADA));
+    const destino = atras(x.s, x.ancla ? 2 : x.desc ? 1 : ANTES_JUGADA);
     const pen = x.pen && TV.modo === 'resumen' ? () => { if (TV.k === k) rotuloTV(rotPen(x), k); } : null;
     if (p && p.getPlayerState && p.getPlayerState() === 1 && destino >= t - 2.5 && destino <= t + 3) {   // ya está ahí: sin saltar
       if (pen) pen(); else if (!x.pen && x.s - ANTES_ROT <= t) rotuloTV(rotDe(x), k);
@@ -4129,7 +4130,7 @@
     const marcas = todas.filter(x => !(x.e && x.e.tipo === 'TIEMPO MUERTO'));
     // el descanso: la tarjeta con los goleadores, unos segundos antes de la 2.ª parte (si hay hueco tras la 1.ª)
     const ult1 = Math.max(partes[1] || 0, ...marcas.filter(x => x.p === 1).map(x => x.s));
-    if (partes[2] != null && partes[2] - 6 > ult1 + 10) { marcas.push({ s: partes[2] - 6, p: 1, desc: true }); marcas.sort((a, b) => a.s - b.s); }
+    if (partes[2] != null && partes[2] - 6 > ult1 + 10) { marcas.push({ s: v.yt2 ? Math.max(VID2, partes[2] - 6) : partes[2] - 6, p: 1, desc: true }); marcas.sort((a, b) => a.s - b.s); }
     const modo = seg === 'entero' ? 'entero' : 'resumen';
     const desde = /^\d+$/.test(seg || '') ? Math.max(0, marcas.findIndex(x => x.s >= +seg)) : 0;   // desde un «▶»: esa jugada
     const saque = partes[1];   // presentación solo si se empieza por el principio y el vídeo trae calentamiento
@@ -4147,8 +4148,10 @@
           ? { autoplay: 0, controls: 0, disablekb: 1, fs: 0, rel: 0, playsinline: 1, modestbranding: 1, iv_load_policy: 3 }
           : { autoplay: 1, rel: 0, playsinline: 1, fs: 0, modestbranding: 1 };
         TV.player = new YT.Player('tv-player', { host: 'https://www.youtube-nocookie.com', videoId: v.yt, playerVars: pv,
-          events: { onReady: ev => { TV.listo = true; if (modo !== 'resumen') ev.target.playVideo(); },
-            onStateChange: () => pintarPausa() } });
+          events: { onReady: ev => { doble(ev.target, () => v); TV.listo = true; if (modo !== 'resumen') ev.target.playVideo(); },
+            onStateChange: ev => {   // con dos vídeos, al acabar el de la 1.ª parte se sigue con el de la 2.ª
+              if (ev.data === 0 && v.yt2 && ev.target.en === 1) { if (modo !== 'resumen') ev.target.seekTo(VID2, true); else if (TV.k < TV.marcas.length) jugadaTV(TV.k + 1); return; }
+              pintarPausa(); } } });
         TV.timer = setInterval(tickTV, 100);
       });
     }, 0);
@@ -4304,7 +4307,25 @@
      Se pega el enlace de YouTube; la página va jugada por jugada (inicio de cada parte, goles, expulsiones,
      cambios de portero), lleva el vídeo a unos segundos antes del momento estimado y basta con pulsar «¡Ahora!». Cada marca
      afina la estimación de la siguiente. Al final da un código que se añade a data/videos.json (scripts/reporte/videos.json). */
-  const SY = { idp: null, S: null, items: [], i: 0, yt: '', canal: '', player: null, modo: 'jugadas', tiros: [], t: -1, msg: '' };
+  const SY = { idp: null, S: null, items: [], i: 0, yt: '', yt2: '', canal: '', player: null, modo: 'jugadas', tiros: [], t: -1, msg: '' };
+  /* Partidos grabados en dos vídeos (uno para cada parte): el de la 2.ª parte va en «yt2» y sus segundos se guardan
+     sumándoles VID2. Así el resumen, la herramienta y la galería trabajan con un solo reloj; doble() hace que el
+     reproductor cambie de vídeo al saltar de uno a otro. */
+  const VID2 = 100000;
+  const enVid = (yt, yt2, s) => (yt2 && s >= VID2 ? { yt: yt2, s: s - VID2 } : { yt, s });
+  const atras = (T, d) => (T >= VID2 ? Math.max(VID2, T - d) : Math.max(0, T - d));   // unos segundos antes, sin pasar al otro vídeo
+  const mmssS = t => (t >= VID2 ? '2.º vídeo ' + mmssV(t - VID2) : mmssV(t));
+  function doble(P, fuentes) {   // P: el reproductor ya listo; fuentes(): { yt, yt2 } de ese momento
+    if (P.cargar) return P;
+    const raw = { t: P.getCurrentTime.bind(P), seek: P.seekTo.bind(P), dur: P.getDuration.bind(P), load: P.loadVideoById.bind(P) };
+    P.en = 1;
+    P.getCurrentTime = () => raw.t() + (P.en === 2 ? VID2 : 0);
+    P.getDuration = () => raw.dur() + (P.en === 2 ? VID2 : 0);
+    P.seekTo = (T, a) => { const f = fuentes(), w = f.yt2 && T >= VID2 ? 2 : 1, x = Math.max(0, T - (w === 2 ? VID2 : 0));
+      if (w !== P.en) { P.en = w; raw.load({ videoId: w === 2 ? f.yt2 : f.yt, startSeconds: x }); } else raw.seek(x, a); };
+    P.cargar = id => { P.en = 1; raw.load(id); };
+    return P;
+  }
   const RITMO_VIDEO = 1.45;   // minutos de vídeo por minuto de juego (senior, medido en octubre de 2026)
   const ytId = u => { const m = /(?:youtu\.be\/|[?&]v=|\/live\/|\/shorts\/|\/embed\/)([\w-]{11})/.exec(u || '') || /^\s*([\w-]{11})\s*$/.exec(u || ''); return m ? m[1] : null; };
   const mmssV = t => { t = Math.max(0, Math.round(t)); const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, x = t % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
@@ -4329,6 +4350,7 @@
   }
   function estimaSync(k) {
     const it = SY.items[k], hechos = SY.items.slice(0, k).filter(x => x.s != null), ult = hechos[hechos.length - 1];
+    if (SY.yt2 && it.p === 2 && (!ult || ult.s < VID2)) return VID2 + (it.ancla ? 0 : it.g * RITMO_VIDEO);   // la 2.ª parte, en su vídeo
     if (!ult) return 0;
     if (it.p === 3) return ult.p === 3 ? ult.s + 40 : ult.s + Math.max(0, (SY.S.duracion_periodo || 1500) - ult.g) * RITMO_VIDEO + 120;   // la tanda: tras el final, un lanzamiento cada ~40 s
     if (ult.p === it.p) {
@@ -4339,9 +4361,9 @@
     const dur = SY.S.duracion_periodo || 1500;   // otra parte: lo que quedaba de la anterior y unos minutos de descanso
     return ult.s + Math.max(0, dur - ult.g) * RITMO_VIDEO + 300 + it.g * RITMO_VIDEO;
   }
-  const guardaSync = () => { try { localStorage.setItem('mp-sync-' + SY.idp, JSON.stringify({ yt: SY.yt, canal: SY.canal, m: Object.fromEntries(SY.items.filter(x => x.s != null).map(x => [x.id, x.s])),
+  const guardaSync = () => { try { localStorage.setItem('mp-sync-' + SY.idp, JSON.stringify({ yt: SY.yt, yt2: SY.yt2, canal: SY.canal, m: Object.fromEntries(SY.items.filter(x => x.s != null).map(x => [x.id, x.s])),
     d: Object.fromEntries(SY.items.filter(x => x.xy || x.pista).map(x => [x.id, { xy: x.xy || null, pista: x.pista || null }])), tiros: SY.tiros })); } catch (e) { /* sin almacenamiento: no pasa nada */ } };
-  const datosSync = (partes, ev) => Object.assign({ yt: SY.yt, canal: SY.canal || null, partes, ev },
+  const datosSync = (partes, ev) => Object.assign({ yt: SY.yt, canal: SY.canal || null, partes, ev }, SY.yt2 ? { yt2: SY.yt2 } : {},
     SY.tiros.length ? { tiros: SY.tiros.filter(t => t.lado && t.r).map(t => ({ s: Math.round(t.s), lado: t.lado, dorsal: t.dorsal || null, xy: t.xy ? t.xy.map(v => Math.round(v * 1000) / 1000) : null, r: t.r })) } : {});
   function codigoSync() {
     const ev = {}, partes = {};
@@ -4355,9 +4377,9 @@
     const lista = $('#sy-lista'), act = $('#sy-actual'), cod = $('#sy-codigo');
     if (!lista) return;
     const it = SY.items[SY.i];
-    act.innerHTML = it ? `<span class="n">${SY.i + 1}/${SY.items.length}</span><b>${esc(it.txt)}</b><span class="t">${it.ancla ? '' : it.pen ? 'Tanda de penaltis' : esc(ordinal(it.p) + ' parte · minuto ' + it.e.t + ' de juego')}${it.s != null ? ' · marcado en ' + mmssV(it.s) : ''}</span>`
+    act.innerHTML = it ? `<span class="n">${SY.i + 1}/${SY.items.length}</span><b>${esc(it.txt)}</b><span class="t">${it.ancla ? '' : it.pen ? 'Tanda de penaltis' : esc(ordinal(it.p) + ' parte · minuto ' + it.e.t + ' de juego')}${it.s != null ? ' · marcado en ' + mmssS(it.s) : ''}</span>`
       : '<b>¡Listo! Copia el código de abajo y pásamelo.</b>';
-    lista.innerHTML = SY.items.map((x, k) => `<button type="button" class="sy-it${k === SY.i ? ' on' : ''}${x.s != null ? ' ok' : ''}${x.ancla ? ' ancla' : ''}" data-sy="ir" data-k="${k}"><span class="s">${x.s != null ? mmssV(x.s) : '—'}</span><span>${esc(x.txt)}</span></button>`).join('');
+    lista.innerHTML = SY.items.map((x, k) => `<button type="button" class="sy-it${k === SY.i ? ' on' : ''}${x.s != null ? ' ok' : ''}${x.ancla ? ' ancla' : ''}" data-sy="ir" data-k="${k}"><span class="s">${x.s != null ? mmssS(x.s) : '—'}</span><span>${esc(x.txt)}</span></button>`).join('');
     const hechas = SY.items.filter(x => x.s != null && !x.ancla).length;
     pintarGolSync();
     pintarTirosSync();
@@ -4408,12 +4430,12 @@
     const editor = t ? `<div class="sy-gol-cols" style="margin-top:10px"><div><div class="lab">DESDE DÓNDE</div>
         ${mediaPista(t.xy ? `<circle cx="${t.xy[0] * PISTA_W}" cy="${t.xy[1] * PISTA_H}" r="9" fill="#D3202A" stroke="#FFFFFF" stroke-width="2"/>` : '', 'class="sy-pista" data-sy-pista width="100%" role="img" aria-label="Media pista: toca desde dónde se tiró"')}
         ${t.xy ? `<div class="an-frase" style="margin:6px 0">A unos ${distM(t.xy)} m de la portería</div>` : '<div class="an-nota">Toca en el dibujo, mirando a la portería a la que tiró.</div>'}</div>
-      <div><div class="lab">TIRO EN ${mmssV(t.s)} DEL VÍDEO</div>
+      <div><div class="lab">TIRO EN ${mmssS(t.s)}${t.s >= VID2 ? '' : ' DEL VÍDEO'}</div>
         <div class="an-sub">EQUIPO (tecla 1 o 2)</div><div class="an-togs">${['L', 'V'].map((l, i) => anTog(t.lado === l, `data-sy="t-lado" data-l="${l}"`, `${i + 1} · ${esc(ctx.abr[l])}`)).join('')}</div>
         ${t.lado ? `<div class="an-sub">QUIÉN TIRA</div><div class="an-togs">${jug(t.lado).map(j => anTog(String(t.dorsal) === String(j.dorsal), `data-sy="t-dorsal" data-d="${esc(j.dorsal)}"`, `#${esc(j.dorsal)} ${esc(j.jugador_corto || '')}`)).join('')}${anTog(!t.dorsal, 'data-sy="t-dorsal" data-d=""', 'No se ve')}</div>` : ''}
         <div class="an-sub">CÓMO ACABA (P, F o B)</div><div class="an-togs">${RES_TIRO.map(([k, x]) => anTog(t.r === k, `data-sy="t-r" data-r="${k}"`, x)).join('')}</div>
         <div class="an-togs" style="margin-top:8px"><button type="button" class="an-tog" data-sy="t-borra">Borrar este tiro</button></div></div></div>` : '';
-    const lista = SY.tiros.map((x, i) => [x, i]).sort((a, b) => a[0].s - b[0].s).map(([x, i]) => `<button type="button" class="sy-it${i === SY.t ? ' on' : ''}${x.lado && x.r ? ' ok' : ''}" data-sy="t-ir" data-k="${i}"><span class="s">${mmssV(x.s)}</span><span>${esc(x.lado ? ctx.abr[x.lado] : '¿equipo?')}${x.dorsal ? ' · #' + esc(x.dorsal) : ''} · ${esc((RES_TIRO.find(r => r[0] === x.r) || [, '¿cómo acaba?'])[1])}${x.xy ? ' · ' + distM(x.xy) + ' m' : ''}</span></button>`).join('');
+    const lista = SY.tiros.map((x, i) => [x, i]).sort((a, b) => a[0].s - b[0].s).map(([x, i]) => `<button type="button" class="sy-it${i === SY.t ? ' on' : ''}${x.lado && x.r ? ' ok' : ''}" data-sy="t-ir" data-k="${i}"><span class="s">${mmssS(x.s)}</span><span>${esc(x.lado ? ctx.abr[x.lado] : '¿equipo?')}${x.dorsal ? ' · #' + esc(x.dorsal) : ''} · ${esc((RES_TIRO.find(r => r[0] === x.r) || [, '¿cómo acaba?'])[1])}${x.xy ? ' · ' + distM(x.xy) + ' m' : ''}</span></button>`).join('');
     box.innerHTML = `<div class="lab">MODO TIROS</div><div class="an-nota" style="margin-top:2px">Pulsa «+ Tiro» (o la tecla T) en cada tiro, aunque vaya fuera. Luego elige el equipo, quién tira, desde dónde y cómo acaba. Los goles no se marcan aquí: ya están en las jugadas del acta.</div>
       <div class="an-togs" style="margin-top:8px"><button type="button" class="dv-alin" data-sy="t-nuevo" style="font-size:15px;padding:10px 16px">+ Tiro</button></div>
       ${resumen}${editor}${lista ? `<div class="an-sub" style="margin-top:12px">TIROS MARCADOS · ${SY.tiros.length}</div><div class="sy-lista" style="max-height:260px">${lista}</div>` : ''}`;
@@ -4436,7 +4458,7 @@
   function irSync(k, buscar = true) {
     SY.i = Math.max(0, Math.min(SY.items.length, k));
     const it = SY.items[SY.i];
-    if (buscar && it && SY.player && SY.player.seekTo) { SY.player.seekTo(Math.max(0, (it.s != null ? it.s : estimaSync(SY.i)) - (it.s != null ? 3 : 15)), true); SY.player.playVideo(); }
+    if (buscar && it && SY.player && SY.player.seekTo) { SY.player.seekTo(atras(it.s != null ? it.s : estimaSync(SY.i), it.s != null ? 3 : 15), true); SY.player.playVideo(); }
     pintarSync();
   }
   function arrancarSync(idp) {
@@ -4447,23 +4469,24 @@
     try { previo = JSON.parse(localStorage.getItem('mp-sync-' + idp) || 'null'); } catch (e) { previo = null; }
     const v = (VID && VID[idp]) || null;
     SY.tiros = (previo && previo.tiros) || (v && v.tiros ? v.tiros.map(t => Object.assign({}, t)) : []); SY.t = -1;
-    if (previo) { SY.yt = previo.yt; SY.canal = previo.canal || ''; SY.items.forEach(x => { if (previo.m[x.id] != null) x.s = previo.m[x.id]; const d = (previo.d || {})[x.id]; if (d) { x.xy = d.xy; x.pista = d.pista; } }); }
-    else if (v) { SY.yt = v.yt; SY.canal = v.canal || ''; SY.items.forEach(x => { const y = x.ancla ? (v.partes || {})[x.p] : (v.ev[x.id] || {}).s; if (y != null) x.s = y; const e2 = v.ev[x.id]; if (e2) { if (e2.xy) x.xy = e2.xy; if (e2.pista) x.pista = e2.pista; } }); }
+    if (previo) { SY.yt = previo.yt; SY.yt2 = previo.yt2 || ''; SY.canal = previo.canal || ''; SY.items.forEach(x => { if (previo.m[x.id] != null) x.s = previo.m[x.id]; const d = (previo.d || {})[x.id]; if (d) { x.xy = d.xy; x.pista = d.pista; } }); }
+    else if (v) { SY.yt = v.yt; SY.yt2 = v.yt2 || ''; SY.canal = v.canal || ''; SY.items.forEach(x => { const y = x.ancla ? (v.partes || {})[x.p] : (v.ev[x.id] || {}).s; if (y != null) x.s = y; const e2 = v.ev[x.id]; if (e2) { if (e2.xy) x.xy = e2.xy; if (e2.pista) x.pista = e2.pista; } }); }
     SY.i = Math.max(0, SY.items.findIndex(x => x.s == null));
     if (SY.i < 0) SY.i = SY.items.length;
     $('#sy-url').value = SY.yt ? 'https://youtu.be/' + SY.yt : '';
+    $('#sy-url2').value = SY.yt2 ? 'https://youtu.be/' + SY.yt2 : '';
     $('#sy-canal').value = SY.canal;
     pintarSync();
     if (SY.yt) cargarPlayer();
   }
   function cargarPlayer() {
     cargarYT().then(() => {
-      if (SY.player && SY.player.loadVideoById) { SY.player.loadVideoById(SY.yt); return; }
-      SY.player = new YT.Player('sy-player', { videoId: SY.yt, playerVars: { rel: 0, playsinline: 1 }, events: { onReady: () => irSync(SY.i) } });
+      if (SY.player && SY.player.cargar) { SY.player.cargar(SY.yt); setTimeout(() => irSync(SY.i), 600); return; }
+      SY.player = new YT.Player('sy-player', { videoId: SY.yt, playerVars: { rel: 0, playsinline: 1 }, events: { onReady: ev => { doble(ev.target, () => SY); irSync(SY.i); } } });
     });
   }
   function vSincronizar(idp) {
-    if (SY.idp !== idp) Object.assign(SY, { idp, S: null, items: [], i: 0, yt: '', canal: '', player: null });
+    if (SY.idp !== idp) Object.assign(SY, { idp, S: null, items: [], i: 0, yt: '', yt2: '', canal: '', player: null });
     const S = (RSM.final && RSM.final.idp === idp && RSM.final) || LIVE.snaps[idp] || SY.S;
     if (!S) {
       const url = DIRECTO_EJEMPLO ? DIRECTO_URL : DIRECTO_URL + '?idp=' + encodeURIComponent(idp);
@@ -4476,8 +4499,8 @@
     SY.S = S;
     cargarVideos().then(() => setTimeout(() => arrancarSync(idp), 0));
     return `<div class="sy"><div class="lab" style="color:#FF6B63">SINCRONIZAR VÍDEO</div><h1>${esc(S.local)} <span>${S.gl ?? ''}–${S.gv ?? ''}</span> ${esc(S.visitante)}</h1>
-      <p class="sy-ayuda">1. Pega el enlace de YouTube y pulsa «Cargar». 2. Para cada jugada el vídeo salta a unos segundos antes de cuando debería ser: dale al play y pulsa <b>¡Ahora!</b> justo cuando pasa (el gol entra, el árbitro pita la expulsión…). Si no se ve, «Saltar». En los goles, si se ve bien, toca en el dibujo desde dónde se tiró y marca quién de los nuestros estaba en pista (es opcional). 3. Al final copia el código y pásamelo.</p>
-      <div class="sy-form"><input id="sy-url" type="url" placeholder="Enlace de YouTube (https://youtu.be/…)" aria-label="Enlace de YouTube"><input id="sy-canal" type="text" placeholder="Canal (opcional)" aria-label="Canal de YouTube"><button type="button" class="dv-alin" data-sy="cargar">Cargar</button></div>
+      <p class="sy-ayuda">1. Pega el enlace de YouTube y pulsa «Cargar». Si el partido se grabó en dos vídeos, pon el de la 2.ª parte en el segundo campo: la herramienta cambia de vídeo sola al llegar a la 2.ª parte. 2. Para cada jugada el vídeo salta a unos segundos antes de cuando debería ser: dale al play y pulsa <b>¡Ahora!</b> justo cuando pasa (el gol entra, el árbitro pita la expulsión…). Si no se ve, «Saltar». En los goles, si se ve bien, toca en el dibujo desde dónde se tiró y marca quién de los nuestros estaba en pista (es opcional). 3. Al final copia el código y pásamelo.</p>
+      <div class="sy-form"><input id="sy-url" type="url" placeholder="Enlace de YouTube (https://youtu.be/…)" aria-label="Enlace de YouTube"><input id="sy-url2" type="url" placeholder="2.ª parte, si es otro vídeo (opcional)" aria-label="Enlace de YouTube de la 2.ª parte, si es otro vídeo"><input id="sy-canal" type="text" placeholder="Canal (opcional)" aria-label="Canal de YouTube"><button type="button" class="dv-alin" data-sy="cargar">Cargar</button></div>
       <div class="an-togs" style="margin-top:14px">${anTog(SY.modo === 'jugadas', 'data-sy="modo" data-m="jugadas"', 'Jugadas del acta')}${anTog(SY.modo === 'tiros', 'data-sy="modo" data-m="tiros"', 'Modo tiros')}</div>
       <div class="sy-cols"><div><div class="sy-marco"><div id="sy-player"></div></div>
         <div class="sy-actual" id="sy-actual"></div>
@@ -4493,14 +4516,14 @@
     const b = e.target.closest('[data-sy]');
     if (!b) return;
     const a = b.dataset.sy, it = SY.items[SY.i], now = () => (SY.player && SY.player.getCurrentTime ? SY.player.getCurrentTime() : null);
-    if (a === 'cargar') { const id = ytId($('#sy-url').value); SY.canal = $('#sy-canal').value.trim(); if (!id) { $('#sy-url').focus(); return; } SY.yt = id; guardaSync(); cargarPlayer(); pintarSync(); }
+    if (a === 'cargar') { const id = ytId($('#sy-url').value); SY.canal = $('#sy-canal').value.trim(); if (!id) { $('#sy-url').focus(); return; } SY.yt = id; SY.yt2 = ytId($('#sy-url2').value) || ''; guardaSync(); cargarPlayer(); pintarSync(); }
     else if (a === 'ahora' && it) { const t = now(); if (t == null) return; it.s = t; guardaSync(); if (it.tipo === 'GOL') pintarSync(); else irSync(SY.i + 1); }
     else if (a === 'pj' && it) { const l = b.dataset.l, d = b.dataset.d; it.pista = it.pista || { L: [], V: [] }; const xs = it.pista[l]; const i2 = xs.indexOf(d); if (i2 >= 0) xs.splice(i2, 1); else xs.push(d); guardaSync(); pintarSync(); }
     else if (a === 'pj-igual' && it) { const ant = SY.items.slice(0, SY.i).reverse().find(x => x.pista); if (ant) { it.pista = { L: ant.pista.L.slice(), V: ant.pista.V.slice() }; guardaSync(); pintarSync(); } }
     else if (a === 'xy-borra' && it) { it.xy = null; guardaSync(); pintarSync(); }
     else if (a === 'modo') { SY.modo = b.dataset.m; document.querySelectorAll('[data-sy="modo"]').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); pintarSync(); }
     else if (a === 't-nuevo') { const t = now(); if (t == null) { SY.msg = 'Carga el vídeo primero'; pintarSync(); return; } SY.tiros.push({ s: t, lado: SY.tiros.length ? SY.tiros[SY.tiros.length - 1].lado : null, dorsal: null, xy: null, r: null }); SY.t = SY.tiros.length - 1; guardaSync(); pintarSync(); }
-    else if (a === 't-ir') { SY.t = +b.dataset.k; const t = SY.tiros[SY.t]; if (t && SY.player && SY.player.seekTo) { SY.player.seekTo(Math.max(0, t.s - 3), true); } pintarSync(); }
+    else if (a === 't-ir') { SY.t = +b.dataset.k; const t = SY.tiros[SY.t]; if (t && SY.player && SY.player.seekTo) { SY.player.seekTo(atras(t.s, 3), true); } pintarSync(); }
     else if (a === 't-lado' && SY.tiros[SY.t]) { const t = SY.tiros[SY.t]; if (t.lado !== b.dataset.l) t.dorsal = null; t.lado = b.dataset.l; guardaSync(); pintarSync(); }
     else if (a === 't-dorsal' && SY.tiros[SY.t]) { SY.tiros[SY.t].dorsal = b.dataset.d || null; guardaSync(); pintarSync(); }
     else if (a === 't-r' && SY.tiros[SY.t]) { SY.tiros[SY.t].r = b.dataset.r; guardaSync(); pintarSync(); }
@@ -4511,11 +4534,11 @@
       SY.msg = 'Guardando…'; pintarSync();
       apiPost('video', { idp: SY.idp, pin, datos: d }).then(r => { SY.msg = r && r._st === 200 ? 'Guardado: ya sale en la web' : (r && r.error) || 'Sin conexión: copia el código y pásalo'; if (r && r._st === 200 && VID) VID[SY.idp] = r.datos; pintarSync(); });
     }
-    else if (a === 'menos' && it && it.s != null) { it.s = Math.max(0, it.s - 2); guardaSync(); irSync(SY.i); }
+    else if (a === 'menos' && it && it.s != null) { it.s = atras(it.s, 2); guardaSync(); irSync(SY.i); }
     else if (a === 'mas' && it && it.s != null) { it.s += 2; guardaSync(); irSync(SY.i); }
     else if (a === 'saltar') irSync(SY.i + 1);
     else if (a === 'atras') irSync(SY.i - 1);
-    else if (a === 'estima' && it) { const t = estimaSync(SY.i); if (SY.player && SY.player.seekTo) { SY.player.seekTo(Math.max(0, t - 15), true); SY.player.playVideo(); } }
+    else if (a === 'estima' && it) { const t = estimaSync(SY.i); if (SY.player && SY.player.seekTo) { SY.player.seekTo(atras(t, 15), true); SY.player.playVideo(); } }
     else if (a === 'ir') irSync(+b.dataset.k);
     else if (a === 'copiar') { const t = $('#sy-codigo'); if (!t.value) return; t.select(); (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(() => { b.textContent = '✓ Copiado'; }).catch(() => document.execCommand('copy')); }
   });
