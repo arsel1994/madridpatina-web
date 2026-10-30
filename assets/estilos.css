@@ -3382,3 +3382,16 @@ a.pv-club { text-decoration: underline; text-decoration-color: #55555B; text-und
 a.pv-club:hover { text-decoration-color: #F4F4F5; }
 @media (max-width: 520px) { .cl-bal b { font-size: 28px; } }
 .cl-med { margin-top: 4px; font-family: "Big Shoulders Display", sans-serif; font-weight: 800; font-size: 20px; color: #FF6B63; }
+
+.cl-hist { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; max-width: 760px; font-size: 14.5px; line-height: 1.55; color: #C9C9CE; }
+.cl-hist p { margin: 0; }
+.cl-hd { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; border-bottom: 1px solid #2A2A2F; }
+.cl-hd > span { display: flex; flex-direction: column; gap: 2px; }
+.cl-hd > span:first-child:not(:last-child) b { font-size: 30px; line-height: 1; color: #FF6B63; }
+.cl-hd > span span { font-size: 12.5px; color: #A6A6AD; }
+.cl-hd b { font-size: 15.5px; color: #F4F4F5; }
+.cl-secc { font-size: 13.5px; color: #A6A6AD; }
+.cl-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.cl-links a { display: inline-flex; align-items: center; min-height: 36px; padding: 6px 12px; border-radius: 999px; border: 1px solid #3A3A40; font-size: 13px; font-weight: 600; color: #F4F4F5; }
+.cl-links a:hover { border-color: #8A8A8F; }
+.pv-nota a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }

@@ -2982,9 +2982,17 @@
       comun.push({ n: j.nombre + ' ' + j.apellidos, h: hP(j.k), t: 'Antes en ' + [...new Set(fz.map(x => x.equipo))].join(' y ') + ' (' + fz[0].t + (fz.length > 1 ? ' a ' + fz[fz.length - 1].t : '') + ')', x: 'Ahora en ' + equiposDe(j).map(mpCorto).join(' y ') }); });
     const comunH = comun.length ? `<section class="cl-sec"><h2 class="h2">Jugadores en común</h2>
         <div class="cl-com">${comun.map(c => `<${c.h ? `a href="${c.h}"` : 'div'} class="cl-c"><b>${esc(c.n)}</b><span>${esc(c.t)}</span><span>${esc(c.x)}</span></${c.h ? 'a' : 'div'}>`).join('')}</div></section>` : '';
+    // el club: lo que han publicado ellos o la prensa (scripts/reporte/clubes_historia.json), con sus enlaces
+    const Hc = C.historia, dom = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } };
+    const historia = Hc && (Hc.historia || []).length ? `<section class="cl-sec"><h2 class="h2">El club</h2><div class="tarjeta cl-hist">
+        ${Hc.nombre_oficial || Hc.localidad || Hc.fundacion ? `<div class="cl-hd">${Hc.fundacion ? `<span><b class="cifra">${esc(Hc.fundacion)}</b><span>fundación</span></span>` : ''}<span>${Hc.nombre_oficial ? `<b>${esc(Hc.nombre_oficial)}</b>` : ''}${Hc.localidad ? `<span>${esc(Hc.localidad)}</span>` : ''}</span></div>` : ''}
+        ${Hc.historia.map(t => `<p>${esc(t)}</p>`).join('')}
+        ${Hc.secciones ? `<p class="cl-secc">Además del hockey línea: ${esc(Hc.secciones)}</p>` : ''}
+        ${Hc.web || Hc.instagram ? `<div class="cl-links">${Hc.web ? `<a href="${esc(Hc.web)}" target="_blank" rel="noopener">${esc(dom(Hc.web))}</a>` : ''}${Hc.instagram ? `<a href="${esc(Hc.instagram)}" target="_blank" rel="noopener">Instagram</a>` : ''}</div>` : ''}</div>
+        ${(Hc.fuentes || []).length ? `<p class="pv-nota">Según lo publicado en ${Hc.fuentes.filter((u, i, a) => a.findIndex(x => dom(x) === dom(u)) === i).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(dom(u))}</a>`).join(', ')}.</p>` : ''}</section>` : '';
     return `<div class="club"><div class="cl-cab">${escudo(unEq, 72)}<div><div class="lab" style="color:#FF6B63">CLUB RIVAL</div><h1 class="h1">${esc(club)}</h1>
         <div class="sub">${C.equipos.length ? C.equipos.length + (C.equipos.length === 1 ? ' equipo' : ' equipos') + ' esta temporada' : 'Sin equipos esta temporada'}${ps.length ? ' · ' + ps.length + (ps.length === 1 ? ' partido' : ' partidos') + ' contra nosotros' : ''}</div></div></div>
-      ${balance}${vigilar}${equipos}${pista}${comunH}</div>`;
+      ${balance}${vigilar}${equipos}${pista}${historia}${comunH}</div>`;
   }
 
   function vMetodo() {
