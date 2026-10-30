@@ -3250,8 +3250,8 @@
     jugadores: '<path d="M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M17.2 6.4a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2zM16.5 14.1c2.8.3 5 2.3 5 5.9"/>',
   };
   // a qué sección del menú pertenece cada página (Pretemporada vive en Ligas; el directo y los resúmenes, en Inicio)
-  const TOP = { inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', nuevo: 'metodo', club: 'ligas', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', buzon: 'inicio' };
-  const TITLES = { inicio: 'Inicio', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', nuevo: '¿Nuevo en el hockey línea?', club: 'Club rival', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
+  const TOP = { inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', nuevo: 'metodo', club: 'ligas', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', admin: 'inicio', buzon: 'inicio' };
+  const TITLES = { inicio: 'Inicio', admin: 'Herramientas del club', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', nuevo: '¿Nuevo en el hockey línea?', club: 'Club rival', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
   // migas: el título de sección se toca para subir un nivel («EQUIPOS / MP A»); la última es la página en la que se está
   const migasHtml = xs => `<nav class="migas" aria-label="Estás en">${xs.map(([t, h], i) => (i ? '<i aria-hidden="true">/</i>' : '') + (h && i < xs.length - 1 ? `<a href="${h}">${esc(t)}</a>` : `<span class="act" aria-current="page">${esc(t)}</span>`)).join('')}</nav>`;
   const mpCorto = e => e.cantera ? (e.id === 'AL' ? 'MP Alevín' : 'MP Infantil') : 'MP ' + e.id;
@@ -3319,6 +3319,7 @@
     // «?» (Cómo lo calculamos) siempre a mano; en el móvil, Legado va en la cabecera
     $('#ayuda').classList.toggle('on', v === 'metodo');
     if (TOP[v] === 'legado') $('#legado-ic').setAttribute('aria-current', 'page'); else $('#legado-ic').removeAttribute('aria-current');
+    iconoAdmin(); if (v === 'admin') $('#admin-ic').setAttribute('aria-current', 'page'); else $('#admin-ic').removeAttribute('aria-current');
     // móvil: cinco secciones abajo, con iconos (al alcance del pulgar)
     $('#tabbar').innerHTML = nav.slice(0, 5).map(([k, l, h]) => `<a href="${h}" data-nav${sec === k ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICONO[k]}</svg><span>${l}</span></a>`).join('');
     pildora(true);
@@ -3343,6 +3344,7 @@
     else if (v === 'calendario') html = vCalendario();
     else if (v === 'apodo') html = vApodo();
     else if (v === 'buzon') html = vBuzon();
+    else if (v === 'admin') html = vAdmin();
     else html = vInicio(parts[0] === 'jornada' || parts[0] === 'inicio' ? parts[1] : null);
     const mg = migasDe(v, parts), back = mg ? migasHtml(mg) : '';
     const pie = `<footer class="pie"><span>MADRIDPATINA · Temporada ${esc(A.temporada)}</span><span><a href="${TELEGRAM}" target="_blank" rel="noopener">Avisos en Telegram</a> · <a href="#/nuevo">¿Nuevo en el hockey línea?</a> · <a href="#/metodo">Cómo lo calculamos</a> · Datos: Federación Madrileña de Patinaje · actualizado ${fdc(A.actualizado).toLowerCase()}</span></footer>`;
@@ -6254,6 +6256,53 @@
       const c = view.querySelector('[data-bz-caja]'); if (c) c.innerHTML = buzonHtml();
     });
   }
+  /* ── Herramientas del club (#/admin): el buzón de apodos y los vídeos de cada partido. Se activa en cada móvil u ordenador
+     una vez, con el PIN del club (se comprueba con el servicio: el del buzón); desde entonces sale el icono de la llave en
+     la cabecera. Ocultar el icono no protege nada: cada herramienta sigue pidiendo el PIN al servicio. */
+  const ADM = { msg: '', pend: null, todos: false };
+  const esAdmin = () => !!leeLS('mp-admin', false) && !!leeLS('mp-pin', '');
+  const iconoAdmin = () => { const a = $('#admin-ic'); if (a) a.hidden = !esAdmin(); };
+  function pendientesAdm() {   // cuántos apodos esperan en el buzón
+    apiPost('apodo', { pin: leeLS('mp-pin', '') }).then(d => { if (d && d._st === 200 && d.pendientes) { ADM.pend = d.pendientes.length; const b = view.querySelector('[data-adm-pend]'); if (b) b.textContent = ADM.pend ? ADM.pend + (ADM.pend === 1 ? ' propuesta' : ' propuestas') : 'Nada pendiente'; } });
+  }
+  function vAdmin() {
+    if (!esAdmin()) return `<div class="sy adm"><div class="cab-pag"><h1 class="h1">Herramientas del club</h1></div>
+      <p class="sy-ayuda">Pon el PIN del club para activar las herramientas en este dispositivo. Solo hace falta una vez: luego tendrás el icono de la llave arriba.</p>
+      <div class="bq-pin"><label for="adm-pin">PIN del club</label><input id="adm-pin" type="password" inputmode="numeric" autocomplete="off"><button type="button" class="btn p" data-adm="activar">Activar</button></div>
+      <p class="an-nota" data-adm-msg>${esc(ADM.msg)}</p></div>`;
+    if (!VID) cargarVideos().then(() => { if (location.hash.indexOf('#/admin') === 0) render(); });
+    setTimeout(pendientesAdm, 0);
+    const ps = Object.values(A.partidos).filter(m => m.nuestro && m.idp && m.gl != null).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.hora || '').localeCompare(a.hora || ''));
+    const fila = m => { const con = VID && VID[m.idp];
+      return `<div class="adm-p${con ? ' con' : ''}"><span class="adm-pt"><b>${esc(mpAbr(m.local))} ${m.gl}–${m.gv} ${esc(mpAbr(m.visitante))}</b><span>${esc(fd(m.fecha))} · ${esc(m.ligaNombre || '')}</span></span>
+        ${con ? `<a class="chip v" href="#/video/${encodeURIComponent(m.idp)}">Con vídeo</a>` : '<span class="chip neutro">Sin vídeo</span>'}<a class="btn s adm-b" href="#/sincronizar/${encodeURIComponent(m.idp)}">${con ? 'Editar' : 'Añadir'}</a></div>`; };
+    const vistos = ADM.todos ? ps : ps.slice(0, 12);
+    return `<div class="sy adm"><div class="cab-pag"><h1 class="h1">Herramientas del club</h1></div>
+      <div class="adm-g">
+        <a class="tarjeta adm-t" href="#/buzon"><span class="etq">Apodos</span><b>Buzón de apodos</b><span data-adm-pend>${ADM.pend == null ? 'Propuestas por aprobar' : ADM.pend ? ADM.pend + (ADM.pend === 1 ? ' propuesta' : ' propuestas') : 'Nada pendiente'}</span></a>
+      </div>
+      <h2 class="h2" style="margin-top:28px">Vídeos de los partidos</h2>
+      <p class="an-nota" style="margin-top:4px">Nuestros partidos jugados, los más recientes primero. «Añadir» abre la herramienta para sincronizar su vídeo.</p>
+      <div class="adm-ps">${vistos.map(fila).join('')}</div>
+      ${ps.length > vistos.length ? `<button type="button" class="btn s" data-adm="todos" style="margin-top:10px">Ver los ${ps.length} partidos</button>` : ''}
+      <div class="adm-pie"><button type="button" class="an-tog" data-adm="salir">Desactivar en este dispositivo</button></div></div>`;
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-adm]'); if (!b || !view.contains(b)) return;
+    const k = b.dataset.adm;
+    if (k === 'todos') { ADM.todos = true; render(); return; }
+    if (k === 'salir') { ponLS('mp-admin', false); try { localStorage.removeItem('mp-pin'); } catch (er) { /* sin almacenamiento */ } ADM.pend = null; iconoAdmin(); render(); return; }
+    if (k === 'activar') {
+      const pin = ((view.querySelector('#adm-pin') || {}).value || '').trim(), m = view.querySelector('[data-adm-msg]');
+      if (!pin) { view.querySelector('#adm-pin').focus(); return; }
+      b.disabled = true; if (m) m.textContent = 'Comprobando…';
+      apiPost('apodo', { pin }).then(d => {
+        b.disabled = false;
+        if (d && d._st === 200) { ponLS('mp-pin', pin); ponLS('mp-admin', true); ADM.msg = ''; ADM.pend = d.pendientes ? d.pendientes.length : null; iconoAdmin(); render(); return; }
+        ADM.msg = d ? (d.error || 'No se ha podido comprobar el PIN.') : 'Sin conexión con el servicio.'; if (m) m.textContent = ADM.msg;
+      });
+    }
+  });
   function vBuzon() {
     if (!BZ.d && leeLS('mp-pin', '')) setTimeout(() => buzon(), 0);
     return `<div class="sy buzon"><div class="cab-pag"><h1 class="h1">Buzón de apodos</h1></div>

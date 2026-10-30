@@ -3412,3 +3412,18 @@ a.pv-club:hover { text-decoration-color: #F4F4F5; }
 .galv-pie .btn { width: 48px; padding: 0; }
 .galv-acc { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
 html.galv-abierta { overflow: hidden; }
+
+/* herramientas del club (#/admin) */
+#admin-ic[hidden] { display: none; }
+.adm-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; margin-top: 16px; }
+.adm-t { display: flex; flex-direction: column; gap: 4px; color: #A6A6AD; font-size: 13.5px; }
+.adm-t b { font-size: 18px; color: #F4F4F5; }
+.adm-t:hover { box-shadow: inset 0 0 0 1px #3A3A40; }
+.adm-ps { display: grid; gap: 6px; margin-top: 12px; max-width: 760px; }
+.adm-p { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #18181B; }
+.adm-p.con { box-shadow: inset 3px 0 0 #1E8A4C; }
+.adm-pt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; color: #8A8A8F; }
+.adm-pt b { font-size: 14.5px; color: #F4F4F5; }
+.adm-b { min-height: 40px; padding: 0 14px; font-size: 14px; }
+.adm-pie { margin-top: 28px; }
+@media (max-width: 520px) { .adm-p .chip { display: none; } }
