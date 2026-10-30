@@ -8,7 +8,9 @@
 <meta name="color-scheme" content="dark">
 <!-- Web para jugadores y familias: se comparte por enlace, no en buscadores (hay nombres de menores) -->
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" type="image/png" href="assets/favicon-64.png">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <!-- Instalable en el móvil («Añadir a pantalla de inicio») -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icono-180.png">
@@ -21,17 +23,20 @@
 <link rel="preload" href="data/historico.json" as="fetch" crossorigin>
 <link rel="preload" href="assets/fonts/big-shoulders-display-900-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/ibm-plex-sans-condensed-400-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/fuentes.css?v=2026-10-30r9">
-<link rel="stylesheet" href="assets/estilos.css?v=2026-10-30r9">
-<link rel="stylesheet" href="assets/animaciones.css?v=2026-10-30r9">
+<link rel="stylesheet" href="assets/fuentes.css?v=2026-10-30r10">
+<link rel="stylesheet" href="assets/estilos.css?v=2026-10-30r10">
+<link rel="stylesheet" href="assets/animaciones.css?v=2026-10-30r10">
 </head>
 <body>
 <header class="top">
   <!-- 9a · barra «En directo»: solo mientras juega un equipo nuestro (la rellena app.js) -->
   <div class="barra-directo" id="barra-directo" hidden><div class="bd-scroll" id="bd-scroll"></div></div>
   <div class="in">
-    <!-- marca: LAMHL (Liga Autonómica Madrileña de Hockey Línea) / MP (MADRIDPATINA), sin escudo; igual en la ventana del principio (app.js). Lleva a Inicio y abre esa ventana -->
-    <a class="blk marca" href="#/" data-marca title="Liga Autonómica Madrileña de Hockey Línea · MADRIDPATINA" aria-label="LAMHL / MP · Inicio"><span>LAMHL</span><span class="bar" aria-hidden="true">/</span><span class="mp"><span>MP</span></span></a>
+    <!-- marca: MPHL (MADRIDPATINA Hockey Línea), dibujada; la horizontal en el escritorio y las iniciales en el móvil. La horizontal sale también en la ventana del principio (app.js). Lleva a Inicio y abre esa ventana -->
+    <a class="blk marca" href="#/" data-marca title="MADRIDPATINA · Hockey Línea" aria-label="MADRIDPATINA · Hockey Línea · Inicio">
+      <img class="marca-h" src="assets/marca/mphl-horizontal.svg" alt="" width="171" height="30">
+      <img class="marca-i" src="assets/marca/mphl-iniciales.svg" alt="" width="78" height="26">
+    </a>
     <nav class="nav" id="nav" aria-label="Secciones"></nav>
     <a class="ic-cab legado-ic" id="legado-ic" href="#/legado" data-nav title="Legado" aria-label="Legado"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 6h3a3 3 0 0 1-3 3.5M7 6H4a3 3 0 0 0 3 3.5"/></svg></a>
     <a class="ic-cab ayuda" id="ayuda" href="#/metodo" title="Cómo lo calculamos" aria-label="Cómo lo calculamos"><span>?</span></a>
@@ -45,7 +50,7 @@
   </div>
 </main>
 <nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
-<script src="assets/directo.js?v=2026-10-30r9"></script>
-<script src="assets/app.js?v=2026-10-30r9"></script>
+<script src="assets/directo.js?v=2026-10-30r10"></script>
+<script src="assets/app.js?v=2026-10-30r10"></script>
 </body>
 </html>

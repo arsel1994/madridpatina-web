@@ -3503,7 +3503,7 @@
     const el = introEl = document.createElement('div');
     el.className = 'intro'; el.tabIndex = -1;
     el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Próximos partidos');
-    el.innerHTML = `<div class="iv"><div class="iv-cab"><span class="marca iv-marca" aria-label="LAMHL / MP"><span>LAMHL</span><span class="bar" aria-hidden="true">/</span><span class="mp"><span>MP</span></span></span>
+    el.innerHTML = `<div class="iv"><div class="iv-cab"><span class="marca iv-marca" aria-label="MADRIDPATINA · Hockey Línea"><img src="assets/marca/mphl-horizontal.svg" alt="" width="171" height="30" style="height:30px;width:auto"></span>
         <button class="iv-x" type="button" aria-label="Cerrar" data-cierra>✕</button></div>
       <div class="iv-centro"><div class="iv-tit">${titIntro(ps)}</div><div class="caja">${ps.map(filaIntro).join('')}</div></div>
       <div class="iv-pie"><button class="btn p iv-entrar" type="button" data-cierra>Entrar</button><span class="iv-m">o desliza hacia arriba</span><span class="iv-d">o pulsa Esc</span></div></div>`;
