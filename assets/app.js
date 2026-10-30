@@ -505,7 +505,8 @@
         ult = `<a class="fav-l" href="${hM(ux.mid)}"><span class="etq">Último partido</span><b>${R.r === 'V' ? 'Ganamos' : 'Perdimos'}${R.pen ? ' en los penaltis' : ''} ${R.nos}–${R.ell}</b><span>Contra ${esc(ux.rival)} · ${esc(suyo)}</span></a>`; }
       const h = H && eqs.length ? hitosDe(j).sort((x, y) => x.falta - y.falta)[0] : null;
       const hito = h ? `<div class="fav-h"><b class="cifra">${h.falta}</b><span>${UNI[h.k][h.falta === 1 ? 0 : 1]} para ${h.k === 'a' || h.k === 'par' ? 'las' : 'los'} ${h.u} con el club</span></div>` : '';
-      return `<div class="tarjeta fav"><a class="fav-cab" href="${hP(k)}"><span class="fav-f">${f ? `<span class="ph" data-bg="${esc(f)}"></span>` : esc(ini(j.nombre, j.apellidos))}</span>
+      // la foto, de fondo de la tarjeta (a la derecha, fundida); sin foto, sus iniciales en grande
+      return `<div class="tarjeta fav${f ? ' con-foto' : ''}">${f ? `<span class="fav-fondo ph" data-bg="${esc(f)}" aria-hidden="true"></span>` : `<span class="fav-ini" aria-hidden="true">${esc(ini(j.nombre, j.apellidos))}</span>`}<a class="fav-cab" href="${hP(k)}">
           <span><b>${esc(nomCorto(j))}</b><span>${esc(eqs.map(mpCorto).join(' · '))}${j.dorsal ? ' · #' + esc(j.dorsal) : ''}</span></span></a>
         <div class="fav-d">${prox}${ult}</div>${hito}</div>`;
     };

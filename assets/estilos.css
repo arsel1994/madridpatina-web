@@ -3306,12 +3306,19 @@ a.fi-mejor:hover { box-shadow: inset 0 0 0 1px #3A3A40; }
 .favs-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
 .favs-cab > span { font-size: 13px; color: #8A8A8F; }
 .favs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; margin-top: 12px; }
-.fav { display: flex; flex-direction: column; gap: 12px; border-top: 3px solid #D3202A; }
+.fav { position: relative; overflow: hidden; isolation: isolate; display: flex; flex-direction: column; gap: 12px; border-top: 3px solid #D3202A; }
+.fav > :not(.fav-fondo):not(.fav-ini) { position: relative; z-index: 1; }
+/* la foto, de fondo a la derecha y entera de arriba abajo (fundida por la izquierda); lo demás, en una columna a la izquierda */
+.fav .fav-fondo { position: absolute; top: 0; right: 0; bottom: 0; left: auto; width: 44%; z-index: 0; background: center top / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 35%); mask-image: linear-gradient(to right, transparent, #000 35%); }
+.fav-fondo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(24, 24, 27, 0) 70%, #18181B); }
+.fav-ini { position: absolute; top: 2px; right: 14px; z-index: 0; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 104px; line-height: 1; color: #232327; }
+.fav.con-foto { padding-right: calc(40% + 8px); min-height: 250px; }
+.fav.con-foto .fav-d { grid-template-columns: 1fr; }
+.fav.con-foto .fav-l { background: rgba(24, 24, 27, .82); }
 .fav-cab { display: flex; align-items: center; gap: 12px; color: #F4F4F5; }
 .fav-cab b { display: block; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 24px; line-height: 1; text-transform: uppercase; }
 .fav-cab > span:last-child > span { display: block; margin-top: 4px; font-size: 13px; color: #A6A6AD; }
-.fav-f { position: relative; flex: none; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: #26262A; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 20px; color: #C9C9CE; }
-.fav-f .ph { position: absolute; inset: 0; background: center 20% / cover no-repeat; }
 .fav-d { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 8px; }
 .fav-l { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 10px; background: #18181B; color: #C9C9CE; font-size: 13px; }
 .fav-l:hover { box-shadow: inset 0 0 0 1px #3A3A40; }
