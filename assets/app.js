@@ -4107,12 +4107,23 @@
       ${(() => { const pm = Object.values(A.partidos).find(x => x.idp === idp); setTimeout(() => cargarReac(idp, true), 0);
         return `<div class="an-grid dos tv-aficion" style="margin-top:12px"><div data-reac-caja="${esc(idp)}"></div>${pm && pm.nuestro ? `<div data-voto="${esc(pm.mid)}"></div>` : ''}</div>`; })()}`;
   }
-  /* Música de fondo del resumen: «Energetic Sport» de MondaMusic (Pixabay, licencia de contenido de Pixabay: uso libre y
-     sin citar), en assets/audio/musica-resumen.mp3 a 128 kbps y con el volumen nivelado. Suena baja y en bucle, y se para
-     y sigue con el vídeo. El volumen va por Web Audio (en el iPhone el del <audio> no se puede cambiar). */
+  /* Música de fondo del resumen: siete canciones de Pixabay (licencia de contenido de Pixabay: uso libre y sin citar), en
+     assets/audio/musica-resumen*.mp3 a 128 kbps y con el volumen nivelado (-15 LUFS):
+       musica-resumen.mp3 «Energetic Sport» de MondaMusic · -2 «Energetic Action Sport» de AlexGrohl ·
+       -3 «Uplifting Action Sport Energetic Rock» de ikoliks · -4 «Sport» de lNPLUSMUSIC · -5 «Sport» de vaitsez ·
+       -6 «Sport» de GR0ZA · -7 «Energetic» de iepmusic.
+     Cada resumen empieza por una al azar (distinta de la última que sonó) y, al acabar una, sigue la siguiente. Suena baja,
+     y se para y sigue con el vídeo. El volumen va por Web Audio (en el iPhone el del <audio> no se puede cambiar). */
   const MUS = { ctx: null, gain: null, el: null, quiere: false, nivel: 0.14 };
   // más alta en el mapa y la presentación y otra vez al decidirse el ganador; durante el partido, bajita
-  const MUS_VOL = 0.14, MUS_BAJO = 0.045, MUS_SRC = 'assets/audio/musica-resumen.mp3';
+  const MUS_VOL = 0.14, MUS_BAJO = 0.045;
+  const MUS_PISTAS = ['', '-2', '-3', '-4', '-5', '-6', '-7'].map(x => `assets/audio/musica-resumen${x}.mp3`);
+  function pistaM() {   // al azar, sin repetir la última que sonó
+    let ult = -1; try { ult = +(localStorage.getItem('mp-musica') ?? -1); } catch (e) { /* sin almacenamiento */ }
+    let i = Math.floor(Math.random() * (MUS_PISTAS.length - 1)); if (i >= ult && ult >= 0) i++;
+    try { localStorage.setItem('mp-musica', String(i)); } catch (e) { /* sin almacenamiento */ }
+    return i;
+  }
   function rampaM(v, seg) {
     if (MUS.gain) { const g = MUS.gain.gain, t = MUS.ctx.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(0.0001, g.value), t); g.exponentialRampToValueAtTime(Math.max(0.0001, v), t + seg); }
     else if (MUS.el) MUS.el.volume = v;
@@ -4121,8 +4132,14 @@
     MUS.quiere = on;
     if (on && !MUS.el) {
       try {
-        const el = new Audio(MUS_SRC);
-        el.loop = true; el.preload = 'auto';
+        let i = pistaM();
+        const el = new Audio(MUS_PISTAS[i]);
+        el.preload = 'auto';
+        el.addEventListener('ended', () => {   // la siguiente canción
+          i = (i + 1) % MUS_PISTAS.length; el.src = MUS_PISTAS[i];
+          try { localStorage.setItem('mp-musica', String(i)); } catch (e) { /* sin almacenamiento */ }
+          if (MUS.quiere) el.play().catch(() => {});
+        });
         MUS.el = el;
         const AC = window.AudioContext || window.webkitAudioContext;
         if (AC) { const c = new AC(), g = c.createGain(); g.gain.value = 0.0001; c.createMediaElementSource(el).connect(g); g.connect(c.destination); Object.assign(MUS, { ctx: c, gain: g }); }
