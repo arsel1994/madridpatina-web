@@ -1843,33 +1843,15 @@ button.cal-fin-c { cursor: pointer; }
 .ff-cuando .cambio { color: #FFB347; }
 .ff-cuando .chip.casa { height: 20px; padding: 0 6px; }
 .chip.ambar.fuerte { background: #FFB347; color: #0D0D0E; border-color: #FFB347; }
-/* Calendario: cada partido como un marcador centrado (igual en móvil y en escritorio): arriba hora, liga y pista;
-   en medio el local, el % de ganar o el resultado y el visitante, apretados hacia el centro; abajo cuánto falta y PREVIA */
-.ff.cal-ff { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 0; text-align: center; }
-.cf-cab { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; font-size: 13px; font-weight: 600; color: #A6A6AD; }
-.cf-cab .chip { height: 20px; padding: 0 6px; }
-.cf-mid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(64px, auto) minmax(0, 1fr); align-items: center; gap: 12px; }
-.cf-eq { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.cf-eq.l { justify-content: flex-end; }
-.cf-eq.v { justify-content: flex-start; }
-.cf-eq .ff-n { font-size: 22px; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; gap: 6px; }
-.cf-c { display: flex; flex-direction: column; align-items: center; line-height: 1; }
-.cf-c .ff-pct { font-size: 34px; }
-.cf-c .ff-g { font-size: 14px; }
-.cf-c .ff-res { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 34px; color: #C9C9CE; white-space: nowrap; }
-.cf-c .res-l { margin-top: 4px; font-size: 11px; font-weight: 700; letter-spacing: .1em; }
-.cf-c .res-l.v { color: #3DD27E; }
-.cf-c .res-l.d { color: #A6A6AD; }
-.cf-pie { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
-.cf-pie .ff-falta { font-size: 18px; }
-.cf-pie .ff-l { font-size: 12px; }
-.cf-pie .ff-previa { margin: 0 0 0 6px; align-self: center; }
-.ff.cal-ff.fin .cf-eq .esc { filter: grayscale(1) brightness(.75); }
-@media (min-width: 721px) { .ff.cal-ff { grid-template-columns: none; grid-template-areas: none; } }
-/* jugamos en casa: la estrella roja de «ven a vernos», girando despacio, junto a nuestro equipo */
-.casa-m { flex: none; display: inline-grid; place-items: center; width: 16px; height: 16px; margin-right: 2px; vertical-align: middle; }
-.casa-m svg { width: 100%; height: 100%; fill: #D3202A; animation: mpGira 6s linear infinite; }
-.hero-n .casa-m { width: 22px; height: 22px; margin-right: 6px; }
+.cal-ff .ff-res { display: inline-flex; align-items: center; gap: 6px; }
+.cal-ff .ff-res .res-l { width: 22px; height: 22px; font-family: 'IBM Plex Sans Condensed', sans-serif; font-size: 12px; font-weight: 700; }
+/* jugamos en casa: la estrella roja de «ven a vernos», girando despacio, sobre nuestro escudo */
+.casa-m { display: grid; place-items: center; width: 16px; height: 16px; }
+.casa-m svg { width: 100%; height: 100%; fill: #D3202A; animation: mpGira 6s linear infinite; filter: drop-shadow(0 0 1px #0D0D0E); }
+/* encima del escudo, en su esquina de arriba a la izquierda */
+.esc.casa { position: relative; }
+.esc.casa > .casa-m { position: absolute; top: -5px; left: -5px; z-index: 3; }
+.hero-escs .esc.casa > .casa-m { width: 22px; height: 22px; top: -6px; left: -6px; }
 @media (prefers-reduced-motion: reduce) { .casa-m svg { animation: none; } }
 /* festivos, cumpleaños y cambios de hora: borde discontinuo */
 .cal-ev { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; border: 1px dashed #5A4320; color: #F4F4F5; }
