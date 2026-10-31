@@ -4021,8 +4021,8 @@
   }
   // estado del marcador en el segundo t del vídeo: goles (cada uno cuenta al irse su rótulo), reloj y expulsiones vigentes
   function estadoTV(t) {
-    const M = TV.relojM || TV.marcas.filter(x => !x.desc), dur = TV.dur, a2 = M.find(x => x.ancla && x.p === 2), goles = { L: 0, V: 0 };
-    M.forEach(x => { if (x.e && x.e.tipo === 'GOL' && t >= x.s - ANTES_ROT + durRot(x)) goles[x.e.lado]++; });
+    const todas = TV.relojM || TV.marcas.filter(x => !x.desc), M = todas.filter(x => !x.est), dur = TV.dur, a2 = M.find(x => x.ancla && x.p === 2), goles = { L: 0, V: 0 };
+    todas.forEach(x => { if (x.e && x.e.tipo === 'GOL' && t >= (x.est ? x.s : x.s - ANTES_ROT + durRot(x))) goles[x.e.lado]++; });   // los no marcados, sin rótulo
     const antes = M.filter(x => x.s <= t), u = antes[antes.length - 1];
     if (!u) return { goles, fase: 'previa', reloj: { tx: '' }, pildora: '' };
     if (u.p === 3) { const ult = M.filter(x => x.pen).pop(), fin = ult && t > ult.s + 6; return { goles, fase: fin ? 'final' : 'penaltis', reloj: { tx: fin ? 'FINAL' : 'PENALTIS' }, pildora: '' }; }
@@ -4128,8 +4128,26 @@
         return { s: x.s, G: (x.p - 1) * dur + (segs(x.t) || 0), p: x.p, e: (S.eventos || []).find(e => e.id === id) };
       }).filter(x => x.e || x.pen))
       .sort((a, b) => a.s - b.s);
+    // vídeo que empieza con la parte ya empezada: si de la marca de inicio a la jugada siguiente pasa menos vídeo que juego
+    // (imposible), el inicio marcado es en realidad el arranque del vídeo y el reloj sale en el minuto que toca
+    const pares = []; todas.forEach((x, i) => { const y = todas[i + 1]; if (y && y.p === x.p && y.G > x.G && (y.s - x.s) >= (y.G - x.G) * 0.8) pares.push([y.s - x.s, y.G - x.G]); });
+    const ritmo = pares.length ? pares.reduce((a, q) => a + q[0], 0) / pares.reduce((a, q) => a + q[1], 0) : RITMO_VIDEO;
+    todas.filter(x => x.ancla && x.p < 3).forEach(x => { const y = todas.find(z => z.p === x.p && !z.ancla && z.s > x.s);
+      if (y && (y.s - x.s) < (y.G - x.G) * 0.8) x.G = Math.max(x.G, y.G - (y.s - x.s) / ritmo); });
+    // goles del acta que no se marcaron (no salen en el vídeo): no son jugada, pero el marcador los cuenta igual, en el
+    // segundo que les tocaría según el reloj de juego entre las marcas de su parte
+    const marcados = new Set(Object.keys(v.ev || {}));
+    (S.eventos || []).filter(e => e.tipo === 'GOL' && e.id && (e.periodo === 1 || e.periodo === 2) && !marcados.has(e.id)).forEach(e => {
+      const G = (e.periodo - 1) * dur + (segs(e.t) || 0), M = todas.filter(x => x.p === e.periodo && !x.est);
+      const a = M.filter(x => x.G <= G).pop(), b = M.find(x => x.G >= G);
+      let s = a && b ? a.s + (G - a.G) * (b.s - a.s) / Math.max(1, b.G - a.G) : a ? a.s + (G - a.G) * RITMO_VIDEO : b ? b.s - (b.G - G) * RITMO_VIDEO : null;
+      if (s == null) return;
+      if (v.yt2) s = e.periodo === 2 ? Math.max(VID2, s) : Math.min(VID2 - 1, s);
+      todas.push({ s, G, p: e.periodo, e, est: true });
+    });
+    todas.sort((a, b) => a.s - b.s);
     // los tiempos muertos no salen en el resumen (no aportan, lo pidió el usuario); sus marcas solo afinan el reloj
-    const marcas = todas.filter(x => !(x.e && x.e.tipo === 'TIEMPO MUERTO'));
+    const marcas = todas.filter(x => !x.est && !(x.e && x.e.tipo === 'TIEMPO MUERTO'));
     // el descanso: la tarjeta con los goleadores, unos segundos antes de la 2.ª parte (si hay hueco tras la 1.ª)
     const ult1 = Math.max(partes[1] || 0, ...marcas.filter(x => x.p === 1).map(x => x.s));
     if (partes[2] != null && partes[2] - 6 > ult1 + 10) { marcas.push({ s: v.yt2 ? Math.max(VID2, partes[2] - 6) : partes[2] - 6, p: 1, desc: true }); marcas.sort((a, b) => a.s - b.s); }
@@ -4501,7 +4519,7 @@
     SY.S = S;
     cargarVideos().then(() => setTimeout(() => arrancarSync(idp), 0));
     return `<div class="sy"><div class="lab" style="color:#FF6B63">SINCRONIZAR VÍDEO</div><h1>${esc(S.local)} <span>${S.gl ?? ''}–${S.gv ?? ''}</span> ${esc(S.visitante)}</h1>
-      <p class="sy-ayuda">1. Pega el enlace de YouTube y pulsa «Cargar». Si el partido se grabó en dos vídeos, pon el de la 2.ª parte en el segundo campo: la herramienta cambia de vídeo sola al llegar a la 2.ª parte. 2. Para cada jugada el vídeo salta a unos segundos antes de cuando debería ser: dale al play y pulsa <b>¡Ahora!</b> justo cuando pasa (el gol entra, el árbitro pita la expulsión…). Si no se ve, «Saltar». En los goles, si se ve bien, toca en el dibujo desde dónde se tiró y marca quién de los nuestros estaba en pista (es opcional). 3. Al final copia el código y pásamelo.</p>
+      <p class="sy-ayuda">1. Pega el enlace de YouTube y pulsa «Cargar». Si el partido se grabó en dos vídeos, pon el de la 2.ª parte en el segundo campo: la herramienta cambia de vídeo sola al llegar a la 2.ª parte. 2. Para cada jugada el vídeo salta a unos segundos antes de cuando debería ser: dale al play y pulsa <b>¡Ahora!</b> justo cuando pasa (el gol entra, el árbitro pita la expulsión…). Si no se ve (o el vídeo no lo tiene), «Saltar»: el marcador del resumen lo cuenta igual. En los goles, si se ve bien, toca en el dibujo desde dónde se tiró y marca quién de los nuestros estaba en pista (es opcional). 3. Al final copia el código y pásamelo.</p>
       <div class="sy-form"><input id="sy-url" type="url" placeholder="Enlace de YouTube (https://youtu.be/…)" aria-label="Enlace de YouTube"><input id="sy-url2" type="url" placeholder="2.ª parte, si es otro vídeo (opcional)" aria-label="Enlace de YouTube de la 2.ª parte, si es otro vídeo"><input id="sy-canal" type="text" placeholder="Canal (opcional)" aria-label="Canal de YouTube"><button type="button" class="dv-alin" data-sy="cargar">Cargar</button></div>
       <div class="an-togs" style="margin-top:14px">${anTog(SY.modo === 'jugadas', 'data-sy="modo" data-m="jugadas"', 'Jugadas del acta')}${anTog(SY.modo === 'tiros', 'data-sy="modo" data-m="tiros"', 'Modo tiros')}</div>
       <div class="sy-cols"><div><div class="sy-marco"><div id="sy-player"></div></div>
