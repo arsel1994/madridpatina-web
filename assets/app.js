@@ -4148,12 +4148,24 @@
       if (v.yt2) s = e.periodo === 2 ? Math.max(VID2, s) : Math.min(VID2 - 1, s);
       todas.push({ s, G, p: e.periodo, e, est: true });
     });
-    todas.sort((a, b) => a.s - b.s);
+    todas.sort((a, b) => a.s - b.s || a.G - b.G);
+    // las no marcadas que caen juntas (o encima de otra jugada) van seguidas, una detrás de otra, con el vídeo corriendo:
+    // cada una empieza cuando acaba la anterior, así no se repite el mismo trozo por cada jugada que falta
+    for (let n = 0; n < 6; n++) {
+      let fin = -Infinity, cambia = false;
+      todas.filter(x => !(x.e && x.e.tipo === 'TIEMPO MUERTO')).forEach(x => {
+        if (x.est && x.s < fin && !(v.yt2 && x.p === 1 && fin >= VID2)) { x.s = fin; cambia = true; }
+        fin = Math.max(fin, x.s + despues(x) + 0.6);
+      });
+      todas.sort((a, b) => a.s - b.s || a.G - b.G);
+      if (!cambia) break;
+    }
     // los tiempos muertos no salen en el resumen (no aportan, lo pidió el usuario); sus marcas solo afinan el reloj
     const marcas = todas.filter(x => !(x.e && x.e.tipo === 'TIEMPO MUERTO'));
     // el descanso: la tarjeta con los goleadores, unos segundos antes de la 2.ª parte (si hay hueco tras la 1.ª)
     const ult1 = Math.max(partes[1] || 0, ...marcas.filter(x => x.p === 1).map(x => x.s));
-    if (partes[2] != null && partes[2] - 6 > ult1 + 10) { marcas.push({ s: v.yt2 ? Math.max(VID2, partes[2] - 6) : partes[2] - 6, p: 1, desc: true }); marcas.sort((a, b) => a.s - b.s); }
+    const ini2 = partes[2] != null ? Math.min(partes[2], ...marcas.filter(x => x.p === 2).map(x => x.s)) : null;   // antes de cualquier jugada de la 2.ª
+    if (ini2 != null && ini2 - 6 > ult1 + 10) { marcas.push({ s: v.yt2 ? Math.max(VID2, ini2 - 6) : ini2 - 6, p: 1, desc: true }); marcas.sort((a, b) => a.s - b.s || (b.desc ? 1 : 0) - (a.desc ? 1 : 0)); }
     const modo = seg === 'entero' ? 'entero' : 'resumen';
     const desde = /^\d+$/.test(seg || '') ? Math.max(0, marcas.findIndex(x => x.s >= +seg)) : 0;   // desde un «▶»: esa jugada
     const saque = partes[1];   // presentación solo si se empieza por el principio y el vídeo trae calentamiento
