@@ -1047,7 +1047,8 @@ footer.pie { margin-top: 64px; padding-top: 20px; border-top: 1px solid #26262A;
 .lz-marc { position: absolute; left: 42px; top: 42px; height: 78px; display: flex; align-items: stretch; white-space: nowrap; opacity: 0; transform: translateY(-30px); transition: opacity .45s cubic-bezier(.33,1,.68,1), transform .45s cubic-bezier(.33,1,.68,1); }
 .lz-marc.on { opacity: 1; transform: none; }
 .lz-marc .caja { display: flex; border-radius: 9px; overflow: hidden; box-shadow: 0 8px 26px rgba(0,0,0,.35); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; line-height: 1; }
-.lz-marc .seg { display: flex; align-items: center; gap: 14px; flex: none; background: #0D0D0E; color: #F4F4F5; transition: background .3s, color .3s; }
+/* sin lo del .seg genérico (los botones segmentados): ni borde ni esquinas redondas, el marcador es una sola caja */
+.lz-marc .seg { display: flex; align-items: center; gap: 14px; flex: none; background: #0D0D0E; color: #F4F4F5; transition: background .3s, color .3s; border: 0; border-radius: 0; overflow: visible; }
 .lz-marc .seg.l { padding-left: 18px; border-left: 9px solid var(--c); }
 .lz-marc .seg.v { padding-right: 18px; background: #18181B; }
 .lz-marc .seg.gol { background: var(--c); color: var(--ink); }
@@ -3434,5 +3435,13 @@ html.galv-abierta { overflow: hidden; }
   opacity: 0; transition: opacity .5s; text-align: center; }
 .tv-marco.sin-img .lz-sinimg { opacity: 1; }
 .lz-sinimg .si-p { padding: 8px 18px; border-radius: 6px; background: #D3202A; color: #F4F4F5; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; letter-spacing: .14em; }
-.lz-sinimg .si-t { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 96px; line-height: .9; text-transform: uppercase; color: #F4F4F5; }
+.lz-sinimg .si-t { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 96px; line-height: .9; text-transform: uppercase; color: #F4F4F5; }
 .lz-sinimg .si-s { font-size: 32px; color: #A6A6AD; max-width: 1100px; }
+
+/* vídeo: fuera lo que traen las clases genéricas de la web (.top, .ini, .esc, .ct) a los rótulos con el mismo nombre de clase,
+   para que se vean como en el diseño (cabecera fija y con raya, letra Big Shoulders, escudo en círculo blanco, caja con raya roja) */
+.lz-rot.gol .top { position: static; z-index: auto; padding-top: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 0; }
+.lz-rot.ini { display: block; font-family: 'Figtree', sans-serif; font-weight: 600; }
+.lz-f .esc { display: block; border-radius: 0; box-shadow: none; }
+.lz-pres .ct { align-items: stretch; padding: 0 0 10px; border-radius: 0; border-left: 0; background: none; }
+.lz-pres .lab { font-size: inherit; font-weight: inherit; letter-spacing: normal; color: inherit; }

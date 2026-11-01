@@ -496,7 +496,7 @@
       // próximo partido de su equipo (o de cualquiera de sus equipos)
       const px = todos.find(m => !m.resultado && m.fecha >= hoy && (eqs.includes(m.e) || (m.otro && eqs.includes(m.otro))));
       const rival = px ? (px.derbi ? 'MP ' + (eqs.includes(px.e) ? px.otro : px.e).id : ours(px.local) ? px.vis : px.local) : '';
-      const prox = px ? `<a class="fav-l" href="${hPar(px.ligaId, px.j, px.local, px.vis)}"><span class="etq">Próximo partido</span><b>${esc(fdLarga(px.fecha))}${px.hora ? ' · ' + esc(px.hora) : ''}</b><span>Contra ${esc(rival)}</span></a>` : '';
+      const prox = px ? `<a class="fav-l" href="${hPar(px.ligaId, px.j, px.local, px.vis)}"><span class="etq">Próximo partido</span><b>${esc(fdLarga(px.fecha))}${px.hora ? '&nbsp;·&nbsp;' + esc(px.hora) : ''}</b><span>Contra ${esc(rival)}</span></a>` : '';
       // su último partido: resultado del equipo y lo que hizo
       const ux = (j.partidos || []).slice().reverse().find(x => A.partidos[x.mid]);
       let ult = '';
@@ -647,7 +647,7 @@
     // a vigilar: sus 3 jugadores con más puntos por partido (mapa de la liga) y su portero, en cromos con su foto (solo
     // adultos) y su dorsal; sin foto, las iniciales (rediseño/Cambios fotos rivales.md)
     const ML = MAPA && MAPA.ligas && MAPA.ligas[lid], FKx = idxFK();
-    const vig = !derbi && ML ? ML.jug.filter(y => y.eq === them).sort((a, b) => b.x - a.x).slice(0, 3).map(y => [y, (ARQ[y.arq] ? ARQ[y.arq][0] + ' · ' : '') + dec(y.gl.toFixed(1)) + ' g · ' + dec(y.al.toFixed(1)) + ' a por partido', dec(y.x.toFixed(1)), 'puntos/partido']) : [];
+    const vig = !derbi && ML ? ML.jug.filter(y => y.eq === them).sort((a, b) => b.x - a.x).slice(0, 3).map(y => [y, dec(y.gl.toFixed(1)) + ' g · ' + dec(y.al.toFixed(1)) + ' a por partido', dec(y.x.toFixed(1)), 'puntos/partido']) : [];
     const pt = !derbi && ML && (ML.por || []).filter(y => y.eq === them).sort((a, b) => b.pj - a.pj)[0];
     if (pt) vig.push([pt, 'Su portero · ' + pt.pj + ' partidos', dec(pt.pct.toFixed(1)) + '%', 'de paradas']);
     const vigilar = vig.length ? `<div class="tarjeta pv-b"><div class="etq">A vigilar</div><div class="pv-crs">${vig.map(([y, d, v, u]) => { const f = FKx.f[y.k], dr = FKx.d[y.k];
@@ -824,7 +824,7 @@
       panel: (k, html) => `<div class="subpanel" data-subpanel="${id}:${k}"${k === sel ? '' : ' hidden'}>${html}</div>` }; };
 
   /* ── Partido jugado (#/partido/<mid> · rediseño, fase 4): marcador y una frase, gráfico con pestañas (cómo fue · tiros),
-     pronóstico frente al resultado, la votación de la afición y, debajo, alineaciones, eventos y datos ── */
+     pronóstico frente al resultado y, debajo, alineaciones, eventos y datos ── */
   let PA_PEDIDO = false;
   function vPartido2(mid) {
     const p = A.partidos[mid]; if (!p) return vPartido(mid);
@@ -914,7 +914,7 @@
       ${p.mvp ? dato('Mejor del partido', esc(nomCorto(p.mvp) + ' · ' + (ours(p.mvp.equipo) ? nmC(p.mvp.equipo) : p.mvp.equipo) + ' · ' + p.mvp.motivo)) : ''}
       ${(p.staff_l || []).length ? dato('Cuerpo técnico · ' + esc(nmC(p.local)), esc(p.staff_l.join(' · '))) : ''}${(p.staff_v || []).length ? dato('Cuerpo técnico · ' + esc(nmC(p.visitante)), esc(p.staff_v.join(' · '))) : ''}</div>${mapasVideo(p)}`;
     const TB = pestanas('pa-tab', [['alin', 'Alineaciones'], ['ev', 'Eventos'], ['datos', 'Datos']], 'alin');
-    return `<div class="partido2">${cab}${grafico}${pron}${nuestro && p.idp && jugado ? `<div data-voto="${esc(p.mid)}"></div>` : ''}
+    return `<div class="partido2">${cab}${grafico}${pron}
       <div class="pa-tabs">${TB.nav}${TB.panel('alin', alineaciones)}${TB.panel('ev', evs ? `<div class="evs">${evs}</div>` : '<div class="pv-nota">El acta no trae eventos.</div>')}${TB.panel('datos', datos)}</div></div>`;
   }
   // lo marcado en el vídeo (#/sincronizar): tiros con su resultado o, si no, desde dónde fueron los goles
@@ -1668,7 +1668,6 @@
           <div style="display:flex;gap:3px;height:10px;margin-top:8px" data-grupo data-espera="1300"><div data-anim="mpWipe .6s" style="flex:${p.tl};background:${ours(p.local) ? RED : '#6B6B70'};border-radius:3px;transform-origin:right"></div><div data-anim="mpWipe .6s" style="flex:${p.tv};background:${ours(p.visitante) ? RED : '#6B6B70'};border-radius:3px;transform-origin:left"></div></div>
         </div>` : ''}
       </div>
-      ${p.nuestro && p.idp && p.gl != null ? `<div data-voto="${esc(p.mid)}"></div>` : ''}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-top:12px" data-grupo data-espera="1700">${side(p.local, p.gol_l, p.por_l, p.alin_l, p.staff_l, 0)}${side(p.visitante, p.gol_v, p.por_v, p.alin_v, p.staff_v, 100)}</div>
       ${info.length || eventos ? `<div class="card" style="margin-top:12px;padding:18px 20px">
         ${info.length ? `<div style="display:flex;gap:12px 32px;flex-wrap:wrap">${info.map(([k, v]) => `<div><div style="font-size:13px;font-weight:700;color:#A6A6AD">${k}</div><div style="font-weight:600;font-size:16px">${esc(v)}</div></div>`).join('')}</div>` : ''}
@@ -2658,8 +2657,8 @@
   }
 
 
-  /* ── Afición y banquillo: el servicio del directo en Vercel guarda votos, emojis, quién está en pista y los tiros que
-     graba el vigía (/api/voto, /api/reaccion, /api/pista, /api/tiros). Si el servicio no tiene almacén, todo esto se oculta. */
+  /* ── Afición y banquillo: el servicio del directo en Vercel guarda emojis, quién está en pista y los tiros que
+     graba el vigía (/api/reaccion, /api/pista, /api/tiros). Si el servicio no tiene almacén, todo esto se oculta. */
   const API = new URLSearchParams(location.search).get('api') === 'local' ? 'http://localhost:5193/api/' : 'https://madridpatina-directo.vercel.app/api/';
   const DISP = (() => { try { let d = localStorage.getItem('mp-disp'); if (!d) { d = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('mp-disp', d); } return d; }
     catch (e) { return 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); } })();
@@ -2699,60 +2698,12 @@
     REAC.t = Date.now();
     apiGet('reaccion?idp=' + encodeURIComponent(idp)).then(d => { if (d && d.reacciones) { REAC.idp = idp; REAC.datos = d; pintarReac(); } });
   }
-  document.addEventListener('mp-directo', () => { const m = /^#\/video\/([^/]+)/.exec(location.hash); if (!m) return; const idp = decodeURIComponent(m[1]); cargarReac(idp);
-    const sn = LIVE.snaps[idp]; if (sn && sn.estado === 'final') pintarVotoDirecto(idp, true); });
+  document.addEventListener('mp-directo', () => { const m = /^#\/video\/([^/]+)/.exec(location.hash); if (!m) return; const idp = decodeURIComponent(m[1]); cargarReac(idp); });
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-reac]'); if (!b || !REAC.datos) return;
     const k = b.dataset.reac; REAC.datos.reacciones[k] = (REAC.datos.reacciones[k] || 0) + 1; pintarReac();
     if (MOV) { const f = document.createElement('span'); f.className = 'an-flota'; f.textContent = (EMO.find(x => x[0] === k) || [])[1] || ''; const r = b.getBoundingClientRect();
       f.style.left = (r.left + r.width / 2) + 'px'; f.style.top = r.top + 'px'; document.body.appendChild(f); setTimeout(() => f.remove(), 1100); }
     apiPost('reaccion', { idp: REAC.idp, e: k, d: DISP }).then(d => { if (d && d.reacciones) { REAC.datos = d; pintarReac(); } }); });
-
-  // ── votación al mejor del partido (nuestros partidos; se vota hasta 7 días después) ──
-  function candidatos(p) {
-    const lados = [['l', p.local], ['v', p.visitante]].filter(([, n]) => ours(n));
-    return lados.flatMap(([s]) => ((s === 'l' ? p.alin_l : p.alin_v) || []).concat(s === 'l' ? p.por_l || [] : p.por_v || []))
-      .filter((x, i, xs) => x.k && xs.findIndex(y => y.k === x.k) === i).sort((a, b) => (+a.dorsal) - (+b.dorsal));
-  }
-  function votoHtml(p, d) {
-    const cand = candidatos(p); if (!cand.length) return '';
-    const mio = leeLS('mp-voto-' + p.idp, null), hoy = hoyISO(), dias = (Date.parse(hoy) - Date.parse(p.fecha)) / 864e5, abierta = dias <= 7;
-    const tot = d.total || 0;
-    if (!mio && abierta) return `${lab('¿QUIÉN FUE EL MEJOR?', 'margin-bottom:2px')}<div class="an-nota" style="margin-top:0">Vota a un jugador nuestro. Un voto por móvil; se puede votar hasta 7 días después del partido.${tot ? ` Ya han votado ${tot}.` : ''}</div>
-      <div class="an-togs">${cand.map(x => `<button type="button" class="an-tog" data-votar="${esc(x.k)}">#${esc(x.dorsal)} ${esc(corto(x))}</button>`).join('')}</div>`;
-    if (!tot) return '';
-    const orden = cand.map(x => [x, d.votos[x.k] || 0]).filter(([, n]) => n).sort((a, b) => b[1] - a[1]), mx = orden.length ? orden[0][1] : 1;
-    return `${lab('EL MEJOR DEL PARTIDO, SEGÚN LA AFICIÓN', 'margin-bottom:2px')}<div class="an-nota" style="margin-top:0">${tot} ${tot === 1 ? 'voto' : 'votos'}${mio === 'ya' ? ' · desde este móvil ya se había votado' : mio && cand.find(x => x.k === mio) ? ' · el tuyo: ' + esc(corto(cand.find(x => x.k === mio))) : ''}${abierta ? ' · se puede votar hasta 7 días después del partido' : ''}</div>
-      ${orden.slice(0, 6).map(([x, n]) => `<div class="an-voto"><span>#${esc(x.dorsal)} ${esc(corto(x))}</span><div class="bar"><i style="width:${(n / mx * 100).toFixed(1)}%"></i></div><b>${Math.round(n / tot * 100)} %</b></div>`).join('')}`;
-  }
-  // en el directo y en el resumen del acta: el partido de app.json si ya está; si no, la plantilla del acta (con su clave de la web)
-  function partidoVoto(idp) {
-    const p = Object.values(A.partidos).find(x => x.idp === idp); if (p) return p;
-    const sn = LIVE.snaps[idp] || (RSM.final && RSM.final.idp === idp && RSM.final); if (!sn || !sn.plantillas) return null;
-    const ctx = ctxDirecto(sn), lista = l => (ctx.mp[l] ? (sn.plantillas[l] || []).map(j => { const q = jugadorDe(ctx, l, j.id_player, j.dorsal); return q ? Object.assign({}, q, { dorsal: j.dorsal }) : null; }).filter(Boolean) : []);
-    return { idp, fecha: hoyISO(), local: ctx.nombre.L, visitante: ctx.nombre.V, alin_l: lista('L'), alin_v: lista('V'), por_l: [], por_v: [] };
-  }
-  function pintarVotoDirecto(idp, final) {
-    const el = view.querySelector(`[data-voto-directo="${idp}"]`); if (!el || !final || el.dataset.hecho) return;
-    const p = partidoVoto(idp); if (!p) return;
-    el.dataset.hecho = '1';
-    apiGet('voto?idp=' + encodeURIComponent(idp)).then(d => { if (!d) return; const h = votoHtml(p, d); if (h) { el.dataset.voto = '_' + idp; VOTO_P['_' + idp] = p; el.innerHTML = `<div class="card an-c" style="margin-top:12px">${h}</div>`; } });
-  }
-  const VOTO_P = {};   // partidos que aún no están en app.json (directo de hoy): los usa el voto
-  function rellenarVoto() {
-    const el = view.querySelector('[data-voto]'); if (!el) return;
-    const p = A.partidos[el.dataset.voto]; if (!p || !p.idp) { el.remove(); return; }
-    apiGet('voto?idp=' + encodeURIComponent(p.idp)).then(d => { if (!d) { el.remove(); return; } const h = votoHtml(p, d); if (h) el.innerHTML = `<div class="card an-c" style="margin-top:12px">${h}</div>`; else el.remove(); });
-  }
-  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-votar]'); if (!b) return;
-    const el = b.closest('[data-voto]'), p = el && (A.partidos[el.dataset.voto] || VOTO_P[el.dataset.voto]); if (!p) return;
-    el.querySelectorAll('[data-votar]').forEach(x => { x.disabled = true; });
-    apiPost('voto', { idp: p.idp, k: b.dataset.votar, d: DISP }).then(d => {
-      if (d && (d._st === 200 || d._st === 409 || d._st === 429)) { ponLS('mp-voto-' + p.idp, d._st === 200 ? b.dataset.votar : 'ya'); el.innerHTML = `<div class="card an-c" style="margin-top:12px">${votoHtml(p, d)}</div>`; }
-      else { el.querySelectorAll('[data-votar]').forEach(x => { x.disabled = false; }); } }); });
-
-  // ── tiros grabados por el vigía (antes de que el proceso semanal los publique en data/tiros.json) ──
-  const TIR_VIVO = {}, VIGIA_DESDE = '2026-10-23';   // el vigía en internet graba desde ese día
-  const tirosApi = idp => (idp in TIR_VIVO ? Promise.resolve(TIR_VIVO[idp]) : apiGet('tiros?idp=' + encodeURIComponent(idp)).then(d => (TIR_VIVO[idp] = d && d.s ? d : null)));
 
   /* ── Banquillo (#/banquillo/{idp}): el delegado apunta quién está en pista en cada gol, con líneas preparadas para ir rápido.
      Se guarda en el servicio con el PIN del banquillo; si no hay servicio, se queda en este móvil. ── */
@@ -3131,8 +3082,8 @@
       ${P('Vuelve a jugar el partido en unos segundos con los minutos del acta. Si tenemos los tiros minuto a minuto, el % de paradas de cada portero cambia con cada tiro; si no, sale al final, con el acta.')}
       ${H('Tiros a puerta minuto a minuto')}
       ${P('Durante el partido, el acta digital va subiendo los tiros que recibe cada portero cada uno o dos minutos. Desde octubre de 2026 los guardamos cada minuto y en la página del partido dibujamos los tiros de cada equipo. Como el acta no publica el reloj, el minuto lo estimamos con la hora de cada apunte (los goles, las faltas y los tiempos muertos sí llevan minuto), así que puede ir uno o dos minutos desviado. Si el acta deja de subir tiros un rato y luego los apunta de golpe, ese tramo sale en discontinuo.')}
-      ${H('La afición y el banquillo')}
-      ${lista(['<b>El mejor del partido</b>: en nuestros partidos se vota a un jugador nuestro hasta 7 días después. Un voto por móvil.', '<b>En pista</b>: en nuestros partidos, el delegado apunta desde el banquillo quién estaba en pista en cada gol, o lo marcamos después viendo el vídeo. Con eso sale en la ficha «En pista en los goles»: los goles de su equipo y los que encajó mientras jugaba. En los partidos con vídeo también marcamos desde dónde fue cada gol y, a veces, cada tiro (gol, parada, fuera o bloqueado).'])}`);
+      ${H('El banquillo')}
+      ${lista(['<b>En pista</b>: en nuestros partidos, el delegado apunta desde el banquillo quién estaba en pista en cada gol, o lo marcamos después viendo el vídeo. Con eso sale en la ficha «En pista en los goles»: los goles de su equipo y los que encajó mientras jugaba. En los partidos con vídeo también marcamos desde dónde fue cada gol y, a veces, cada tiro (gol, parada, fuera o bloqueado).'])}`);
 
     // 5 · ficha del jugador
     const ficha = sec('ficha', '05', 'FICHA DEL JUGADOR', 'Con el equipo', 'En la ficha de cada jugador nuestro, su peso en los goles del equipo. Sale la temporada más reciente en la que lleva 5 partidos o más.', `
@@ -3370,7 +3321,6 @@
     dibujar(view);
     rellenarComparar();
     rellenarVideoFicha();
-    rellenarVoto();
     rellenarPistaVivo();
     billetes(view);
     // con la intro delante, la web se anima al cerrarla
@@ -5807,7 +5757,6 @@
     const verRes = modo === 'resumen' ? '<button type="button" class="dv-alin" data-ver-resumen>▶ Resumen final</button>'
       : sn.estado === 'final' ? `<a class="dv-alin" href="#/directo/${encodeURIComponent(idp)}/resumen">▶ Ver resumen</a>` : '';
     cargarReac(idp, true);
-    setTimeout(() => pintarVotoDirecto(idp, modo === 'resumen' || sn.estado === 'final'), 0);
     const arriba = verRes + alinBtn(sn) + pistaChip(sn) + `<button type="button" class="dv-alin" data-wa="${esc(idp)}" title="Manda el marcador y el enlace del directo por WhatsApp">WhatsApp</button>`
       + (ctx.mp.L || ctx.mp.V ? `<a class="dv-alin" href="${TELEGRAM}" target="_blank" rel="noopener" title="Avisos de cada gol en el móvil">Avisos en Telegram</a>` : '');
     return `${arriba ? `<div class="dv-arriba">${arriba}</div>` : ''}${resumenHtml}<div class="dv">
@@ -5825,7 +5774,7 @@
         <div class="dv-lista"><div class="dv-lcab"><span>MINUTO A MINUTO <a class="dv-como" href="#/metodo/directo">¿qué significa cada aviso?</a></span><span data-dv="lcab">${cabLista(sn).replace(/^<span[^>]*>|<\/span>$/g, '')}</span></div>
           <div class="dv-filas" data-dv="filas">${filasHtml(ctx)}</div></div>
       </div>
-      <div class="dv-der" data-dv="der">${juegoHtml(ctx)}<div data-dv="reac" data-reac-caja="${esc(idp)}">${reacHtml(idp)}</div><div data-voto-directo="${esc(idp)}"></div><div data-dv="ficha">${fichaHtml(ctx)}</div><div style="display:flex;flex-direction:column;gap:8px" data-dv="hoy">${hoyHtml()}</div></div>
+      <div class="dv-der" data-dv="der">${juegoHtml(ctx)}<div data-dv="reac" data-reac-caja="${esc(idp)}">${reacHtml(idp)}</div><div data-dv="ficha">${fichaHtml(ctx)}</div><div style="display:flex;flex-direction:column;gap:8px" data-dv="hoy">${hoyHtml()}</div></div>
     </div>`;
   }
   function pintarMarcador() {
@@ -6301,6 +6250,16 @@
   function pendientesAdm() {   // cuántos apodos esperan en el buzón
     apiPost('apodo', { pin: leeLS('mp-pin', '') }).then(d => { if (d && d._st === 200 && d.pendientes) { ADM.pend = d.pendientes.length; const b = view.querySelector('[data-adm-pend]'); if (b) b.textContent = ADM.pend ? ADM.pend + (ADM.pend === 1 ? ' propuesta' : ' propuestas') : 'Nada pendiente'; } });
   }
+  // banquillo: los nuestros de hoy (del directo) y los 3 últimos jugados, por si se apunta después
+  function bqFilasAdm(ps) {
+    const hoy = Object.values(LIVE.snaps).filter(sn => { const c = ctxDirecto(sn); return (c.mp.L || c.mp.V) && sn.estado !== 'final' && !ps.some(m => m.idp === sn.idp); });
+    const fila = (idp, txt, info, chip) => `<div class="adm-p"><span class="adm-pt"><b>${txt}</b><span>${info}</span></span>${chip}<a class="btn s adm-b" href="#/banquillo/${encodeURIComponent(idp)}">Abrir</a></div>`;
+    return hoy.map(sn => fila(sn.idp, `${esc(mpAbr(sn.local))} ${sn.estado === 'directo' ? `${sn.gl ?? 0}–${sn.gv ?? 0}` : '–'} ${esc(mpAbr(sn.visitante))}`, 'Hoy' + (sn.hora ? ' · ' + esc(sn.hora) : '') + (sn.liga ? ' · ' + esc(sn.liga) : ''),
+      sn.estado === 'directo' ? '<span class="chip v">En juego</span>' : '<span class="chip neutro">Hoy</span>')).join('')
+      + ps.slice(0, 3).map(m => fila(m.idp, `${esc(mpAbr(m.local))} ${m.gl}–${m.gv} ${esc(mpAbr(m.visitante))}`, esc(fd(m.fecha)) + ' · ' + esc(m.ligaNombre || ''), '<span class="chip neutro">Jugado</span>')).join('');
+  }
+  document.addEventListener('mp-directo', () => { const c = location.hash.indexOf('#/admin') === 0 && view.querySelector('[data-adm-bq]');
+    if (c) c.innerHTML = bqFilasAdm(Object.values(A.partidos).filter(m => m.nuestro && m.idp && m.gl != null).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.hora || '').localeCompare(a.hora || ''))); });
   function vAdmin() {
     if (!esAdmin()) return `<div class="sy adm"><div class="cab-pag"><h1 class="h1">Herramientas del club</h1></div>
       <p class="sy-ayuda">Pon el PIN del club para activar las herramientas en este dispositivo. Solo hace falta una vez: luego tendrás el icono de la llave arriba.</p>
@@ -6317,6 +6276,9 @@
       <div class="adm-g">
         <a class="tarjeta adm-t" href="#/buzon"><span class="etq">Apodos</span><b>Buzón de apodos</b><span data-adm-pend>${ADM.pend == null ? 'Propuestas por aprobar' : ADM.pend ? ADM.pend + (ADM.pend === 1 ? ' propuesta' : ' propuestas') : 'Nada pendiente'}</span></a>
       </div>
+      <h2 class="h2" style="margin-top:28px">Banquillo</h2>
+      <p class="an-nota" style="margin-top:4px">Para el delegado: en cada gol, quién de los nuestros estaba en pista. Los partidos de hoy salen aquí en cuanto empiezan; también se puede apuntar después en los ya jugados.</p>
+      <div class="adm-ps" data-adm-bq>${bqFilasAdm(ps)}</div>
       <h2 class="h2" style="margin-top:28px">Vídeos de los partidos</h2>
       <p class="an-nota" style="margin-top:4px">Nuestros partidos jugados, los más recientes primero. «Añadir» abre la herramienta para sincronizar su vídeo.</p>
       <div class="adm-ps">${vistos.map(fila).join('')}</div>
