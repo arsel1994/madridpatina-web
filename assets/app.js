@@ -1047,7 +1047,7 @@
     const pares = yo && LM ? (esPor ? LM.por || [] : LM.jug).filter(x => x.k !== j.k && x.pj >= 5).map(x => [x, esPor ? Math.abs(x.pct - yo.pct) : Math.hypot((x.x - yo.x) * 10, x.y - yo.y)]).sort((p1, p2) => p1[1] - p2[1]).slice(0, 3) : [];
     const comparar = `<div class="dest">${pares.length ? 'Por cómo juega en ' + esc(LM.nombre || 'su liga') + ', se parece a:' : 'Necesitamos algunos partidos más para comparar.'}</div>
       ${pares.length ? `<div class="pares">${pares.map(([x]) => { const href = x.nuestro && A.jugadores[x.k] ? hP(x.k) : null; return `<${href ? `a href="${href}"` : 'div'} class="tarjeta par"><b>${esc(x.n + ' ' + x.a)}</b><span class="${ours(x.eq) ? 'mp' : ''}">${esc(ours(x.eq) ? etqEq(x.eq, e0.ligaId) : x.eq)}</span><span>${esPor ? dec(x.pct.toFixed(1)) + ' % de paradas' : dec(x.gl.toFixed(1)) + ' goles y ' + dec(x.al.toFixed(1)) + ' asist. por partido'}</span></${href ? 'a' : 'div'}>`; }).join('')}</div>` : ''}
-      ${esPor ? '' : `<div data-comparar="${esc(j.k)}"></div>`}`;
+      ${esPor ? '' : `<div data-comparar="${esc(j.k)}"></div><div data-elite="${esc(j.k)}"></div>`}`;
     // Partidos de esta temporada: el gráfico partido a partido, la lista y sus goles en vídeo
     const partidosF = (j.partidos || []).slice().reverse().map(x => { const p = A.partidos[x.mid]; if (!p) return '';
       const mio = [p.alin_l, p.por_l, p.gol_l].some(l => (l || []).some(y => y.k === j.k)) ? p.local : p.visitante, Rr = resLado(p, mio);
@@ -1515,11 +1515,11 @@
         .sort((a, b) => b.pj - a.pj);
       pEx = ex.length ? `<div class="pl-g" data-exg><div class="pl-t"><span class="h2">Han jugado con nosotros</span><span>${ex.length} exjugadores · por partidos</span></div><div class="cromos2">${ex.map((x, i) => x.h.replace('class="cromo"', `class="cromo" data-top="${i}"`)).join('')}</div></div>` : '<div class="pv-nota">Sin exjugadores.</div>';
     }
-    const T = pestanas('jug', [['plant', 'Plantillas'], ['mov', 'Movimientos'], ['ex', 'Exjugadores']], 'plant');
+    const T = pestanas('jug', [['plant', 'Plantillas'], ['mov', 'Movimientos'], ['ex', 'Exjugadores'], ['nac', 'Liga nacional']], 'plant');
     const vacio = k => `<div class="jg-vacio" data-vacio="${k}" hidden></div>`;
     return `<div class="jug2"><h1 class="h1">Jugadores</h1>
       <label class="jq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" id="jq" value="${esc(JQ)}" placeholder="Busca por nombre o dorsal" aria-label="Buscar jugador" autocomplete="off"><button type="button" class="jq-x" aria-label="Borrar"${JQ ? '' : ' hidden'}>✕</button></label>
-      ${apodoCta()}${T.nav}${T.panel('plant', vacio('plant') + pPlant)}${T.panel('mov', vacio('mov') + pMov)}${T.panel('ex', vacio('ex') + pEx)}</div>`;
+      ${apodoCta()}${T.nav}${T.panel('plant', vacio('plant') + pPlant)}${T.panel('mov', vacio('mov') + pMov)}${T.panel('ex', vacio('ex') + pEx)}${T.panel('nac', '<div data-nac><div class="carga" role="status" aria-label="Cargando"><div class="carga-tarjetas"><div class="sk"></div><div class="sk"></div></div></div></div>')}</div>`;
   }
   function filtrarJug() {
     const root = view.querySelector('.jug2'); if (!root) return;
@@ -1762,6 +1762,66 @@
     box.innerHTML = q.info; };
   document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('.mp-p'); if (c) infoMapa(c); });
   document.addEventListener('pointerover', e => { const c = e.target.closest && e.target.closest('.mp-p'); if (c && e.pointerType === 'mouse') infoMapa(c); });
+  /* ── Liga nacional (data/nacional.json, de scripts/rfep/nacional_web.py): los nuestros que juegan en una liga nacional,
+     la Élite con su arquetipo y, para cada jugador nuestro, el de la Élite que más se le parece en estilo ── */
+  let NAC = null, nacP = null;
+  const cargarNac = () => nacP || (nacP = fetch('data/nacional.json?v=' + encodeURIComponent(A.actualizado || ''))
+    .then(r => (r.ok ? r.json() : null)).then(d => (NAC = d)).catch(() => { nacP = null; return null; }));
+  const NIV_NOM = { elite: 'Liga Élite', oro: 'Liga Oro', plata: 'Liga Plata', challenger: 'Challenger League', elite_f: 'Liga Élite femenina', oro_f: 'Liga Oro femenina', plata_f: 'Liga Plata femenina' };
+  const fotoNac = (f, nom, cls) => `<span class="${cls}">${f ? `<span class="ph" data-bg="${esc(f)}"></span>` : `<span class="ini">${esc(ini((nom || '').split(' ')[0], (nom || '').split(' ').slice(1).join(' ')))}</span>`}</span>`;
+  // a quién de la Élite se parece (mismo estilo, sin mirar el nivel)
+  const eliteDe = k => { const p = NAC && NAC.parecidos && NAC.parecidos[k]; if (!p) return null; const r = (NAC.elite || []).find(x => x.id === p.ids[0]); return r ? { r, p } : null; };
+  function nacHtml() {
+    if (!NAC) return '<div class="pv-nota">No hemos podido cargar los datos de la liga nacional.</div>';
+    const nac = NAC.nacional || [], el = NAC.elite || [];
+    // 1 · los nuestros en la liga nacional
+    const tarj = x => { const ppg = x.pj ? x.pts / x.pj : 0, cm = x.con_mp;
+      return `<div class="tarjeta nc-j">${fotoNac(x.foto, x.nombre, 'nc-f')}<div class="nc-d"><span class="etq">${esc(NIV_NOM[x.nivel] || x.liga)} · ${esc(NAC.temporada || '')}</span><b class="nc-n">${esc(x.nombre)}</b><span class="nc-eq">${esc(x.equipo)}</span>
+        <div class="nc-k">${x.portero ? `<div><b class="cifra">${x.pj}</b><span>PJ</span></div>${x.paradas != null ? `<div><b class="cifra">${dec((x.paradas * 100).toFixed(1))}<small>%</small></b><span>paradas</span></div>` : ''}`
+          : `<div><b class="cifra">${x.pj}</b><span>PJ</span></div><div><b class="cifra">${x.g}</b><span>goles</span></div><div><b class="cifra">${x.a}</b><span>asist.</span></div><div><b class="cifra">${x.pts}</b><span>puntos</span></div>`}</div>
+        ${!x.portero && x.esperado_ppg != null && x.pj ? `<div class="nc-esp">${dec(ppg.toFixed(2))} puntos por partido · con lo que hacía con nosotros, lo esperado son unos ${dec(x.esperado_ppg.toFixed(2))}${x.pj < 6 ? ' (aún con pocos partidos)' : ''}</div>` : ''}
+        ${(x.ultimos || []).length ? `<div class="nc-ult"><span class="etq">Últimos partidos</span>${x.ultimos.slice().reverse().map(u => `<div><span>${esc(u.l)} <b>${esc(u.m)}</b> ${esc(u.v)}</span><i>${u.g || u.a ? [u.g ? u.g + ' G' : '', u.a ? u.a + ' A' : ''].filter(Boolean).join(' · ') : '—'}</i></div>`).join('')}</div>` : ''}
+        ${cm ? `<div class="nc-mp">Con nosotros: ${esc(cm.equipo.replace('MADRIDPATINA ', 'MP '))} hasta ${esc(cm.temporada)} · ${cm.pj} PJ · ${cm.g} G · ${cm.a} A</div>` : ''}</div></div>`; };
+    const pNac = `<div class="pl-g"><div class="pl-t"><span class="h2">Nuestros en la liga nacional</span><span>${nac.length ? nac.length + (nac.length === 1 ? ' jugador' : ' jugadores') + ' · ' + esc(NAC.temporada || '') : ''}</span></div>
+      ${nac.length ? `<p class="pv-nota" style="margin-top:0">Quien ha jugado con MADRIDPATINA y esta temporada juega en una liga de la Real Federación Española de Patinaje. Lo esperado sale de sus puntos con nosotros pasados a su liga con el <a href="#/metodo/niveles">nivel de las ligas</a>.</p><div class="nc-js">${nac.map(tarj).join('')}</div>`
+        : '<p class="pv-nota" style="margin-top:0">Esta temporada no hay nadie de MADRIDPATINA en las ligas nacionales.</p>'}</div>`;
+    // 2 · a quién de la Élite se parece cada uno de los nuestros
+    const nuestros = Object.keys(NAC.parecidos || {}).map(k => [A.jugadores[k], eliteDe(k)]).filter(([j, e]) => j && e);
+    const eqOrd = ['A', 'B', 'C', 'D'], eqDe = j => (equiposDe(j)[0] || {}).id;
+    nuestros.sort((x, y) => eqOrd.indexOf(eqDe(x[0])) - eqOrd.indexOf(eqDe(y[0])) || (y[1].p.px || 0) - (x[1].p.px || 0));
+    const fila = ([j, { r }]) => `<a class="nc-par" href="${hP(j.k)}"><span class="nc-yo"><b>${esc(corto(j))}</b><span>${esc(mpCorto(equiposDe(j)[0] || {}) || '')}</span></span><i aria-hidden="true">→</i>
+      ${fotoNac(r.foto, r.n + ' ' + r.a, 'nc-pf')}<span class="nc-el"><b>${esc(r.n + ' ' + r.a)}</b><span>${esc(r.eqn || r.eq)}</span>${chipArq(r.arq, false)}</span></a>`;
+    // 3 · el mapa de la Élite (estilo): puesto en su liga por puntos y % de goles; los nuestros encima, en rojo
+    const W = 600, Hh = 340, px = v => 40 + v / 100 * (W - 60), py = v => 20 + (100 - v) / 100 * (Hh - 60);
+    const pts = el.map(r => `<circle cx="${px(r.px).toFixed(1)}" cy="${py(r.y).toFixed(1)}" r="5" class="e"><title>${esc(r.n + ' ' + r.a + ' · ' + (r.eqn || r.eq) + (ARQ[r.arq] ? ' · ' + ARQ[r.arq][0] : ''))}</title></circle>`).join('')
+      + nuestros.map(([j, { p }]) => `<circle cx="${px(p.px).toFixed(1)}" cy="${py(p.y || 0).toFixed(1)}" r="6" class="n"><title>${esc(corto(j) + ' · ' + (mpCorto(equiposDe(j)[0] || {}) || ''))}</title></circle>`).join('');
+    const mapa = el.length ? `<div class="tarjeta nc-mapa"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Mapa de estilo de la Liga Élite con nuestros jugadores">
+        <line x1="40" y1="${Hh - 40}" x2="${W - 20}" y2="${Hh - 40}" class="ax"/><line x1="40" y1="20" x2="40" y2="${Hh - 40}" class="ax"/>
+        <line x1="${px(50)}" y1="20" x2="${px(50)}" y2="${Hh - 40}" class="md"/><line x1="40" y1="${py(50)}" x2="${W - 20}" y2="${py(50)}" class="md"/>
+        <text x="${W - 20}" y="${Hh - 14}" text-anchor="end">más puntos en su liga →</text><text transform="translate(8 20) rotate(-90)" text-anchor="end" dominant-baseline="hanging">más goles que asistencias →</text>
+        <text x="${px(98)}" y="34" text-anchor="end" class="q">GOLEADORES</text><text x="${px(98)}" y="${Hh - 50}" text-anchor="end" class="q">PASADORES</text>${pts}</svg>
+      <div class="mt-leyenda"><span><i class="nc-le e"></i>Liga Élite masculina</span><span><i class="nc-le n"></i>nuestros jugadores</span></div></div>` : '';
+    const pEl = nuestros.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">En la Élite se parecen a…</span><span>${nuestros.length} jugadores</span></div>
+      <p class="pv-nota" style="margin-top:0">Por estilo, no por nivel: cada uno con el jugador de la Liga Élite que ocupa un sitio parecido en su liga. Se miran su puesto por puntos por partido, cuántos de sus puntos son goles, su parte en los goles de su equipo y la sanción. En el mapa, a la derecha los que más puntos hacen en su liga y arriba los más goleadores.</p>
+      ${mapa}<div class="nc-pars">${nuestros.map(fila).join('')}</div></div>` : '';
+    return pNac + pEl;
+  }
+  function rellenarNac() {
+    const el = view.querySelector('[data-nac]'); if (!el) return;
+    const pon = () => { el.innerHTML = nacHtml(); fondos(el); };
+    if (NAC) pon(); else cargarNac().then(pon);
+  }
+  // en la ficha (Comparar): «En la Élite se parece a…»
+  function rellenarEliteFicha() {
+    const el = view.querySelector('[data-elite]'); if (!el) return;
+    const pon = () => { const e = eliteDe(el.dataset.elite); if (!e) { el.remove(); return; } const { r, p } = e;
+      el.innerHTML = `<div class="dest" style="margin-top:6px">En la Liga Élite, por estilo, se parece a:</div>
+        <div class="tarjeta nc-ficha">${fotoNac(r.foto, r.n + ' ' + r.a, 'nc-pf')}<div><b>${esc(r.n + ' ' + r.a)}</b><span>${esc(r.eqn || r.eq)} · ${r.pj} PJ · ${r.g} G · ${r.as} A</span>${chipArq(r.arq, false)}</div></div>
+        <div class="pv-nota">Los dos en un sitio parecido de su liga: puesto por puntos por partido (${p.px} de 100 frente a ${r.px}), ${p.y != null ? p.y + ' % y ' + r.y + ' % de sus puntos son goles' : 'goles frente a asistencias'}, parte en los goles del equipo y sanción. No compara el nivel: para eso, el <a href="#/metodo/niveles">nivel de las ligas</a>.</div>`;
+      fondos(el); };
+    if (NAC) pon(); else cargarNac().then(pon);
+  }
+
   // «Se parece a» en la ficha: llega con mapa.json (se pide al abrir la ficha)
   function rellenarArquetipo() {
     const el = view.querySelector('[data-arquetipo]'); if (!el) return;
@@ -3362,6 +3422,8 @@
     rodillos(view);
     rellenarParecidos();
     rellenarArquetipo();
+    rellenarNac();
+    rellenarEliteFicha();
     rellenarPerfiles();
     rellenarGraficoPartido();
     rellenarTirosPartido();

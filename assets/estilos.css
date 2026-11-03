@@ -3482,3 +3482,44 @@ html.galv-abierta { overflow: hidden; }
 .nv-cat .nv-esc { margin-top: 8px; }
 .nv-cat .nv-f { grid-template-columns: 0 minmax(118px, 190px) minmax(0, 1fr) 52px; }
 @media (max-width: 520px) { .nv-cat .nv-f { grid-template-columns: 0 minmax(0, 1fr) 46px; } }
+
+/* Jugadores · Liga nacional: los nuestros en la nacional, el mapa de la Élite y a quién se parece cada uno */
+.nc-js { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 12px; }
+.nc-j { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 14px; align-items: start; }
+.nc-f, .nc-pf { position: relative; display: block; overflow: hidden; border-radius: 8px; background: #26262A; aspect-ratio: 3 / 4; }
+.nc-f .ph, .nc-pf .ph { position: absolute; inset: 0; background: center 20% / cover no-repeat; }
+.nc-f .ini, .nc-pf .ini { position: absolute; inset: 0; display: grid; place-items: center; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 28px; color: #55555B; }
+.nc-d { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nc-n { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 24px; line-height: 1; text-transform: uppercase; }
+.nc-eq { font-size: 14px; color: #C9C9CE; }
+.nc-k { display: flex; gap: 22px; margin-top: 6px; }
+.nc-k div { min-width: 34px; }
+.nc-k div { display: flex; flex-direction: column; }
+.nc-k b { font-size: 26px; line-height: 1; }
+.nc-k span { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: #A6A6AD; text-transform: uppercase; }
+.nc-esp, .nc-mp { margin-top: 6px; font-size: 13px; line-height: 1.4; color: #A6A6AD; }
+.nc-ult { display: grid; gap: 3px; margin-top: 8px; font-size: 13px; }
+.nc-ult div { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid #26262A; }
+.nc-ult i { font-style: normal; font-weight: 700; color: #F4F4F5; white-space: nowrap; }
+.nc-mapa { max-width: 760px; margin-bottom: 12px; }
+.nc-mapa svg { display: block; width: 100%; height: auto; }
+.nc-mapa .ax { stroke: #3A3A40; stroke-width: 1; }
+.nc-mapa .md { stroke: #26262A; stroke-width: 1; stroke-dasharray: 4 4; }
+.nc-mapa text { fill: #A6A6AD; font-size: 12px; }
+.nc-mapa text.q { fill: #55555B; font-size: 11px; font-weight: 700; letter-spacing: .12em; }
+.nc-mapa circle.e { fill: #6B6B70; fill-opacity: .75; }
+.nc-mapa circle.n { fill: #D3202A; stroke: #F4F4F5; stroke-width: 1.5; }
+.nc-le { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; margin-right: 6px; }
+.nc-le.e { background: #6B6B70; } .nc-le.n { background: #D3202A; }
+.nc-pars { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 8px; }
+.nc-par { display: grid; grid-template-columns: minmax(0, 1fr) 16px 54px minmax(0, 1.3fr); gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; background: #18181B; color: #F4F4F5; text-decoration: none; }
+.nc-par:hover { background: #1E1E22; }
+.nc-par > i { font-style: normal; color: #55555B; }
+.nc-yo, .nc-el { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.nc-yo b, .nc-el b { font-weight: 700; font-size: 15px; line-height: 1.15; }
+.nc-yo span, .nc-el > span { font-size: 12px; color: #A6A6AD; }
+.nc-el > span:last-child { align-self: flex-start; }
+.nc-ficha { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; margin: 8px 0; }
+.nc-ficha div { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.nc-ficha b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; line-height: 1; text-transform: uppercase; }
+.nc-ficha span { font-size: 13px; color: #A6A6AD; }
