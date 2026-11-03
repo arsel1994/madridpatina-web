@@ -3130,13 +3130,23 @@
       return `<div class="nv-f${amb === 'Madrid' ? ' mad' : ''}"><span class="nv-n">${i + 1}</span><div class="nv-t"><b>${nom}${x.provisional ? '*' : ''}</b><span><i class="nv-c ${amb === 'Madrid' ? 'm' : 'e'}">${amb}</i>${gen}</span></div>
         <div class="nv-b"><i style="width:${w}%" data-anim="mpWipe .7s cubic-bezier(.2,.8,.2,1)"></i>${x.p10 != null && x.p90 != null && !x.provisional && k !== filasN[0][0] ? `<i class="rg" style="left:${x.p10 / maxN * 100}%;width:${(x.p90 - x.p10) / maxN * 100}%"></i>` : ''}</div>
         <div class="nv-v">${k === 'S1' ? '1' : fx(x.f / s1, x.f / s1 >= 10 ? 0 : x.f / s1 >= 1 ? 1 : 2)}</div></div>`; }).join('');
+    // cantera: cada categoría en su escala, frente a la liga de Madrid de esa categoría
+    const CA = R.cantera || {}, catN = [['alevin', 'Alevín'], ['infantil', 'Infantil'], ['juvenil', 'Juvenil']].filter(([k]) => CA[k] && Object.keys(CA[k].factores || {}).length > 1);
+    const canteraN = catN.length ? H('Cantera') + `<p class="mt-p">Cada categoría va en su propia escala. La cifra dice cuántos puntos de la liga de Madrid de esa categoría vale un punto hecho en la liga nacional. Aquí solo cuentan quienes juegan las dos ligas la misma temporada: de un año a otro un chaval cambia mucho y eso se mezclaría con el nivel de la liga.</p>`
+      + catN.map(([k, nom]) => { const fc = CA[k].factores, ls = Object.keys(fc).sort((a, b) => fc[b].f - fc[a].f), mx = Math.max(...ls.map(L => Math.max(fc[L].f, fc[L].p90 || 0)));
+        return `<div class="nv-cat"><div class="nv-ck"><b>${nom}</b><span>${CA[k].casos} casos de ${CA[k].jugadores} jugadores</span></div><div class="nv-esc">${ls.map(L => { const x = fc[L], mad = L.startsWith('mad_');
+          return `<div class="nv-f${mad ? ' mad' : ''}"><span class="nv-n"></span><div class="nv-t"><b>${mad ? 'Liga ' + nom : (L.startsWith('elite') ? 'Liga Élite ' : 'Liga Oro ') + nom}</b><span><i class="nv-c ${mad ? 'm' : 'e'}">${mad ? 'Madrid' : 'España'}</i></span></div>
+            <div class="nv-b"><i style="width:${Math.max(1.2, x.f / mx * 100)}%" data-anim="mpWipe .7s cubic-bezier(.2,.8,.2,1)"></i>${!mad && x.p10 != null ? `<i class="rg" style="left:${x.p10 / mx * 100}%;width:${(x.p90 - x.p10) / mx * 100}%"></i>` : ''}</div>
+            <div class="nv-v">${mad ? '1' : fx(x.f, 1)}</div></div>`; }).join('')}</div></div>`; }).join('')
+      + `<p class="mt-nota">En Madrid, la liga de cada categoría cuenta con todos sus grupos juntos, porque el formato cambia casi cada temporada. De ${R.cantera_desde || '—'} a ${R.cantera_hasta || '—'}. Júnior no tiene liga nacional.</p>` : '';
     const opcN = filasN.map(([k, nom, amb, gen]) => `<option value="${k}"${k === 'S1' ? ' selected' : ''}>${nom} · ${amb === 'Madrid' ? 'Madrid' : 'España'}${gen === 'mixta' ? '' : ' · ' + gen}</option>`).join('');
-    const niveles = filasN.length ? sec('niveles', '08', 'NIVEL DE LAS LIGAS', 'Dónde está cada liga de España y de Madrid', 'Las ligas nacionales de la Real Federación Española de Patinaje y las de Madrid, masculinas, femeninas y mixtas, en una misma escala. Así se ve qué nivel tiene cada una frente a las demás.', `
+    const niveles = filasN.length ? sec('niveles', '08', 'NIVEL DE LAS LIGAS', 'Dónde está cada liga de España y de Madrid', 'Las ligas nacionales de la Real Federación Española de Patinaje y las de Madrid, masculinas, femeninas y mixtas, en una misma escala. Así se ve qué nivel tiene cada una frente a las demás. Más abajo, la cantera.', `
       ${H('De más a menos nivel')}
       <p class="mt-p">La cifra de la derecha es cuántos puntos de Senior 1 vale un punto hecho en esa liga. Por ejemplo, un punto en la Liga Oro vale como ${fx(rfac.oro ? rfac.oro.f / s1 : 0, 1)} en Senior 1.</p>
       <div class="nv-esc">${escalera}</div>
       <div class="mt-leyenda"><span><i class="l1" style="background:#6B6B70"></i>liga nacional</span><span><i class="l1"></i>liga de Madrid</span><span><i class="l2"></i>margen: si repetimos la cuenta con otros jugadores sacados al azar, 8 de cada 10 veces cae en esta franja</span></div>
       ${rfac.S4 && rfac.S4.provisional ? '<p class="mt-nota">* Senior 4 empezó en 2026/27 y aún no tiene datos propios: usa el nivel de la antigua Senior 3, como en el FMPe.</p>' : ''}
+      ${canteraN}
       ${H('Compara')}
       <p class="mt-p">Elige una liga y unos puntos: debajo sale cuántos serían, en los mismos partidos, en cada una de las demás.</p>
       <div class="nv-comp" data-nv><label><span>Liga</span><select data-nv="liga">${opcN}</select></label><label><span>Puntos</span><input data-nv="pts" type="number" inputmode="numeric" min="0" max="999" value="20"></label></div>
