@@ -3187,7 +3187,7 @@
     const filasN = s1 ? NIV_LIGAS.filter(([k]) => rfac[k]).sort((a, b) => rfac[b[0]].f - rfac[a[0]].f) : [];
     const maxN = filasN.length ? rfac[filasN[0][0]].f : 1;
     const escalera = filasN.map(([k, nom, amb, gen], i) => { const x = rfac[k], w = Math.max(1.2, x.f / maxN * 100);
-      return `<div class="nv-f${amb === 'Madrid' ? ' mad' : ''}"><span class="nv-n">${i + 1}</span><div class="nv-t"><b>${nom}${x.provisional ? '*' : ''}</b><span><i class="nv-c ${amb === 'Madrid' ? 'm' : 'e'}">${amb}</i>${gen}</span></div>
+      return `<div class="nv-f${amb === 'Madrid' ? ' mad' : ''}"><span class="nv-n">${i + 1}</span><div class="nv-t"><b>${nom}${x.provisional ? '*' : ''}</b><span><i class="nv-c ${amb === 'Madrid' ? 'm' : amb === 'España' ? 'e' : 'r'}">${amb}</i>${gen}</span></div>
         <div class="nv-b"><i style="width:${w}%" data-anim="mpWipe .7s cubic-bezier(.2,.8,.2,1)"></i>${x.p10 != null && x.p90 != null && !x.provisional && k !== filasN[0][0] ? `<i class="rg" style="left:${x.p10 / maxN * 100}%;width:${(x.p90 - x.p10) / maxN * 100}%"></i>` : ''}</div>
         <div class="nv-v">${k === 'S1' ? '1' : fx(x.f / s1, x.f / s1 >= 10 ? 0 : x.f / s1 >= 1 ? 1 : 2)}</div></div>`; }).join('');
     // cantera: cada categoría en su escala, frente a la liga de Madrid de esa categoría
@@ -3199,8 +3199,8 @@
             <div class="nv-b"><i style="width:${Math.max(1.2, x.f / mx * 100)}%" data-anim="mpWipe .7s cubic-bezier(.2,.8,.2,1)"></i>${!mad && x.p10 != null ? `<i class="rg" style="left:${x.p10 / mx * 100}%;width:${(x.p90 - x.p10) / mx * 100}%"></i>` : ''}</div>
             <div class="nv-v">${mad ? '1' : fx(x.f, 1)}</div></div>`; }).join('')}</div></div>`; }).join('')
       + `<p class="mt-nota">En Madrid, la liga de cada categoría cuenta con todos sus grupos juntos, porque el formato cambia casi cada temporada. De ${R.cantera_desde || '—'} a ${R.cantera_hasta || '—'}. Júnior no tiene liga nacional.</p>` : '';
-    const opcN = filasN.map(([k, nom, amb, gen]) => `<option value="${k}"${k === 'S1' ? ' selected' : ''}>${nom} · ${amb === 'Madrid' ? 'Madrid' : 'España'}${gen === 'mixta' ? '' : ' · ' + gen}</option>`).join('');
-    const niveles = filasN.length ? sec('niveles', '08', 'NIVEL DE LAS LIGAS', 'Dónde está cada liga de España y de Madrid', 'Las ligas nacionales de la Real Federación Española de Patinaje y las de Madrid, masculinas, femeninas y mixtas, en una misma escala. Así se ve qué nivel tiene cada una frente a las demás. Más abajo, la cantera.', `
+    const opcN = filasN.map(([k, nom, amb, gen]) => `<option value="${k}"${k === 'S1' ? ' selected' : ''}>${nom} · ${amb}${gen === 'mixta' ? '' : ' · ' + gen}</option>`).join('');
+    const niveles = filasN.length ? sec('niveles', '08', 'NIVEL DE LAS LIGAS', 'Dónde está cada liga de España y de Madrid', 'Las ligas nacionales de la Real Federación Española de Patinaje, las de Madrid y las autonómicas que publican sus datos, masculinas, femeninas y mixtas, en una misma escala. Así se ve qué nivel tiene cada una frente a las demás. Más abajo, la cantera.', `
       ${H('De más a menos nivel')}
       <p class="mt-p">La cifra de la derecha es cuántos puntos de Senior 1 vale un punto hecho en esa liga. Por ejemplo, un punto en la Liga Oro vale como ${fx(rfac.oro ? rfac.oro.f / s1 : 0, 1)} en Senior 1.</p>
       <div class="nv-esc">${escalera}</div>
@@ -3214,6 +3214,7 @@
       ${H('Cómo se calcula')}
       ${P(`Igual que el FMPe: con los jugadores de campo que han jugado en dos ligas, la misma temporada o en temporadas seguidas. Como es la misma persona, la diferencia entre sus puntos por partido en cada liga dice cuánto más difícil es una que otra. Usamos <b>${R.casos || '—'} casos de ${R.jugadores || '—'} jugadores</b>, de ${R.desde || '—'} a ${R.hasta || '—'}.`)}
       ${P('Los datos de las ligas nacionales salen de la web de la Real Federación Española de Patinaje. A cada jugador lo unimos con su ficha de Madrid por el nombre y la fecha de nacimiento.')}
+      ${P('Las ligas autonómicas salen de la web de cada federación, y entran por quienes juegan también una liga nacional: los unimos por el nombre completo, solo cuando no hay duda. Solo sale una liga autonómica cuando tiene bastantes casos; de momento, la del País Vasco, que publica sus datos desde 2024/25.')}
       ${P('Las ligas femeninas entran en la misma escala gracias a las jugadoras que juegan también en las ligas de Madrid. Se puede comprobar por varios caminos: el nivel de la Senior Femenina sale igual frente a Senior 1, a Senior 2 y a Senior 3.')}
       <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['Quien juega una liga nacional y también en Madrid suele hacerlo en el equipo filial, donde tiene más peso en el juego. Eso puede agrandar algo la distancia entre las ligas nacionales y las de Madrid', 'Solo cuentan las ligas regulares: ni copas ni fases de ascenso', 'Mide puntos (goles y asistencias); no la defensa ni nada que no esté en el acta', 'No se calcula para porteros'], '!')}</div>`) : '';
 
@@ -3233,7 +3234,14 @@
   const NIV_LIGAS = [['elite', 'Liga Élite', 'España', 'masculina'], ['oro', 'Liga Oro', 'España', 'masculina'], ['plata', 'Liga Plata', 'España', 'masculina'],
     ['challenger', 'Challenger League', 'España', 'masculina'], ['elite_f', 'Liga Élite', 'España', 'femenina'], ['oro_f', 'Liga Oro', 'España', 'femenina'],
     ['plata_f', 'Liga Plata', 'España', 'femenina'], ['S1', 'Senior 1', 'Madrid', 'mixta'], ['S2', 'Senior 2', 'Madrid', 'mixta'], ['S3', 'Senior 3', 'Madrid', 'mixta'],
-    ['S4', 'Senior 4', 'Madrid', 'mixta'], ['SF', 'Senior Femenina', 'Madrid', 'femenina']];
+    ['S4', 'Senior 4', 'Madrid', 'mixta'], ['SF', 'Senior Femenina', 'Madrid', 'femenina'],
+    // ligas autonómicas (scripts/rfep/regiones.py): salen cuando tienen bastantes jugadores en común con las nacionales
+    ['eus', 'Liga Euskadi', 'País Vasco', 'masculina'], ['eus_f', 'Liga Euskadi', 'País Vasco', 'femenina'],
+    ['gal', 'Liga gallega', 'Galicia', 'masculina'], ['gal_f', 'Liga gallega', 'Galicia', 'femenina'],
+    ['and', 'Liga andaluza', 'Andalucía', 'masculina'], ['and_f', 'Liga andaluza', 'Andalucía', 'femenina'],
+    ['val', 'Liga valenciana', 'C. Valenciana', 'masculina'], ['val_f', 'Liga valenciana', 'C. Valenciana', 'femenina'],
+    ['cat', 'Lliga catalana', 'Cataluña', 'masculina'], ['cat_f', 'Lliga catalana', 'Cataluña', 'femenina'],
+    ['cyl', 'Liga de Castilla y León', 'Castilla y León', 'masculina'], ['cyl_f', 'Liga de Castilla y León', 'Castilla y León', 'femenina']];
   // «Compara»: los mismos puntos, pasados a cada liga
   function nivRes(fac, de, pts) {
     const f0 = (fac[de] || {}).f; if (!f0 || !(pts >= 0)) return '';

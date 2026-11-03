@@ -3523,3 +3523,4 @@ html.galv-abierta { overflow: hidden; }
 .nc-ficha div { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
 .nc-ficha b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; line-height: 1; text-transform: uppercase; }
 .nc-ficha span { font-size: 13px; color: #A6A6AD; }
+.nv-c.r { background: #2E2A3F; color: #D9D2F5; }
