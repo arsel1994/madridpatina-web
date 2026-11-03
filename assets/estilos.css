@@ -3452,8 +3452,8 @@ html.galv-abierta { overflow: hidden; }
 .nv-f.mad { background: #1E1214; box-shadow: inset 3px 0 0 #D3202A; }
 .nv-n { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 18px; color: #55555B; text-align: right; }
 .nv-t b { display: block; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 19px; line-height: 1; text-transform: uppercase; }
-.nv-t span { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; color: #A6A6AD; }
-.nv-c { padding: 1px 6px; border-radius: 4px; font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.nv-t span { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 4px; font-size: 12px; color: #A6A6AD; }
+.nv-c { white-space: nowrap; padding: 1px 6px; border-radius: 4px; font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .nv-c.e { background: #26262A; color: #F4F4F5; }
 .nv-c.m { background: #D3202A; color: #FFFFFF; }
 .nv-b { position: relative; height: 22px; }
@@ -3524,3 +3524,4 @@ html.galv-abierta { overflow: hidden; }
 .nc-ficha b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; line-height: 1; text-transform: uppercase; }
 .nc-ficha span { font-size: 13px; color: #A6A6AD; }
 .nv-c.r { background: #2E2A3F; color: #D9D2F5; }
+.nv-c.p { background: transparent; box-shadow: inset 0 0 0 1px #55555B; color: #A6A6AD; }

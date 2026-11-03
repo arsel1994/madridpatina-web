@@ -3187,7 +3187,7 @@
     const filasN = s1 ? NIV_LIGAS.filter(([k]) => rfac[k]).sort((a, b) => rfac[b[0]].f - rfac[a[0]].f) : [];
     const maxN = filasN.length ? rfac[filasN[0][0]].f : 1;
     const escalera = filasN.map(([k, nom, amb, gen], i) => { const x = rfac[k], w = Math.max(1.2, x.f / maxN * 100);
-      return `<div class="nv-f${amb === 'Madrid' ? ' mad' : ''}"><span class="nv-n">${i + 1}</span><div class="nv-t"><b>${nom}${x.provisional ? '*' : ''}</b><span><i class="nv-c ${amb === 'Madrid' ? 'm' : amb === 'España' ? 'e' : 'r'}">${amb}</i>${gen}</span></div>
+      return `<div class="nv-f${amb === 'Madrid' ? ' mad' : ''}"><span class="nv-n">${i + 1}</span><div class="nv-t"><b>${nom}${x.provisional ? '*' : ''}</b><span><i class="nv-c ${amb === 'Madrid' ? 'm' : amb === 'España' ? 'e' : 'r'}">${amb}</i>${gen}${amb !== 'Madrid' && amb !== 'España' ? '<i class="nv-c p">provisional</i>' : ''}</span></div>
         <div class="nv-b"><i style="width:${w}%" data-anim="mpWipe .7s cubic-bezier(.2,.8,.2,1)"></i>${x.p10 != null && x.p90 != null && !x.provisional && k !== filasN[0][0] ? `<i class="rg" style="left:${x.p10 / maxN * 100}%;width:${(x.p90 - x.p10) / maxN * 100}%"></i>` : ''}</div>
         <div class="nv-v">${k === 'S1' ? '1' : fx(x.f / s1, x.f / s1 >= 10 ? 0 : x.f / s1 >= 1 ? 1 : 2)}</div></div>`; }).join('');
     // cantera: cada categoría en su escala, frente a la liga de Madrid de esa categoría
@@ -3205,6 +3205,7 @@
       <p class="mt-p">La cifra de la derecha es cuántos puntos de Senior 1 vale un punto hecho en esa liga. Por ejemplo, un punto en la Liga Oro vale como ${fx(rfac.oro ? rfac.oro.f / s1 : 0, 1)} en Senior 1.</p>
       <div class="nv-esc">${escalera}</div>
       <div class="mt-leyenda"><span><i class="l1" style="background:#6B6B70"></i>liga nacional</span><span><i class="l1"></i>liga de Madrid</span><span><i class="l2"></i>margen: si repetimos la cuenta con otros jugadores sacados al azar, 8 de cada 10 veces cae en esta franja</span></div>
+      ${filasN.some(([, , amb]) => amb !== 'Madrid' && amb !== 'España') ? '<p class="mt-nota">Las ligas autonómicas son provisionales: no hay jugadores que las jueguen a la vez que las de Madrid, así que se comparan a través de las nacionales (quienes juegan también Plata o Challenger), con pocas temporadas y su margen es más ancho. Se irán afinando cada temporada.</p>' : ''}
       ${rfac.S4 && rfac.S4.provisional ? '<p class="mt-nota">* Senior 4 empezó en 2026/27 y aún no tiene datos propios: usa el nivel de la antigua Senior 3, como en el FMPe.</p>' : ''}
       ${canteraN}
       ${H('Compara')}
@@ -3247,7 +3248,7 @@
     const f0 = (fac[de] || {}).f; if (!f0 || !(pts >= 0)) return '';
     const fx = x => (x >= 100 ? Math.round(x) : x >= 10 ? x.toFixed(0) : x.toFixed(1)).toString().replace('.', ',');
     return NIV_LIGAS.filter(([k]) => fac[k]).sort((a, b) => fac[b[0]].f - fac[a[0]].f).map(([k, nom, amb, gen]) =>
-      `<div class="${k === de ? 'yo' : ''}${amb === 'Madrid' ? ' mad' : ''}"><span>${nom}<small>${amb}${gen === 'mixta' ? '' : ' · ' + gen}</small></span><b>${fx(pts * f0 / fac[k].f)}</b></div>`).join('');
+      `<div class="${k === de ? 'yo' : ''}${amb === 'Madrid' ? ' mad' : ''}"><span>${nom}<small>${amb}${gen === 'mixta' ? '' : ' · ' + gen}${amb !== 'Madrid' && amb !== 'España' ? ' · provisional' : ''}</small></span><b>${fx(pts * f0 / fac[k].f)}</b></div>`).join('');
   }
   document.addEventListener('input', e => {
     const c = e.target.closest && e.target.closest('[data-nv]'); if (!c || !(A.rfepe || {}).factores) return;
