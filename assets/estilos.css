@@ -3688,3 +3688,26 @@ html.galv-abierta { overflow: hidden; }
 .nvl-cerca .etq { color: #FF6B63; }
 .nvl-cerca .mt-p { margin-top: 6px; font-size: 14px; }
 .fi-nivel { display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 4px; background: #13263A; color: #5AB0FF; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+
+/* gráfico de «Por encima de su liga» */
+.nvl-grafw { position: relative; max-width: 900px; margin: 14px 0 6px; }
+.nvl-graf { width: 100%; height: auto; display: block; }
+.nvl-graf .g-banda { fill: #18181B; }
+.nvl-graf .g-grid { stroke: #26262A; stroke-width: 1; }
+.nvl-graf .g-tick, .nvl-graf .g-eje { fill: #8A8A8F; font: 600 12px Figtree, sans-serif; text-anchor: middle; }
+.nvl-graf .g-liga { fill: #F4F4F5; font: 800 14px Figtree, sans-serif; text-anchor: end; }
+.nvl-graf .g-med { stroke: #A6A6AD; stroke-width: 2; }
+.nvl-graf .g-umbral { stroke: #F4F4F5; stroke-width: 2; stroke-dasharray: 5 4; }
+.nvl-graf .g-ut { fill: #C9C9CE; font: 700 11px Figtree, sans-serif; }
+.nvl-graf .g-p { stroke: #121214; stroke-width: 1.5; cursor: pointer; }
+.nvl-graf .g0 { fill: #5A5A60; } .nvl-graf .g1 { fill: #3F9BE8; } .nvl-graf .g2 { fill: #F0544C; }
+.nvl-graf .g-p:hover { stroke: #F4F4F5; }
+.nvl-gley { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: #A6A6AD; }
+.nvl-gley span { display: inline-flex; align-items: center; gap: 6px; }
+.nvl-gley i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.nvl-gley i.g2 { background: #F0544C; } .nvl-gley i.g1 { background: #3F9BE8; } .nvl-gley i.g0 { background: #5A5A60; }
+.nvl-gley i.gl { width: 2px; height: 12px; border-radius: 0; background: #A6A6AD; }
+.nvl-gley i.gu { width: 0; height: 12px; border-radius: 0; border-left: 2px dashed #F4F4F5; }
+.nvl-tip { position: absolute; z-index: 5; display: grid; gap: 2px; padding: 8px 10px; border-radius: 8px; background: #F4F4F5; color: #0D0D0E; font-size: 12px; font-weight: 600; pointer-events: none; box-shadow: 0 6px 18px rgba(0,0,0,.4); white-space: nowrap; }
+.nvl-tip b { font-size: 13px; }
+.nvl-graf.m .g-liga { font-size: 17px; } .nvl-graf.m .g-tick, .nvl-graf.m .g-eje { font-size: 13px; } .nvl-graf.m .g-ut { font-size: 12px; }
