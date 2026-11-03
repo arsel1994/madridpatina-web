@@ -3384,7 +3384,12 @@
     ['cyl', 'Liga de Castilla y León', 'Castilla y León', 'masculina'], ['cyl_f', 'Liga de Castilla y León', 'Castilla y León', 'femenina'],
     // otros países (NARCh, EE. UU.: scripts/rfep/narch.py), también provisionales
     ['narch_pro', 'NARCh Pro', 'EE. UU.', 'masculina'], ['narch_plat', "NARCh Men's Platinum", 'EE. UU.', 'masculina'],
-    ['narch_gold', "NARCh Men's Gold", 'EE. UU.', 'masculina'], ['narch_w_f', "NARCh Women's Pro", 'EE. UU.', 'femenina']];
+    ['narch_gold', "NARCh Men's Gold", 'EE. UU.', 'masculina'], ['narch_w_f', "NARCh Women's Pro", 'EE. UU.', 'femenina'],
+    // Chequia, Suiza, Francia y Suecia (scripts/rfep/europa.py)
+    ['fr', 'Élite', 'Francia', 'masculina'], ['fr1', 'Nationale 1', 'Francia', 'masculina'], ['fr_w_f', 'Ligue Féminine N1', 'Francia', 'femenina'],
+    ['se', 'Serie A y SM', 'Suecia', 'masculina'],
+    ['cz', 'Extraliga', 'Chequia', 'masculina'], ['cz1', '1. liga', 'Chequia', 'masculina'],
+    ['ch', 'National League', 'Suiza', 'masculina'], ['ch1', '1. Liga', 'Suiza', 'masculina']];
   // «Compara»: los mismos puntos, pasados a cada liga
   function nivRes(fac, de, pts) {
     const f0 = (fac[de] || {}).f; if (!f0 || !(pts >= 0)) return '';
@@ -3516,6 +3521,8 @@
   function render() {
     const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
     const v = TOP[parts[0]] ? parts[0] : 'inicio';
+    // dirección desconocida: a la portada de verdad (con otro «#» la portada se quedaba a medio cargar)
+    if (parts[0] && !TOP[parts[0]]) { history.replaceState(null, '', '#/'); prevRoute = location.hash; return render(); }
     // Enlace viejo o mal copiado: a la lista, nunca a la ficha de otra persona ni a otro partido
     if (v === 'jugador' && !A.jugadores[parts[1]]) { history.replaceState(null, '', '#/jugadores'); prevRoute = location.hash; return render(); }
     if (v === 'liga' && parts[2] === 'llega') { history.replaceState(null, '', hPre(parts[1])); prevRoute = location.hash; return render(); }

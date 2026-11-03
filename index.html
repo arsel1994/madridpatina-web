@@ -23,9 +23,9 @@
 <link rel="preload" href="data/historico.json" as="fetch" crossorigin>
 <link rel="preload" href="assets/fonts/big-shoulders-display-900-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/ibm-plex-sans-condensed-400-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/fuentes.css?v=2026-11-03r9">
-<link rel="stylesheet" href="assets/estilos.css?v=2026-11-03r9">
-<link rel="stylesheet" href="assets/animaciones.css?v=2026-11-03r9">
+<link rel="stylesheet" href="assets/fuentes.css?v=2026-11-03r10">
+<link rel="stylesheet" href="assets/estilos.css?v=2026-11-03r10">
+<link rel="stylesheet" href="assets/animaciones.css?v=2026-11-03r10">
 </head>
 <body>
 <header class="top">
@@ -52,7 +52,26 @@
   </div>
 </main>
 <nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
-<script src="assets/directo.js?v=2026-11-03r9"></script>
-<script src="assets/app.js?v=2026-11-03r9"></script>
+<script>
+  // #/no-contar: este dispositivo deja de contar en las visitas (o vuelve a contar). GoatCounter respeta «skipgc».
+  if (location.hash === '#/no-contar' || location.hash === '#toggle-goatcounter') {
+    try {
+      var gcOff = localStorage.getItem('skipgc') === 't';
+      if (gcOff) localStorage.removeItem('skipgc'); else localStorage.setItem('skipgc', 't');
+      setTimeout(function () { alert(gcOff ? 'Este dispositivo vuelve a contar en las visitas.' : 'Listo: las visitas de este dispositivo ya no se cuentan.'); }, 600);
+    } catch (e) {}
+    history.replaceState(null, '', location.pathname + '#/');
+  }
+</script>
+<script src="assets/directo.js?v=2026-11-03r10"></script>
+<script src="assets/app.js?v=2026-11-03r10"></script>
+<!-- visitas (GoatCounter: sin cookies ni datos personales). La web cambia de página por el «#», así que se cuenta también cada cambio. -->
+<script>
+  window.goatcounter = { path: function (p) { return p + location.hash; } };
+  window.addEventListener('hashchange', function () {
+    if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: location.pathname + location.hash });
+  });
+</script>
+<script data-goatcounter="https://madridpatinahl.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
