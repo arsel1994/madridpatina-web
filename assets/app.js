@@ -10,7 +10,6 @@
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const RED = '#D3202A';
   const TELEGRAM = 'https://t.me/madridpatina_directo';   // canal con los avisos automáticos de nuestros partidos (los manda el vigía)
-  const RES = { V: ['VICTORIA', '#1A7A43'], E: ['EMPATE', '#6B6B70'], D: ['DERROTA', '#55555B'] };
   const MES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
   /* ── Animaciones (handoff_animaciones/README.md) ─────────────────────────────────────────────
@@ -158,7 +157,6 @@
   const fondos = root => (root.matches('[data-bg]') ? [root] : []).concat([...root.querySelectorAll('[data-bg]')]).forEach(el => (ioFondos ? ioFondos.observe(el) : ponFondo(el)));
   new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) fondos(n); }))).observe(document.body, { childList: true, subtree: true });
   const disc = (url, size, ring = '#FFFFFF', extra = '') => `<div class="disc"${url ? ` data-bg="${esc(url)}"` : ''} style="width:${size}px;height:${size}px;box-shadow:0 0 0 2px ${ring};${extra}"></div>`;
-  const photo = (f, filter = 'grayscale(1)', pos = '50% 18%', extra = '', attrs = '') => f ? `<div class="ph" data-bg="${esc(f)}"${attrs} style="filter:${filter};background-position:${pos};${extra}"></div>` : '';
   const lab = (t, extra = '') => `<h2 class="lab" style="${extra}">${t}</h2>`;
   const flecha = d => d ? `<span data-anim="mpArrow .3s 1.2s" style="flex:none;font-size:11px;font-weight:800;color:${d > 0 ? '#3DD27E' : '#FF5A52'}"><span aria-hidden="true">${d > 0 ? '▲' + d : '▼' + -d}</span><span class="sr-only">${d > 0 ? 'sube' : 'baja'} ${Math.abs(d)} ${Math.abs(d) === 1 ? 'puesto' : 'puestos'}</span></span>` : '';
   // 7n · barra V/E/D por tramos (victorias → empates → derrotas) y el balance al final; filas en cascada
@@ -691,6 +689,13 @@
   });
   const arqDe = (k, lid) => { const L = MAPA && MAPA.ligas && MAPA.ligas[lid]; const x = L && (L.jug.find(j => j.k === k) || (L.por || []).find(j => j.k === k)); return x && ARQ[x.arq] ? { n: ARQ[x.arq][0], c: ARQ[x.arq][3], d: ARQ[x.arq][4], x } : null; };
   const colArq = c => (c || '').replace('#a8281f', '#FF6B63');
+  // nacionalidades (ISO): bandera y nombre en español
+  // imagen (en Windows los emojis de bandera salen como letras); flagcdn.com, por su código ISO
+  const bandera = c => (/^[A-Z]{2}$/.test(c || '') ? `<img class="bandera" src="https://flagcdn.com/w20/${c.toLowerCase()}.png" srcset="https://flagcdn.com/w40/${c.toLowerCase()}.png 2x" width="20" height="15" alt="" loading="lazy">` : '');
+  let PAISES = null;
+  const pais = c => { try { PAISES = PAISES || new Intl.DisplayNames(['es'], { type: 'region' }); return PAISES.of(c) || c; } catch (e) { return c; } };
+  const nacChips = j => ((j && j.nac) || []).map(c => `<span class="fi-nac" title="${esc(pais(c))}">${bandera(c)} ${esc(pais(c))}</span>`).join('');
+  const nacCromo = j => ((j.nac || []).some(c => c !== 'ES') ? `<span class="cromo-nac" title="${esc(j.nac.map(pais).join(' · '))}">${j.nac.map(bandera).join('')}</span>` : '');
   // en la cabecera de la ficha, junto al arquetipo: hasta 3 rasgos (el resto, «+N»; todos con su porqué en «En el equipo»)
   const rasChips = a => { const rs = ((a && a.x && a.x.ras) || []).filter(k => ARQ[k]); if (!rs.length) return '';
     return rs.slice(0, 3).map(k => `<span class="fi-ras" style="--c:${ARQ[k][3]}" title="${esc(ARQ[k][4])}">${esc(ARQ[k][0])}</span>`).join('') + (rs.length > 3 ? `<span class="fi-ras mas" title="${esc(rs.slice(3).map(k => ARQ[k][0]).join(', '))}">+${rs.length - 3}</span>` : ''); };
@@ -805,7 +810,7 @@
     pl.sort((a, b) => (b.portero ? 1 : 0) - (a.portero ? 1 : 0) || (+a.dorsal || 99) - (+b.dorsal || 99));
     const cromo = j => { const a = arqDe(j.k, e.ligaId), t = (j.temporadas || {})[A.temporada] || {}, ok = fotoOK(j), w = (j.apellidos || '').split(' ');
       const ap = []; for (const x of w) { ap.push(x); if (!PART.has(x.toLowerCase()) || ap.length === w.length) break; }
-      return `<a class="cromo" href="${hP(j.k)}" style="--arq:${a ? colArq(a.c) : '#3A3A40'}"><span class="cromo-f${ok ? '' : ' sin'}"><span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : ''}<span class="cromo-d">${esc(j.dorsal || '')}</span>${j.capitan ? '<span class="cromo-cap">C</span>' : ''}</span>
+      return `<a class="cromo" href="${hP(j.k)}" style="--arq:${a ? colArq(a.c) : '#3A3A40'}"><span class="cromo-f${ok ? '' : ' sin'}"><span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : ''}${nacCromo(j)}<span class="cromo-d">${esc(j.dorsal || '')}</span>${j.capitan ? '<span class="cromo-cap">C</span>' : ''}</span>
         <span class="cromo-t"><b>${esc((j.nombre || '').split(' ')[0])}<br>${esc(ap.join(' '))}</b><span class="arq"${a ? ` style="color:${colArq(a.c)}"` : ''}>${a ? esc(a.n.toUpperCase()) : j.portero ? 'PORTERO' : 'SIN PERFIL TODAVÍA'}</span>
         <span class="cromo-c">${j.portero ? (t.pj || 0) + ' PJ esta temporada' : (t.goles || 0) + ' G · ' + (t.asistencias || 0) + ' A'}</span></span></a>`; };
     const grupo = (t, js) => js.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">${t}</span><span>${js.length} ${js.length === 1 ? 'jugador' : 'jugadores'}</span></div><div class="cromos2">${js.map(cromo).join('')}</div></div>` : '';
@@ -960,7 +965,7 @@
     const roles = [j.capitan ? (j.fem ? 'CAPITANA' : 'CAPITÁN') : '', j.asistente ? 'ASISTENTE' : '', esPor ? (j.fem ? 'PORTERA' : 'PORTERO') : ''].filter(Boolean);
     const cab = `<div class="fi-cab"><div class="fi-foto${ok ? '' : ' sin'}"><span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : ''}<span class="fi-dorsal cifra">${esc(j.dorsal || '')}</span></div>
       <div class="fi-t"><h1 class="h1 fi-n">${esc((j.nombre + ' ' + j.apellidos).toUpperCase())}</h1><div class="sub">${esc(eqs.map(nomEqLargo).join(' · ') || j.equipo || '')}${e0.liga ? ' · ' + esc(e0.liga.replace(/^Liga /, '')) : ''}</div>
-        <div class="fi-chips">${a ? `<span class="fi-arq" style="background:${a.c}" title="${esc(a.d)}">${esc(a.n.toUpperCase())}</span>` : ''}${rasChips(a)}${roles.map(r => `<span class="fi-rol">${r}</span>`).join('')}${equiposDe(j).length ? favBoton(j.k) : ''}</div>
+        <div class="fi-chips">${a ? `<span class="fi-arq" style="background:${a.c}" title="${esc(a.d)}">${esc(a.n.toUpperCase())}</span>` : ''}${rasChips(a)}${nacChips(j)}${roles.map(r => `<span class="fi-rol">${r}</span>`).join('')}${equiposDe(j).length ? favBoton(j.k) : ''}</div>
         <div class="fi-kpis">${kpis.map(([v, l]) => `<div><b class="cifra">${v}</b><span class="etq">${l}</span></div>`).join('')}</div>
         ${h0 ? `<div class="fi-hito"><b class="cifra">${h0.falta}</b><span>${UNI[h0.k][h0.falta === 1 ? 0 : 1]} para ${h0.k === 'a' || h0.k === 'par' ? 'las' : 'los'} ${h0.u} con el club</span></div>` : ''}</div></div>`;
     // Temporadas: barras de goles y asistencias (porteros: partidos y % de paradas)
@@ -1188,7 +1193,12 @@
       const mxX = Math.max(1, ...jx.map(j => j.x)), avgX = jx.reduce((s2, j) => s2 + j.x, 0) / jx.length, avgY = jx.reduce((s2, j) => s2 + j.y, 0) / jx.length;
       const PX = v => v / mxX * 92 + 4, PY = v => v * .9 + 5;
       const ord = jx.slice().sort((a, b) => a.nuestro - b.nuestro);
-      const puntos = ord.map(j => `<button type="button" class="lg-mp-pt${j.nuestro ? ' nos' : ''}" style="left:${PX(j.x).toFixed(1)}%;bottom:${PY(j.y).toFixed(1)}%" data-mp="${esc(j.k)}" aria-label="${esc(j.n + ' ' + j.a)}"></button>`).join('');
+      const puntos = ord.map(j => `<button type="button" class="lg-mp-pt${j.nuestro ? ' nos' : ''}" style="left:${PX(j.x).toFixed(1)}%;bottom:${PY(j.y).toFixed(1)}%" data-mp="${esc(j.k)}" data-ras="${esc([j.arq, ...(j.ras || [])].filter(Boolean).join(' '))}" aria-label="${esc(j.n + ' ' + j.a)}"></button>`).join('');
+      // ver por arquetipo o rasgo: los que lo tienen, encendidos; el resto, atenuados; y debajo, quiénes son
+      const cuenta = {}; jx.forEach(j => [j.arq, ...(j.ras || [])].filter(k => ARQ[k]).forEach(k => { cuenta[k] = (cuenta[k] || 0) + 1; }));
+      const opc = (t, ks) => ks.length ? `<optgroup label="${t}">${ks.map(k => `<option value="${k}">${esc(ARQ[k][0])} · ${esc(ARQ[k][1])} (${cuenta[k]})</option>`).join('')}</optgroup>` : '';
+      const ksArq = Object.keys(ARQ).filter(k => cuenta[k] && jx.some(j => j.arq === k)), ksRas = Object.keys(ARQ).filter(k => cuenta[k] && !ksArq.includes(k));
+      const filtro = `<label class="lg-mp-fil"><span>Ver por arquetipo o rasgo</span><select data-mpfil><option value="">Todos los jugadores</option>${opc('Arquetipos', ksArq)}${opc('Rasgos', ksRas)}</select></label><div class="lg-mp-fl" data-mpfl></div>`;
       const nosJ = ML.jug.filter(j => j.nuestro).sort((a, b) => b.x - a.x), riv = jx.filter(j => !j.nuestro).sort((a, b) => b.x - a.x);
       const etq = (j, us) => { const x = PX(j.x); return `<span class="lg-mp-et${us ? ' nos' : ''}${x > 55 ? ' izq' : ''}" style="left:${x.toFixed(1)}%;bottom:${PY(j.y).toFixed(1)}%">${esc(nomCorto({ nombre: j.n, apellidos: j.a }))}</span>`; };
       const cuad = [['Goleadores', 'marcan más que reparten', 'rd'], ['Pasadores', 'reparten más que marcan', 'bd'], ['Apoyo', 'menos puntos', 'bi']]
@@ -1196,7 +1206,7 @@
       // datos de cada punto para la línea de abajo (sin recargar)
       const info = Object.fromEntries(jx.map(j => [j.k, [nomCorto({ nombre: j.n, apellidos: j.a }), ours(j.eq) ? mpCortoN(j.eq, L.id) : j.eq, dec(j.x.toFixed(2)), j.zona || '', A.jugadores[j.k] && ours(j.eq) ? hP(j.k) : '']]));
       pMapa = `<div class="dest">Cada punto es un jugador de la liga con al menos 3 partidos. En rojo, los nuestros; con nombre, los que más destacan. Toca un punto para ver quién es.</div>
-        <div class="tarjeta lg-mp"><div class="lg-mp-y"><span>Más goleador ↑</span></div>
+        ${filtro}<div class="tarjeta lg-mp"><div class="lg-mp-y"><span>Más goleador ↑</span></div>
           <div class="lg-mp-c" role="img" aria-label="Mapa de jugadores de la liga" data-mapa-info="${esc(JSON.stringify(info))}">
             <div class="lg-mp-zona" style="left:${PX(avgX).toFixed(1)}%;bottom:${PY(avgY).toFixed(1)}%"></div><div class="lg-mp-vx" style="left:${PX(avgX).toFixed(1)}%"></div><div class="lg-mp-hx" style="bottom:${PY(avgY).toFixed(1)}%"></div>
             ${cuad}${puntos}${nosJ.slice(0, 3).map(j => etq(j, true)).join('')}${riv.slice(0, 2).map(j => etq(j, false)).join('')}
@@ -1477,7 +1487,7 @@
   // cromo: foto solo de mayores (si no, iniciales), dorsal grande, una línea de color (arquetipo o lo que pasa) y la cifra
   const cromoJ = (j, o) => { const ok = fotoOK(j), h = j.k && A.jugadores[j.k] ? hP(j.k) : null, n1 = (j.nombre || '').split(' ')[0], w = (j.apellidos || '').split(' ').filter(Boolean), ap = [];
     for (const x of w) { ap.push(x); if (!PART.has(x.toLowerCase()) || ap.length === w.length) break; }
-    return `<${h ? `a href="${h}"` : 'div'} class="cromo" data-q="${esc(nq((j.nombre || '') + ' ' + (j.apellidos || '')))}" data-d="${esc(j.dorsal || '')}" style="--arq:${o.c || '#3A3A40'}"><span class="cromo-f${ok ? '' : ' sin'}"><span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : ''}<span class="cromo-d">${esc(j.dorsal || '')}</span>${o.cap ? '<span class="cromo-cap">C</span>' : ''}${o.tag ? `<span class="cromo-tag ${o.tag[1]}">${o.tag[0]}</span>` : ''}</span>
+    return `<${h ? `a href="${h}"` : 'div'} class="cromo" data-q="${esc(nq((j.nombre || '') + ' ' + (j.apellidos || '')))}" data-d="${esc(j.dorsal || '')}" style="--arq:${o.c || '#3A3A40'}"><span class="cromo-f${ok ? '' : ' sin'}"><span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : ''}${nacCromo(j)}<span class="cromo-d">${esc(j.dorsal || '')}</span>${o.cap ? '<span class="cromo-cap">C</span>' : ''}${o.tag ? `<span class="cromo-tag ${o.tag[1]}">${o.tag[0]}</span>` : ''}</span>
       <span class="cromo-t"><b>${esc(n1)}<br>${esc(ap.join(' '))}</b><span class="arq" style="color:${o.sc || '#A6A6AD'}">${esc(o.sub || '')}</span><span class="cromo-c">${esc(o.cifra || '')}</span></span></${h ? 'a' : 'div'}>`; };
   function vJugadores2(fid) {
     if (!JG_PEDIDO && !MAPA) { JG_PEDIDO = true; const h = location.hash; cargarMapa().then(() => { if (location.hash === h) render(); });
@@ -1811,6 +1821,17 @@
     view.querySelectorAll('.mp-p.sel').forEach(x => x.classList.remove('sel')); c.classList.add('sel');
     box.innerHTML = q.info; };
   document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('.mp-p'); if (c) infoMapa(c); });
+  // mapa de la liga: ver solo los de un arquetipo o un rasgo
+  document.addEventListener('change', e => {
+    const sel = e.target.closest && e.target.closest('[data-mpfil]'); if (!sel) return;
+    const panel = sel.closest('[role="tabpanel"], .liga2') || view, cont = panel.querySelector('.lg-mp-c'), lista = panel.querySelector('[data-mpfl]'), k = sel.value;
+    if (!cont) return;
+    cont.classList.toggle('filtrando', !!k);
+    const info = JSON.parse(cont.dataset.mapaInfo || '{}'), quien = [];
+    cont.querySelectorAll('.lg-mp-pt').forEach(b => { const on = !!k && b.dataset.ras.split(' ').includes(k); b.classList.toggle('on', on); if (on) quien.push(b); });
+    if (lista) lista.innerHTML = k ? `<div class="pv-nota" style="margin:6px 0 4px">${esc(ARQ[k][4])}</div>` + quien.sort((a, b) => b.classList.contains('nos') - a.classList.contains('nos'))
+      .map(b => { const x = info[b.dataset.mp] || [], nos = b.classList.contains('nos'); return `<${x[4] ? `a href="${x[4]}"` : 'span'} class="lg-mp-ch${nos ? '' : ' riv'}"><i></i>${esc(x[0] || '')}<span>${esc(x[1] || '')}</span></${x[4] ? 'a' : 'span'}>`; }).join('') : '';
+  });
   document.addEventListener('pointerover', e => { const c = e.target.closest && e.target.closest('.mp-p'); if (c && e.pointerType === 'mouse') infoMapa(c); });
   /* ── Liga nacional (data/nacional.json, de scripts/rfep/nacional_web.py): los nuestros que juegan en una liga nacional,
      la Élite con su arquetipo y, para cada jugador nuestro, el de la Élite que más se le parece en estilo ── */
@@ -1996,19 +2017,6 @@
     const pon = () => { const p = A.partidos[el.dataset.graficoPartido]; const h = p && ANA ? graficoPartido(p) : ''; if (h) el.innerHTML = h; else el.remove(); };
     if (ANA) pon(); else cargarAnalisis().then(pon);
   }
-  // en el directo: con el marcador y el minuto del último apunte del acta
-  function probDirecto(ctx) {
-    const sn = ctx.sn, dur = ctx.dur;
-    if (!ANA || !dur || !sn || sn.estado === 'previa' || sn.estado === 'final' || sn.fase === 'penaltis') return null;
-    const abs = e => (e.periodo - 1) * dur + (segs(e.t) || 0);
-    let t = Math.max(0, ...sn.eventos.filter(e => e.periodo && e.t != null).map(abs));
-    if (sn.estado === 'descanso') t = Math.max(t, dur);
-    const gl = sn.eventos.filter(e => e.tipo === 'GOL' && e.lado === 'L').length, gv = sn.eventos.filter(e => e.tipo === 'GOL' && e.lado === 'V').length;
-    const cantera = dur <= 1200;
-    const pr = prob(cantera, gl - gv, (2 * dur - t) / 60);
-    return pr ? { pr, queda: Math.max(0, Math.round((2 * dur - t) / 60)) } : null;
-  }
-
   /* ── Equipo: cómo juega (cuándo marca y encaja, el marcador, tiros, disciplina, quién asiste a quién y el próximo rival) ── */
   const ANA_SEL = {};   // temporada elegida en cada equipo
   const tramoTxt = (i, nb) => { const m = i * 5; return `entre el minuto ${m} y el ${m + 5}` + (i === nb - 1 ? ' (los últimos 5)' : i === nb / 2 - 1 ? ' (antes del descanso)' : ''); };
@@ -2886,9 +2894,6 @@
   }
 
   /* ── 6. Ficha de jugador ────────────────────────────────── */
-  // FMPe (scripts/reporte/fmpe.py): puntos por partido × factor de su liga × 18, o sea, puntos en una temporada de Senior 1
-  const FMPE_PJ = 18;
-
   /* ── Cómo lo calculamos: cada número que publicamos, de dónde sale y qué no puede decir ─────────────────────────────── */
   const COMO = sec => ` · <a href="#/metodo/${sec}">cómo se calcula</a>`;
   const comoL = sec => `<a class="como-l" href="#/metodo/${sec}">¿Cómo se calcula?</a>`;
@@ -3242,11 +3247,11 @@
     // 8 · nivel de las ligas de España y de Madrid en una sola escala (RFEPe)
     const R = A.rfepe || {}, rfac = R.factores || {}, s1 = (rfac.S1 || {}).f;
     const filasN = s1 ? NIV_LIGAS.filter(([k]) => rfac[k]).sort((a, b) => rfac[b[0]].f - rfac[a[0]].f) : [];
-    const maxN = filasN.length ? rfac[filasN[0][0]].f : 1;
+    const maxN = filasN.length ? rfac[filasN[0][0]].f : 1, nivTxt = v => fx(v, v >= 10 ? 0 : v >= 1 ? 1 : 2);
     const escalera = filasN.map(([k, nom, amb, gen], i) => { const x = rfac[k], w = Math.max(1.2, x.f / maxN * 100);
       return `<div class="nv-f${amb === 'Madrid' ? ' mad' : ''}"><span class="nv-n">${i + 1}</span><div class="nv-t"><b>${nom}${x.provisional ? '*' : ''}</b><span><i class="nv-c ${amb === 'Madrid' ? 'm' : amb === 'España' ? 'e' : 'r'}">${amb}</i>${gen}${amb !== 'Madrid' && amb !== 'España' ? '<i class="nv-c p">provisional</i>' : ''}</span></div>
         <div class="nv-b"><i style="width:${w}%" data-anim="mpWipe .7s cubic-bezier(.2,.8,.2,1)"></i>${x.p10 != null && x.p90 != null && !x.provisional && k !== filasN[0][0] ? `<i class="rg" style="left:${x.p10 / maxN * 100}%;width:${(x.p90 - x.p10) / maxN * 100}%"></i>` : ''}</div>
-        <div class="nv-v">${k === 'S1' ? '1' : fx(x.f / s1, x.f / s1 >= 10 ? 0 : x.f / s1 >= 1 ? 1 : 2)}</div></div>`; }).join('');
+        <div class="nv-v">${k === 'S1' ? '1' : nivTxt(x.f / s1)}${x.p10 != null && x.p90 != null && !x.provisional && k !== 'S1' && k !== 'elite' ? `<small>${nivTxt(x.p10 / s1)} – ${nivTxt(x.p90 / s1)}</small>` : ''}</div></div>`; }).join('');
     // cantera: cada categoría en su escala, frente a la liga de Madrid de esa categoría
     const CA = R.cantera || {}, catN = [['alevin', 'Alevín'], ['infantil', 'Infantil'], ['juvenil', 'Juvenil']].filter(([k]) => CA[k] && Object.keys(CA[k].factores || {}).length > 1);
     const canteraN = catN.length ? H('Cantera') + `<p class="mt-p">Cada categoría va en su propia escala. La cifra dice cuántos puntos de la liga de Madrid de esa categoría vale un punto hecho en la liga nacional. Aquí solo cuentan quienes juegan las dos ligas la misma temporada: de un año a otro un chaval cambia mucho y eso se mezclaría con el nivel de la liga.</p>`
@@ -3254,12 +3259,12 @@
         return `<div class="nv-cat"><div class="nv-ck"><b>${nom}</b><span>${CA[k].casos} casos de ${CA[k].jugadores} jugadores</span></div><div class="nv-esc">${ls.map(L => { const x = fc[L], mad = L.startsWith('mad_');
           return `<div class="nv-f${mad ? ' mad' : ''}"><span class="nv-n"></span><div class="nv-t"><b>${mad ? 'Liga ' + nom : (L.startsWith('elite') ? 'Liga Élite ' : 'Liga Oro ') + nom}</b><span><i class="nv-c ${mad ? 'm' : 'e'}">${mad ? 'Madrid' : 'España'}</i></span></div>
             <div class="nv-b"><i style="width:${Math.max(1.2, x.f / mx * 100)}%" data-anim="mpWipe .7s cubic-bezier(.2,.8,.2,1)"></i>${!mad && x.p10 != null ? `<i class="rg" style="left:${x.p10 / mx * 100}%;width:${(x.p90 - x.p10) / mx * 100}%"></i>` : ''}</div>
-            <div class="nv-v">${mad ? '1' : fx(x.f, 1)}</div></div>`; }).join('')}</div></div>`; }).join('')
+            <div class="nv-v">${mad ? '1' : fx(x.f, 1)}${!mad && x.p10 != null ? `<small>${fx(x.p10, 1)} – ${fx(x.p90, 1)}</small>` : ''}</div></div>`; }).join('')}</div></div>`; }).join('')
       + `<p class="mt-nota">En Madrid, la liga de cada categoría cuenta con todos sus grupos juntos, porque el formato cambia casi cada temporada. De ${R.cantera_desde || '—'} a ${R.cantera_hasta || '—'}. Júnior no tiene liga nacional.</p>` : '';
     const opcN = filasN.map(([k, nom, amb, gen]) => `<option value="${k}"${k === 'S1' ? ' selected' : ''}>${nom} · ${amb}${gen === 'mixta' ? '' : ' · ' + gen}</option>`).join('');
     const niveles = filasN.length ? sec('niveles', '08', 'NIVEL DE LAS LIGAS', 'Dónde está cada liga de España y de Madrid', 'Las ligas nacionales de la Real Federación Española de Patinaje, las de Madrid, las autonómicas que publican sus datos y, de fuera, el campeonato de Norteamérica (NARCh), masculinas, femeninas y mixtas, en una misma escala. Así se ve qué nivel tiene cada una frente a las demás. Más abajo, la cantera.', `
       ${H('De más a menos nivel')}
-      <p class="mt-p">La cifra de la derecha es cuántos puntos de Senior 1 vale un punto hecho en esa liga. Por ejemplo, un punto en la Liga Oro vale como ${fx(rfac.oro ? rfac.oro.f / s1 : 0, 1)} en Senior 1.</p>
+      <p class="mt-p">La cifra de la derecha es cuántos puntos de Senior 1 vale un punto hecho en esa liga. Debajo, en pequeño, y en la línea blanca de cada barra, su <b>margen</b>: entre qué valores cae 8 de cada 10 veces si repetimos la cuenta con otros jugadores sacados al azar. Cuanto más corta la línea, más fiable el dato. Por ejemplo, un punto en la Liga Oro vale como ${fx(rfac.oro ? rfac.oro.f / s1 : 0, 1)} en Senior 1.</p>
       <div class="nv-esc">${escalera}</div>
       <div class="mt-leyenda"><span><i class="l1" style="background:#6B6B70"></i>liga nacional</span><span><i class="l1"></i>liga de Madrid</span><span><i class="l2"></i>margen: si repetimos la cuenta con otros jugadores sacados al azar, 8 de cada 10 veces cae en esta franja</span></div>
       ${filasN.some(([, , amb]) => amb !== 'Madrid' && amb !== 'España') ? `<p class="mt-nota">Las ligas autonómicas${filasN.some(([, , amb]) => amb === 'EE. UU.') ? ' y las de otros países' : ''} son provisionales: no hay jugadores que las jueguen a la vez que las de Madrid, así que se comparan a través de las nacionales (quienes juegan también Élite, Oro, Plata o Challenger), con pocas temporadas y su margen es más ancho.${filasN.some(([, , amb]) => amb === 'EE. UU.') ? ' NARCh, el campeonato de Norteamérica, son torneos de pocos partidos: cuenta cada año sus WinterNationals y sus finales juntas.' : ''} Se irán afinando cada temporada.</p>` : ''}
@@ -3844,7 +3849,6 @@
     RZ: 'Rodillazo', CA: 'Conducta antideportiva', IF: 'Interferencia', CI: 'Cambio ilegal', PB: 'Penalización de banquillo', EI: 'Equipación incorrecta',
     RJ: 'Retraso en el juego', SR: 'Stick roto', PP: 'Penalización de partido', EX: 'Expulsión' };
   const motivoFalta = e => (e.falta_tipo && FALTA_TXT[e.falta_tipo] ? FALTA_TXT[e.falta_tipo] + ' (' + e.falta_tipo + ')' : 'Expulsión');
-  const minFuera = m => (m % 1 ? fmin(m) : m + ' min');
   const segs = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : null; };
   const ordinal = p => (p ? p + 'ª' : '');
   // «B» junto al marcador de quien gana en los penaltis (así lo pone la FMP)
@@ -4788,7 +4792,6 @@
     return { vivo: false, txt: sn.estado === 'descanso' ? 'DESCANSO' : sn.estado === 'final' ? 'FINAL' : 'HOY' + (sn.hora ? ' · ' + sn.hora : '') };
   }
   const chipHtml = c => (c.vivo ? '<span class="punto"></span>' : '') + esc(c.txt);
-  const rodilloD = (n, lado) => `<div class="dv-rod ${lado}" data-dv="rod${lado}"><div style="transform:translateY(-${n}em)">${Array.from({ length: Math.max(16, n + 1) }, (_, i) => `<span>${i}</span>`).join('')}</div></div>`;
   // línea del partido: dos tramos que se llenan con el reloj (sin reloj del portal, solo las partes ya terminadas)
   function rellenoDirecto(sn) {
     if (sn.estado === 'previa') return [0, 0];
@@ -4796,78 +4799,6 @@
     if (sn.estado === 'descanso') return [100, 0];
     const r = segs(relojDe(sn)), f = sn.duracion_periodo && r != null ? Math.min(100, r / sn.duracion_periodo * 100) : 0;
     return (sn.periodo || 1) === 1 ? [f, 0] : [100, f];
-  }
-  const posLinea = (dur, p, t) => `calc((100% - 4px) * ${((p - 1) * 0.5 + Math.min(1, t / dur) * 0.5).toFixed(4)} + ${p === 2 ? 4 : 0}px)`;
-  // lo nuevo entra cuando le toca (los goles, al salir su cortina): hasta entonces no se pinta, para no dejar huecos
-  const pendiente = clave => DV.aparece[clave] != null && DV.aparece[clave] > Date.now() + 30;
-  const animDe = (clave, ms) => (DV.aparece[clave] != null && Date.now() - DV.aparece[clave] < 400 ? `animation:${ms};` : '');
-  let timerListas = null;
-  function pintarListas(ctx) {
-    const mk = $('[data-dv="marcas"]'), fl = $('[data-dv="filas"]');
-    if (mk) mk.innerHTML = marcasLinea(ctx);
-    if (fl) fl.innerHTML = filasHtml(ctx);
-    pintarPorteros(ctx); pintarTanda(ctx);
-    clearTimeout(timerListas);
-    const prox = Object.values(DV.aparece).concat(...Object.values(DV.tiros).map(st => st.lista.map(x => x.aparece || 0))).filter(t => t > Date.now() + 30);
-    if (prox.length) { const gen = DV.gen; timerListas = setTimeout(() => { const sn = snapDV(); if (gen === DV.gen && sn) pintarListas(ctxDirecto(sn)); }, Math.min(...prox) - Date.now()); }
-  }
-  function marcasLinea(ctx) {
-    const { sn, dur } = ctx;
-    if (!dur) return '';
-    const arriba = l => (ctx.mp.L && ctx.mp.V ? l === 'L' : ctx.mp[l]);   // nuestros goles arriba (en un derbi, el local)
-    const evs = sn.eventos.filter(e => e.t != null && e.periodo >= 1 && e.periodo <= 2 && !pendiente(e.id));
-    return evs.filter(e => e.tipo === 'FALTA').map(e => { const t = segs(e.t), w = Math.min((e.min_sancion || 2) * 60, dur - t) / dur * 0.5;
-      return `<div class="dv-excl" style="left:${posLinea(dur, e.periodo, t)};width:calc((100% - 4px) * ${w.toFixed(4)});${animDe(e.id, 'mpWipe .4s both')}"></div>`; }).join('')
-      + evs.filter(e => e.tipo === 'GOL').map(e => `<div class="dv-pgol" style="left:${posLinea(dur, e.periodo, segs(e.t))};top:${arriba(e.lado) ? 2 : 26}px;background:${ctx.mp[e.lado] ? RED : '#F4F4F5'};${animDe(e.id, 'mpDot .4s cubic-bezier(.3,1.4,.5,1) both')}"></div>`).join('');
-  }
-  const TAGD = { GOL: ['GOL', RED, '#FFFFFF'], FALTA: ["2'", '#FF8A3D', '#0D0D0E'], 'TIEMPO MUERTO': ['TM', '#26262A', '#F4F4F5'], 'CAMBIO DE PORTERO': ['POR', '#26262A', '#F4F4F5'], 'LANZAMIENTO PENALTI': ['PEN', '#F4F4F5', '#0D0D0E'] };
-  function filaDirecto(ctx, e) {
-    const t = (TAGD[e.tipo] || [e.tipo.slice(0, 3), '#26262A', '#F4F4F5']).slice(), l = e.lado, nom = ctx.nombre[l] || '';
-    let tit, sub, hitos = [];
-    if (e.tipo === 'GOL') {
-      tit = quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador);
-      const h = hitosGol(e, ctx.sn.eventos, ctx.sn); hitos = h.tags;
-      sub = [e.asist_dorsal || e.asist_jugador ? 'Asist. ' + quienD(ctx, l, e.asist_dorsal, e.asist_corto, e.asist_jugador) + (h.asist ? ' (' + h.asist + ')' : '') : 'Sin asistencia', situacionGol(e, ctx.sn.eventos, ctx.dur), h.media].filter(Boolean).join(' · ');
-    } else if (e.tipo === 'FALTA') {
-      tit = quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador); t[0] = fmin(e.min_sancion || 2);
-      sub = motivoFalta(e) + ' · ' + minFuera(e.min_sancion || 2) + ' fuera';
-    } else if (e.tipo === 'TIEMPO MUERTO') { tit = 'Tiempo muerto'; sub = nom; }
-    else if (e.tipo === 'CAMBIO DE PORTERO') {
-      if (e.nota === 'Portero fuera') { tit = 'Portero fuera' + (e.dorsal ? ' · ' + quienD(ctx, l, e.dorsal, e.sale_corto || e.jugador_corto, e.sale) : ''); sub = nom + ' · juega con 5 de pista'; }
-      else if (e.ambiguo) { tit = 'Cambio de portero'; sub = [e.nota, nom, 'momento aproximado'].filter(Boolean).join(' · '); }
-      else { tit = 'Entra ' + quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador);
-        sub = [e.sale ? 'Sale ' + (e.sale_dorsal ? quienD(ctx, l, e.sale_dorsal, e.sale_corto, e.sale) : (e.sale_corto || e.sale)) : '', nom, e.aprox ? 'momento aproximado' : ''].filter(Boolean).join(' · '); }
-    } else { tit = e.tipo.charAt(0) + e.tipo.slice(1).toLowerCase(); sub = nom; }
-    const c = crest(nom), bg = (A.crests[nom] && A.crests[nom].bg) || 'transparent';
-    return `<div class="dv-fila${e.tipo === 'GOL' && ctx.mp[l] ? ' mp' : ''}" style="${animDe(e.id, 'mpUp .45s cubic-bezier(.2,.8,.2,1) both')}">
-      <span class="t">${esc(ordinal(e.periodo) + (e.t ? ' ' + e.t : ''))}</span><span class="tag" style="background:${t[1]};color:${t[2]}">${esc(t[0])}</span>
-      <div style="min-width:0"><div class="tit">${esc(tit)}${hitos.map(x => `<span class="dv-hito">${esc(x)}</span>`).join('')}${botonVer(ctx.sn.idp, e)}</div><div class="sub">${esc(sub)}</div></div>
-      <div class="der"><div style="box-shadow:0 0 0 1.5px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div><span>${e.tipo === 'GOL' && e.marcador ? esc(e.marcador.replace('-', '–')) : ''}</span></div></div>`;
-  }
-  // filas en orden cronológico (la lista las muestra al revés) con separadores deducidos del estado: el portal no da inicio/fin
-  function itemsFeed(ctx) {
-    const { sn } = ctx, evs = sn.eventos, out = [];
-    const goles = (p, l) => evs.filter(e => e.tipo === 'GOL' && e.lado === l && e.periodo <= p).length;
-    const hay2 = evs.some(e => e.periodo >= 2) || (sn.periodo || 0) >= 2 || sn.estado === 'final';
-    evs.filter(e => !e.periodo).forEach(e => out.push(['ev', e.id, e]));
-    if (sn.estado !== 'previa') out.push(['div', 'ini1', 'EMPIEZA LA 1ª PARTE']);
-    evs.filter(e => e.periodo === 1).forEach(e => out.push(['ev', e.id, e]));
-    if (hay2 || sn.estado === 'descanso') out.push(['div', 'desc', 'DESCANSO · ' + goles(1, 'L') + '–' + goles(1, 'V')]);
-    if (hay2) out.push(['div', 'ini2', 'EMPIEZA LA 2ª PARTE']);
-    evs.filter(e => e.periodo >= 2).forEach(e => out.push(['ev', e.id, e]));
-    const gana = sn.penaltis && sn.penaltis.ganador ? ' · GANA ' + ctx.abr[sn.penaltis.ganador] : '';
-    if (sn.penaltis || sn.fase === 'penaltis') out.push(['div', 'pen', 'PENALTIS' + (sn.penaltis ? ' · ' + sn.penaltis.gl + '–' + sn.penaltis.gv + gana : '')]);
-    if (sn.estado === 'final') out.push(['div', 'fin', 'FINAL · ' + (sn.gl ?? 0) + '–' + (sn.gv ?? 0) + (sn.penaltis ? ' · PENALTIS ' + sn.penaltis.gl + '–' + sn.penaltis.gv + gana : '')]);
-    return out;
-  }
-  function filasHtml(ctx) {
-    return itemsFeed(ctx).filter(([k, id]) => !pendiente(k === 'div' ? 'div-' + id : id)).map(([k, id, x]) => (k === 'div' ? `<div class="dv-div" style="${animDe('div-' + id, 'mpUp .45s cubic-bezier(.2,.8,.2,1) both')}">${esc(x)}</div>` : filaDirecto(ctx, x))).join('');
-  }
-  function cabLista(sn) {
-    const n = sn.eventos.length;
-    if (sn._resumen) return `<span>${n} ${n === 1 ? 'evento' : 'eventos'} · resumen del acta</span>`;
-    if (LIVE.ok === false) return '<span class="off">sin conexión · reintentando</span>';
-    return `<span>${n} ${n === 1 ? 'evento' : 'eventos'} · ${DIRECTO_EJEMPLO ? 'datos de ejemplo' : 'cada 15 s'}</span>`;
   }
   /* ── 9c · Expulsiones en curso y situación en pista ──────────────────────────────────────────
      La cuenta atrás necesita el reloj de la parte: sin reloj del portal no se muestran (no se inventan). La portería vacía
@@ -4921,112 +4852,12 @@
   /* ── 9g · Porteros: una tarjeta por equipo, con el portero en pista ─────────────────────────
      % de paradas, barra y un rectángulo por tiro recibido (los nuevos entran con mpDot; los goles, tras la cortina).
      Portero fuera: tarjeta atenuada y sello «FUERA · PORTERÍA VACÍA». Sin tiros todavía, la tarjeta no se muestra. */
-  function porteroDe(ctx, l) {
-    const ps = ctx.sn.porteros.filter(p => p.lado === l);
-    if (!ps.length) return null;
-    const dentro = ps.find(p => p.en_pista);
-    const vacia = porteriaVacia(ctx, l);
-    const ult = ctx.sn.eventos.filter(e => e.tipo === 'CAMBIO DE PORTERO' && e.lado === l).pop();
-    const p = dentro || (vacia && ult && ps.find(x => x.dorsal === ult.dorsal)) || ps.slice().sort((a, b) => (b.tiros || 0) - (a.tiros || 0))[0];
-    return p && p.tiros ? { p, fuera: vacia && !dentro } : null;
-  }
-  // tiros de cada portero como lista de rectángulos: al entrar, los que ya hay (quietos: paradas y luego goles, el orden
-  // exacto no lo da el portal); después, lo que cambia de una respuesta a otra
-  function contarTiros(ctx, nuevosGoles) {
-    const ahora = Date.now();
-    ctx.sn.porteros.forEach(p => {
-      const k = p.lado + '-' + p.dorsal, prev = DV.tiros[k], t = p.tiros || 0, g = p.gc || 0;
-      if (!prev || t < prev.t || g < prev.g || !DV.listo) {
-        DV.tiros[k] = { t, g, lista: Array(Math.max(0, t - g)).fill(0).map(() => ({ gol: false })).concat(Array(g).fill(0).map(() => ({ gol: true }))) };
-        return;
-      }
-      const dP = (t - prev.t) - (g - prev.g), dG = g - prev.g;
-      const golesContra = nuevosGoles.filter(e => e.lado !== p.lado);
-      for (let i = 0; i < dP; i++) prev.lista.push({ gol: false, aparece: ahora });
-      for (let i = 0; i < dG; i++) prev.lista.push({ gol: true, aparece: golesContra[i] ? DV.aparece[golesContra[i].id] : ahora + (MOV ? 1600 : 0) });
-      prev.t = t; prev.g = g;
-    });
-  }
   const pctP = p => (p.tiros ? Math.round((p.tiros - (p.gc || 0)) / p.tiros * 1000) / 10 : null);
   function tirosHtml(k) {
     const st = DV.tiros[k];
     return st ? st.lista.filter(x => !(x.aparece && x.aparece > Date.now() + 30)).map(x => `<span${x.gol ? ' class="g"' : ''}${x.aparece && Date.now() - x.aparece < 400 ? ' style="animation:mpDot .35s cubic-bezier(.3,1.4,.5,1) both"' : ''}></span>`).join('') : '';
   }
-  function porterosHtml(ctx) {
-    return ['L', 'V'].map(l => { const x = porteroDe(ctx, l); if (!x) return '';
-      const { p } = x, k = l + '-' + p.dorsal, mp = jugadorMP(ctx, l, p.dorsal), pc = pctP(p), nom = mp ? mp.nombre + ' ' + mp.apellidos : p.jugador || '';
-      const inis = nom.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('');
-      return `<div class="dv-por${x.fuera ? ' fuera' : ''}" data-por="${esc(k)}">
-        <div class="foto ini">${esc(inis)}${mp ? photo(mp.foto, 'grayscale(1)', '50% 15%') : ''}</div>
-        <div class="datos"><div class="arriba"><div style="min-width:0"><div class="lab2">PORTERO · ${esc(ctx.abr[l])}</div><div class="quien">${esc(quienD(ctx, l, p.dorsal, p.jugador_corto, p.jugador))}</div></div>
-          <div style="flex:none"><div class="pct" data-k="pct">${pc == null ? '—' : dec(pc) + '%'}</div><div class="par" data-k="par">${(p.tiros || 0) - (p.gc || 0)}/${p.tiros || 0} PARADAS</div></div></div>
-          <div class="barra"><i data-k="bar" style="width:${pc || 0}%;background:${ctx.mp[l] ? RED : '#F4F4F5'}"></i></div>
-          <div class="tiros" data-k="tiros">${tirosHtml(k)}</div></div>
-        ${x.fuera ? '<div class="sello"><span>FUERA · PORTERÍA VACÍA</span></div>' : ''}</div>`; }).join('');
-  }
-  function pintarPorteros(ctx) {
-    const cont = $('[data-dv="porteros"]');
-    if (!cont) return;
-    const quiero = ['L', 'V'].map(l => { const x = porteroDe(ctx, l); return x ? l + '-' + x.p.dorsal : ''; }).filter(Boolean).join(',');
-    const hay = [...cont.querySelectorAll('[data-por]')].map(c => c.dataset.por).join(',');
-    if (quiero !== hay) {   // cambia el portero: se vuelve a pintar (en el resumen, entran al acabar)
-      cont.innerHTML = porterosHtml(ctx);
-      if (ctx.sn._resumen && DV.listo && MOV) cont.querySelectorAll('.dv-por').forEach((c, i) => { c.style.animation = `mpUp .45s ${i * 120}ms cubic-bezier(.2,.8,.2,1) both`; });
-      return;
-    }
-    ['L', 'V'].forEach(l => { const x = porteroDe(ctx, l); if (!x) return;
-      const card = cont.querySelector(`[data-por="${CSS.escape(l + '-' + x.p.dorsal)}"]`), pc = pctP(x.p);
-      card.querySelector('[data-k="pct"]').textContent = pc == null ? '—' : dec(pc) + '%';
-      card.querySelector('[data-k="par"]').textContent = `${(x.p.tiros || 0) - (x.p.gc || 0)}/${x.p.tiros || 0} PARADAS`;
-      card.querySelector('[data-k="bar"]').style.width = (pc || 0) + '%';
-      card.querySelector('[data-k="tiros"]').innerHTML = tirosHtml(l + '-' + x.p.dorsal);
-      const era = card.classList.contains('fuera');
-      card.classList.toggle('fuera', x.fuera);
-      if (x.fuera && !era) card.insertAdjacentHTML('beforeend', '<div class="sello"><span style="animation:mpScale .4s cubic-bezier(.2,.8,.2,1) both">FUERA · PORTERÍA VACÍA</span></div>');
-      if (!x.fuera && era) { const se = card.querySelector('.sello'); if (se) se.remove(); }
-    });
-  }
-
   /* ── 9h · En juego: tiros, paradas, minutos de expulsión y goles en superioridad (goles/ocasiones) ── */
-  function datosJuego(ctx) {
-    const { sn } = ctx, filas = [];
-    const sumP = (l, f) => sn.porteros.filter(p => p.lado === l).reduce((a, p) => a + f(p), 0);
-    if (sn.tiros) {
-      filas.push(['TIROS A PUERTA', sn.tiros.l, sn.tiros.v, sn.tiros.l, sn.tiros.v]);
-      const pl = sumP('L', p => (p.tiros || 0) - (p.gc || 0)), pv = sumP('V', p => (p.tiros || 0) - (p.gc || 0));
-      filas.push(['PARADAS', pl, pv, pl, pv]);
-    }
-    const ex = l => sn.eventos.filter(e => e.tipo === 'FALTA' && e.lado === l).reduce((a, e) => a + (e.min_sancion || 2), 0);
-    filas.push(['MIN. EXPULSIÓN', fmin(ex('L')), fmin(ex('V')), ex('L'), ex('V')]);
-    if (ctx.dur) {
-      const ppG = l => sn.eventos.filter(e => e.tipo === 'GOL' && e.lado === l && situacionGol(e, sn.eventos, ctx.dur) === 'En superioridad').length;
-      const ppO = l => sn.eventos.filter(e => exclusion(e) && e.lado !== l).length;
-      filas.push(['GOLES EN SUPERIORIDAD', ppG('L') + '/' + ppO('L'), ppG('V') + '/' + ppO('V'), ppG('L'), ppG('V')]);
-    }
-    const pd = probDirecto(ctx);
-    if (pd) filas.push(['OPCIONES DE GANAR', pct(pd.pr[0]), pct(pd.pr[2]), pd.pr[0], pd.pr[2]]);
-    else if (!ANA) cargarAnalisis().then(d => { if (d) pintarDirecto(); });
-    return filas;
-  }
-  function juegoHtml(ctx) {
-    if (ctx.sn.estado === 'previa') return '';
-    const cL = ctx.mp.L ? RED : '#55555B', cV = ctx.mp.V && !ctx.mp.L ? RED : '#55555B';
-    return `<div class="dv-juego" data-dv="juego"><div class="cab"><span>${esc(ctx.abr.L)}</span><span>${ctx.sn.estado === 'final' ? 'EL PARTIDO' : 'EN JUEGO'}</span><span>${esc(ctx.abr.V)}</span></div>
-      ${datosJuego(ctx).map(([k, l, v, a, b]) => `<div class="fila" data-fj="${esc(k)}"><div class="nums"><b data-k="l">${esc(l)}</b><span>${k}</span><b data-k="v">${esc(v)}</b></div>
-        <div class="bar"><i data-k="w" style="width:${(a + b ? a / (a + b) * 100 : 50).toFixed(1)}%;background:${cL}"></i><i style="background:${cV}"></i></div></div>`).join('')}</div>`;
-  }
-  function pintarJuego(ctx) {
-    const cont = $('[data-dv="der"]');
-    if (!cont) return;
-    const j = cont.querySelector('[data-dv="juego"]'), filas = datosJuego(ctx);
-    const misma = j && ctx.sn.estado !== 'previa' && [...j.querySelectorAll('[data-fj]')].map(f => f.dataset.fj).join() === filas.map(f => f[0]).join();
-    if (!misma) { if (j) j.remove(); cont.insertAdjacentHTML('afterbegin', juegoHtml(ctx)); return; }
-    j.querySelector('.cab span:nth-child(2)').textContent = ctx.sn.estado === 'final' ? 'EL PARTIDO' : 'EN JUEGO';
-    filas.forEach(([k, l, v, a, b]) => { const f = j.querySelector(`[data-fj="${CSS.escape(k)}"]`);
-      f.querySelector('[data-k="l"]').textContent = l; f.querySelector('[data-k="v"]').textContent = v;
-      f.querySelector('[data-k="w"]').style.width = (a + b ? a / (a + b) * 100 : 50).toFixed(1) + '%'; });
-  }
-
   // resultado desde nuestro lado: VICTORIA / EMPATE / DERROTA; empate con tanda → «… EN LOS PENALTIS» (como el prototipo)
   function resultadoMP(ctx, sn) {
     const M = ctx.mp.L && ctx.mp.V ? null : ctx.mp.L ? 'L' : 'V';
@@ -5037,54 +4868,10 @@
     if (g) return g === M ? ['VICTORIA EN LOS PENALTIS', '#1E8A4C', '#123A24'] : ['DERROTA EN LOS PENALTIS', '#55555B', '#1F1F22'];
     return ['EMPATE', '#8A8A8F', '#26262A'];
   }
-  // 9e · franja V/E/D bajo el marcador cuando acaba (y después de la última cortina)
-  function finalHtml(ctx, animar) {
-    const { sn } = ctx;
-    if (sn.estado !== 'final' || DV.pendientes || DV.mostrado.gl !== (sn.gl || 0) || DV.mostrado.gv !== (sn.gv || 0)) return '';
-    const r = resultadoMP(ctx, sn);
-    const pen = sn.penaltis ? ' · PENALTIS ' + sn.penaltis.gl + '–' + sn.penaltis.gv : '';
-    return `<div class="dv-final"><i style="background:${r[1]};${animar ? 'animation:mpWipe .5s cubic-bezier(.2,.8,.2,1) both' : ''}"></i><span${animar ? ' style="animation:mpFade .3s .35s both"' : ''}>${r[0]} · ${esc(ctx.abr.L)} ${sn.gl ?? 0}–${sn.gv ?? 0} ${esc(ctx.abr.V)}${pen}</span></div>`;
-  }
-  // tanda de penaltis bajo el marcador: una fila por ronda (como el acta, que no dice quién tiró primero); verde = gol
-  function tandaHtml(ctx) {
-    const { sn } = ctx, pen = sn.penaltis;
-    if (!pen && sn.fase !== 'penaltis') return '';
-    const tiros = (pen && pen.tanda) || [], vis = x => x && !pendiente('tanda-' + x.lado + x.ronda);
-    const rondas = tiros.reduce((m, x) => Math.max(m, x.ronda || 0), 0), filas = [];
-    const marca = x => (vis(x) ? `<i class="m ${x.gol ? 'si' : 'no'}" style="${animDe('tanda-' + x.lado + x.ronda, 'mpDot .35s cubic-bezier(.3,1.4,.5,1) both')}">${x.gol ? '✓' : '✕'}</i>` : '<i class="m"></i>');
-    const nom = x => (vis(x) ? esc(quienD(ctx, x.lado, x.dorsal, x.jugador_corto, x.jugador)) : '');
-    for (let r = 1; r <= rondas; r++) {
-      const a = tiros.find(x => x.lado === 'L' && x.ronda === r), b = tiros.find(x => x.lado === 'V' && x.ronda === r);
-      if (vis(a) || vis(b)) filas.push(`<div class="r"><span class="n">${nom(a)}</span>${marca(a)}<b>${r}</b>${marca(b)}<span class="n v">${nom(b)}</span></div>`);
-    }
-    const g = l => tiros.filter(x => x.lado === l && x.gol && vis(x)).length;
-    const gana = pen && pen.ganador && !DV.pendientes ? `<div class="gana${ctx.mp[pen.ganador] ? ' mp' : ''}">GANA LA TANDA ${esc(ctx.abr[pen.ganador])} · ${pen.gl}–${pen.gv}</div>` : '';
-    return `<div class="dv-tanda"><div class="cab"><span>TANDA DE PENALTIS</span><span>${esc(ctx.abr.L)} ${tiros.length ? g('L') : pen ? pen.gl : 0}–${tiros.length ? g('V') : pen ? pen.gv : 0} ${esc(ctx.abr.V)}</span></div>${filas.join('')}${gana}</div>`;
-  }
-  function pintarTanda(ctx) { const c = $('[data-dv="tanda"]'), h = tandaHtml(ctx); if (c && c._h !== h) { c.innerHTML = h; c._h = h; } }
-  // plantilla de un equipo: porteros primero y luego por dorsal; C capitán, A asistente, P portero
-  const nomPres = (ctx, l, j) => quienD(ctx, l, j.dorsal, j.jugador_corto, j.jugador).replace(/^#\d+\s+/, '');
   const RANGO_ROL = { P: 0, C: 1, A: 2 };   // porteros, capitán, asistentes y el resto; en cada grupo, por dorsal
   const ordenPl = pl => pl.slice().sort((a, b) => ((RANGO_ROL[a.rol] ?? 3) - (RANGO_ROL[b.rol] ?? 3)) || ((+a.dorsal || 99) - (+b.dorsal || 99)));
-  const posHtml = j => (j.rol === 'P' ? '<i class="dv-pos">P</i>' : j.rol === 'C' ? '<i class="dv-pos c">C</i>' : j.rol === 'A' ? '<i class="dv-pos a">A</i>' : '');
-  const escFicha = (ctx, l) => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
-    return `<i style="--ring:${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></i>`; };
-  const staffDe = (sn, l) => (sn.staff && sn.staff[l]) || [];
-  const staffTxt = st => st.map(x => (x.cargo ? x.cargo + ' · ' : '') + x.nombre).join(' · ');
   // «POLID. MUNICIPAL JOSE CABALLERO-PISTA 4» → «Polid. Municipal Jose Caballero-Pista 4» (el acta la da en mayúsculas)
   const pistaBonita = s => (s || '').toLowerCase().replace(/(^|[\s\-(])(\p{L})/gu, (m, a, c) => a + c.toUpperCase()).replace(/ (De|Del|La|Las|Los|Y) /g, m => m.toLowerCase());
-  // 9h · ficha del partido (columna derecha): pista, árbitros, alineaciones y cuerpo técnico, tal como los da el acta
-  function fichaHtml(ctx) {
-    const { sn } = ctx, P = sn.plantillas, arb = sn.arbitros || [];
-    if (!sn.pista && !arb.length && !P) return '';
-    const eq = l => (P && P[l] ? `<div class="eq"><div class="n">${escFicha(ctx, l)}${esc(ctx.abr[l])}</div>${ordenPl(P[l]).map(j => `<div class="j"><b>${esc(j.dorsal)}</b><span>${esc(nomPres(ctx, l, j))}</span>${posHtml(j)}</div>`).join('')}
-      ${staffDe(sn, l).length ? `<div class="staff">Cuerpo técnico · ${esc(staffTxt(staffDe(sn, l)))}</div>` : ''}</div>` : '<div></div>');
-    return `<div class="dv-ficha"><div class="cab">FICHA DEL PARTIDO</div>
-      ${sn.pista ? `<div class="dato"><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></div>` : ''}
-      ${arb.length ? `<div class="dato"><span>${arb.length > 1 ? 'ÁRBITROS' : 'ÁRBITRO'}</span><b>${esc(arb.join(' · '))}</b></div>` : ''}
-      ${P ? `<div class="eqs">${eq('L')}${eq('V')}</div><div class="ley"><span><i class="dv-pos c">C</i>capitán</span><span><i class="dv-pos a">A</i>asistente</span><span><i class="dv-pos">P</i>portero</span></div>` : ''}</div>`;
-  }
-  function pintarFicha(ctx) { const c = $('[data-dv="ficha"]'), h = fichaHtml(ctx); if (c && c._h !== h) { c.innerHTML = h; c._h = h; } }
   /* ── 10b · Presentación a pantalla completa ─────────────────────────────────────────────────────────────────────
      Al abrirse el acta (el portal no da convocados antes: el acta se abre 0-2 min antes de empezar), una vez, si aún no hay
      apuntes; o con «Ver alineación». Título → nuestros uno a uno cada 1,25 s (foto a color, dorsal gigante de fondo, rol,
@@ -5188,7 +4975,6 @@
     PRES_VISTAS.add(sn.idp);
     escenaPresentacion(ctx);
   }
-  const alinBtn = sn => (sn && sn.plantillas ? '<button type="button" class="dv-alin" data-alin>▶ Ver alineación</button>' : '');
   document.addEventListener('click', e => {
     if (!e.target.closest('[data-alin]')) return;
     const sn = snapDV();
@@ -5196,12 +4982,6 @@
     if (MOV) escenaPresentacion(ctxDirecto(sn)); else { const f = $('[data-dv="ficha"]'); if (f) f.scrollIntoView({ block: 'start' }); }   // sin animaciones: a la ficha
   });
 
-  function pintarFinal() {
-    const sn = snapDV(), cont = $('[data-dv="final"]');
-    if (!sn || !cont) return;
-    const h = finalHtml(ctxDirecto(sn), true);
-    if (!h) cont.innerHTML = ''; else if (!cont.firstElementChild) cont.innerHTML = h;
-  }
   // 9e · «Hoy»: todos nuestros partidos del día con su estado; el que se juega, con fondo granate
   function hoyHtml() {
     const d = new Date(), hoyDM = p2(d.getDate()) + '/' + p2(d.getMonth() + 1);
@@ -5294,17 +5074,6 @@
       return true;
     }).catch(() => { ESC.cargando = false; return false; });
   }
-  // en la previa, o la primera vez que se abre el partido en esta sesión; en el resumen, siempre que empieza (es el principio de la historia)
-  function pistaSiToca(sn, siempre) {
-    if (!sn || !sn.pista) return;
-    const k = 'mp-pista-' + sn.idp;
-    let visto = false;
-    try { visto = sessionStorage.getItem(k) === '1'; } catch (e) { /* sin almacenamiento */ }
-    if (!siempre && visto && sn.estado !== 'previa') return;
-    try { sessionStorage.setItem(k, '1'); } catch (e) { /* sin almacenamiento */ }   // también cuando sale por empezar un resumen
-    escenaPista(sn);
-  }
-  const pistaChip = sn => (sn && sn.pista ? `<button type="button" class="dv-pista" data-pista title="Ver la pista en el mapa"><i></i><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></button>` : '');
   document.addEventListener('click', e => { if (e.target.closest('[data-pista]')) escenaPista(snapDV()); });
   document.addEventListener('mp-escena-fin', () => { const sn = snapDV(); if (sn && $('[data-dv="caja"]')) presentarSiToca(ctxDirecto(sn)); });
 
@@ -5314,77 +5083,13 @@
      Los tiros de cada portero solo se conocen al final (el acta no dice cuándo fue cada uno): no se inventan por el camino. */
   const RSM = { activo: false, idp: null, final: null, foto: null, T: 0, fase: '', nuevos: [], pausa: 0, timer: null, tPen: null, saltado: false };
   const snapDV = () => (RSM.activo && RSM.idp === DV.idp ? RSM.foto : LIVE.snaps[DV.idp]);
-  const fuenteNuevos = () => (RSM.activo && RSM.idp === DV.idp ? RSM.nuevos : LIVE.nuevos);
-  function fotoResumen(S, T) {
-    const dur = S.duracion_periodo || 1200, p = T < dur || RSM.fase === 'descanso' || RSM.fase === 'p1fin' ? 1 : 2, tp = Math.max(0, Math.min(dur, p === 1 ? T : T - dur));
-    const tE = e => (e.t != null ? segs(e.t) : e.t_acta ? dur - segs(e.t_acta) : 0);
-    const evs = S.eventos.filter(e => !e.periodo || e.periodo < p || (e.periodo === p && tE(e) <= tp));
-    return Object.assign({}, S, { _resumen: true, estado: RSM.fase === 'descanso' ? 'descanso' : 'directo', periodo: p, reloj: mmssD(tp), fase: null, penaltis: null,
-      gl: evs.filter(e => e.tipo === 'GOL' && e.lado === 'L').length, gv: evs.filter(e => e.tipo === 'GOL' && e.lado === 'V').length, eventos: evs, porteros: [], tiros: null });
-  }
-  function aplicarFotoResumen(f) {
-    const ids = new Set(RSM.foto.eventos.map(e => e.id));
-    f.eventos.filter(e => !ids.has(e.id)).forEach(e => RSM.nuevos.push({ idp: RSM.idp, ev: e }));
-    RSM.foto = f;
-    if (RSM.idp === DV.idp && !DV.vacio) actualizarDirecto();
-  }
-  function pasoResumen() {
-    if (!RSM.activo || !new RegExp('^#/directo/' + RSM.idp + '/resumen').test(location.hash.replace(/%2F/g, '/'))) return pararResumen();
-    if (DV.pendientes > 0 || Date.now() < RSM.pausa || Date.now() - (DV.finCortina || 0) < 1300 || RSM.fase === 'fin' || ESC.abierta || ESC.cargando) return;
-    const S = RSM.final, dur = S.duracion_periodo || 1200;
-    if (RSM.fase === 'pista') {   // la escena de la pista ya pasó (o no tocaba): la presentación, si hay convocados
-      RSM.fase = S.plantillas && MOV && escenaPresentacion(ctxDirecto(snapDV())) ? 'pres' : '';
-      return;
-    }
-    if (RSM.fase === 'pres') { RSM.fase = ''; RSM.pausa = Date.now() + 500; return; }
-    if (RSM.fase === 'p2fin' || RSM.fase === 'pen') return tandaResumen();
-    if (RSM.fase === 'p1fin') { RSM.fase = 'descanso'; RSM.pausa = Date.now() + 1600; return aplicarFotoResumen(fotoResumen(S, dur)); }
-    if (RSM.fase === 'descanso') RSM.fase = 'p2';
-    RSM.T += 2 * dur / 25 * 0.1;
-    // al acabar cada parte, primero su último minuto (con sus goles, y sus cortinas) y después el descanso o el final
-    if (RSM.fase === '' && RSM.T >= dur) { RSM.T = dur; RSM.fase = 'p1fin'; } else if (RSM.T >= 2 * dur) { RSM.T = 2 * dur; RSM.fase = 'p2fin'; }
-    aplicarFotoResumen(fotoResumen(S, RSM.T));
-  }
-  // la tanda: se aplica el final (con la tanda entera y su ganador) y la escena 10d la cuenta lanzamiento a lanzamiento
-  const tandaResumen = () => finResumen();
-  function finResumen() {
-    RSM.fase = 'fin'; clearInterval(RSM.timer); RSM.timer = null;
-    aplicarFotoResumen(Object.assign({}, RSM.final, { _resumen: true }));
-    quizasResumen();   // si no quedó nada por anunciar
-  }
   function pararResumen() { clearInterval(RSM.timer); clearTimeout(RSM.tPen); RSM.timer = RSM.tPen = null; RSM.activo = false; }
-  // devuelve el aviso de espera si aún no tenemos el partido; si no, deja preparada la simulación (o el final, si se saltó)
-  function prepararResumen(idp) {
-    const S = RSM.final && RSM.final.idp === idp ? RSM.final : LIVE.snaps[idp];
-    if (!S) { cargarPartidoResumen(idp); return `<div class="dv-espera" data-dv="espera">${SKEL(260)}</div>`; }
-    if (S.estado !== 'final') { pararResumen(); return null; }   // aún se juega: la página del directo
-    pararResumen();
-    Object.assign(RSM, { activo: true, idp, final: S, T: 0, fase: '', nuevos: [], pausa: Date.now() + 900, resumenVisto: false });
-    if (RSM.saltado || !MOV) { RSM.fase = 'fin'; RSM.foto = Object.assign({}, S, { _resumen: true }); setTimeout(() => quizasResumen(true), 0); return null; }   // directo al final: el resumen
-    RSM.fase = 'pista';   // primero la pista (si toca), luego la presentación
-    RSM.foto = fotoResumen(S, 0);
-    RSM.timer = setInterval(pasoResumen, 100);
-    return null;
-  }
-  function cargarPartidoResumen(idp) {
-    const url = DIRECTO_EJEMPLO ? DIRECTO_URL : DIRECTO_URL + '?idp=' + encodeURIComponent(idp);
-    fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(d => {
-      const S = (d.partidos || []).find(p => p.idp === idp);
-      if (!S) { const w = $('[data-dv="espera"]'); if (w) w.textContent = 'No encuentro este partido en el acta de la federación.'; return; }
-      RSM.final = S;
-      if (location.hash.indexOf('#/directo/' + idp) === 0) render();
-    }).catch(() => { const w = $('[data-dv="espera"]'); if (w) w.textContent = 'Sin conexión con el acta de la federación. Prueba otra vez en un momento.'; });
-  }
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-res]');
     if (!b) return;
     RSM.saltado = b.dataset.res === 'saltar';
     render();
   });
-  const barraResumen = () => (RSM.activo && RSM.idp === DV.idp ? `<div class="dv-resumen"><span><b>▶</b>RESUMEN · ASÍ FUE EL PARTIDO</span>${MOV ? `<span class="b">${RSM.fase === 'fin' ? '' : '<button type="button" data-res="saltar">Saltar al final</button>'}<button type="button" data-res="repetir">↺ Repetir</button></span>` : ''}</div>` : '');
-
-  const esperaHtml = () => (LIVE.ok === false && !LIVE.cargado ? casoHtml('Directo', 'El directo no está disponible', 'Ahora mismo no podemos seguir el partido en vivo. El resultado saldrá con el acta de la FMP.', 'SIN CONEXIÓN', 'neutro')
-    : LIVE.cargado || (!LIVE.sesion && !DIRECTO_EJEMPLO) ? casoHtml('Directo', 'Este partido no está ahora en el directo', 'Cuando empiece, el marcador saldrá aquí solo. Si ya terminó, el resultado saldrá con el acta de la FMP.') : SKEL(260));
   /* ── Así fue el partido (rediseño final · «Resumen sin vídeo», #/directo/{idp}/resumen): el partido se vuelve a jugar deprisa
      en la misma página con las piezas del directo: alineaciones, reloj que corre (el partido entero en unos 10 s), marcador de
      rodillo, aviso de cada momento al lado del marcador, porteros con su % de paradas que se mueve con cada tiro y línea de
@@ -5396,7 +5101,6 @@
   function rsLimpiar() { clearInterval(RS.timer); RS.timer = null; RS.tos.forEach(clearTimeout); RS.tos = []; }
   const rsMin = t => Math.max(1, Math.ceil(t / 60)) + "'";
   const rsRel = g => Math.floor(g / 60) + ':' + p2(Math.floor(g % 60));
-  const rsEs = n => ours(n);
   // «#9 Santiago Muñoz»: de los nuestros, con su apodo si lo tiene; del rival, nombre y primer apellido
   function rsQ(j, nuestro) { if (!j) return ''; const J = nuestro && j.k && A.jugadores[j.k]; const n = J ? nomCorto(J) : j.nombre ? corto(j, true) : (j.jugador_corto || j.jugador || '');
     return ((j.dorsal ? '#' + j.dorsal + ' ' : '') + n).trim(); }
@@ -5918,148 +5622,19 @@
     rsLinea(root); rsPintar(); rsPie();
   }
 
-  function vDirecto(idp, modo) {
-    if (ESC.abierta && ESC.abierta.tipo === 'resumen') ESC.abierta.cerrar();
-    cargarHitos();
-    DV.idp = idp; DV.gen++;
-    if (modo === 'resumen') { const espera = prepararResumen(idp); if (espera) { DV.vacio = true; return espera; } } else { pararResumen(); RSM.saltado = false; }
-    const sn = snapDV();
-    if (!sn) { DV.vacio = true; return `<div class="dv-espera" data-dv="espera">${esperaHtml()}</div>`; }
-    DV.vacio = false;
-    const ctx = ctxDirecto(sn), [f1, f2] = rellenoDirecto(sn), ch = chipDirecto(sn);
-    // se pinta quieto: lo que ya hay no se anima
-    Object.assign(DV, { mostrado: { gl: sn.gl || 0, gv: sn.gv || 0 }, visto: fuenteNuevos().length, aparece: {}, pendientes: 0, cola: MPDirecto.colaGoles(mostrarGol),
-      penVistos: new Set(), situClave: '', tiros: {}, listo: false, colaFin: 0, ganVisto: !!(sn.penaltis && sn.penaltis.ganador), tanda: new Set(((sn.penaltis && sn.penaltis.tanda) || []).map(x => x.lado + x.ronda)) });
-    contarTiros(ctx, []);
-    excluidos(ctx).L.concat(excluidos(ctx).V).forEach(p => DV.penVistos.add(p.id));
-    { const si = situacionPista(ctx, excluidos(ctx)); DV.situClave = si ? si.label + si.n : ''; }
-    setTimeout(() => { DV.listo = true; const c2 = ctxDirecto(snapDV() || sn); pintarSituacion(c2); pistaSiToca(c2.sn, modo === 'resumen' && RSM.activo && RSM.fase === 'pista'); presentarSiToca(c2); }, 0);
-    DV.claves = new Set(itemsFeed(ctx).map(([, id]) => id));
-    const eqHtml = l => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
-      return `<div class="dv-eq"><div class="dv-esc" data-dv="esc${l}" style="box-shadow:0 0 0 2px ${ctx.mp[l] ? RED : '#FFFFFF'};background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div><span class="dv-abr">${esc(ctx.abr[l])}</span><div class="dv-pens" data-dv="pen${l}"></div></div>`; };
-    const resumenHtml = barraResumen();
-    if (modo === 'resumen') RSM.saltado = false;
-    const verRes = modo === 'resumen' ? '<button type="button" class="dv-alin" data-ver-resumen>▶ Resumen final</button>'
-      : sn.estado === 'final' ? `<a class="dv-alin" href="#/directo/${encodeURIComponent(idp)}/resumen">▶ Ver resumen</a>` : '';
-    cargarReac(idp, true);
-    const arriba = verRes + alinBtn(sn) + pistaChip(sn) + `<button type="button" class="dv-alin" data-wa="${esc(idp)}" title="Manda el marcador y el enlace del directo por WhatsApp">WhatsApp</button>`
-      + (ctx.mp.L || ctx.mp.V ? `<a class="dv-alin" href="${TELEGRAM}" target="_blank" rel="noopener" title="Avisos de cada gol en el móvil">Avisos en Telegram</a>` : '');
-    return `${arriba ? `<div class="dv-arriba">${arriba}</div>` : ''}${resumenHtml}<div class="dv">
-      <div class="dv-izq">
-        <div class="dv-caja" data-dv="caja">
-          <div class="dv-cab"><div class="dv-cabtx"><div class="dv-liga">${esc(((sn.liga || '') + (sn.jornada ? ' · J' + sn.jornada : '')).toUpperCase())}</div>${sn.pista ? `<div class="dv-sede">${esc(pistaBonita(sn.pista))}</div>` : ''}</div><div class="dv-chip${ch.vivo ? ' vivo' : ''}" data-dv="chip">${chipHtml(ch)}</div></div>
-          <div class="dv-marcador">${eqHtml('L')}<div class="dv-num">${rodilloD(DV.mostrado.gl, 'L')}<span class="dv-guion">–</span>${rodilloD(DV.mostrado.gv, 'V')}</div>${eqHtml('V')}</div>
-          <div class="dv-situ-caja" data-dv="situ"></div>
-          ${ctx.dur ? `<div class="dv-linea"><div class="dv-tramos"><div><i data-dv="f1" style="width:${f1}%"></i></div><div><i data-dv="f2" style="width:${f2}%"></i></div></div><div data-dv="marcas">${marcasLinea(ctx)}</div></div>
-          <div class="dv-partes"><span>1ª PARTE</span><span>2ª PARTE</span></div>` : '<div style="height:clamp(14px,2.4vw,22px)"></div>'}
-          <div data-dv="tanda">${tandaHtml(ctx)}</div>
-          <div data-dv="final">${finalHtml(ctx, false)}</div>
-        </div>
-        <div class="dv-porteros" data-dv="porteros">${porterosHtml(ctx)}</div>
-        <div class="dv-lista"><div class="dv-lcab"><span>MINUTO A MINUTO <a class="dv-como" href="#/metodo/directo">¿qué significa cada aviso?</a></span><span data-dv="lcab">${cabLista(sn).replace(/^<span[^>]*>|<\/span>$/g, '')}</span></div>
-          <div class="dv-filas" data-dv="filas">${filasHtml(ctx)}</div></div>
-      </div>
-      <div class="dv-der" data-dv="der">${juegoHtml(ctx)}<div data-dv="reac" data-reac-caja="${esc(idp)}">${reacHtml(idp)}</div><div data-dv="ficha">${fichaHtml(ctx)}</div><div style="display:flex;flex-direction:column;gap:8px" data-dv="hoy">${hoyHtml()}</div></div>
-    </div>`;
-  }
-  function pintarMarcador() {
-    ['L', 'V'].forEach(l => { const el = $(`[data-dv="rod${l}"] > div`), n = l === 'L' ? DV.mostrado.gl : DV.mostrado.gv;
-      if (!el) return;
-      if (el.children.length <= n) el.innerHTML = Array.from({ length: n + 6 }, (_, i) => `<span>${i}</span>`).join('');
-      el.style.transform = `translateY(-${n}em)`; });
-    pintarHoy(); pintarFinal();
-  }
-  function sincronizarMarcador() {   // por si el portal corrige un gol: sin cortinas pendientes, el marcador es el del portal
-    const sn = snapDV();
-    if (!sn || DV.pendientes || (DV.mostrado.gl === (sn.gl || 0) && DV.mostrado.gv === (sn.gv || 0))) return;
-    DV.mostrado = { gl: sn.gl || 0, gv: sn.gv || 0 }; pintarMarcador();
-  }
   /* ── Gol (rediseño, fase 6): una banda cruza el centro de la pantalla en 1,6 s (roja si es nuestro, gris si es del rival)
      con «GOL», quién marca y el marcador; no tapa el marcador de arriba y se toca para saltarla. Con reducir movimiento,
      la banda se queda quieta 2 s. */
-  const DUR_GOL = { mp: MOV ? 1600 : 2000, riv: MOV ? 1600 : 2000 }, DUR_FALTA = 5000, DUR_CORTA = 2200;
-  const T_TIRO = 2300, T_GANA = 3200;   // 10d: cada lanzamiento (tarjeta y, a los 1,3 s, el sello) y la tarjeta del ganador
-  const durAnuncio = (ctx, e) => (e.tipo === 'GOL' ? (ctx.mp[e.lado] ? DUR_GOL.mp : DUR_GOL.riv) : e.tipo === 'FALTA' ? DUR_FALTA
-    : e.tipo === 'TANDA' ? e.nuevos.length * T_TIRO + (e.ganador ? T_GANA : 500) : e.tipo === 'CAMBIO DE PORTERO' ? 3600 : DUR_CORTA);
-  const anunciable = e => e.tipo === 'GOL' || e.tipo === 'FALTA' || (e.tipo === 'CAMBIO DE PORTERO' && e.jugador && !e.ambiguo);
+   // 10d: cada lanzamiento (tarjeta y, a los 1,3 s, el sello) y la tarjeta del ganador
   const iniDe = n => (n || '').replace(/\./g, '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-  function escenaGolHtml(ctx, e) {
-    const l = e.lado, quien = quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador), marc = e.marcador ? ctx.abr.L + ' ' + e.marcador.replace('-', '–') + ' ' + ctx.abr.V : '';
-    return `<div class="gol-banda${ctx.mp[l] ? ' mp' : ''}${MOV ? '' : ' quieta'}" role="status" aria-label="Gol de ${esc(ctx.abr[l])}"><div class="gb"><b>GOL</b><span><strong>${esc(quien)}</strong><em>${esc(marc || ctx.abr[l])}</em></span></div></div>`;
-  }
-
   /* ── 10f · Falta a pantalla completa ────────────────────────────────────────────────────────────────────────────
      Foto del sancionado en blanco y negro (la única escena en B/N) y caen 6 barrotes con rebote y 2 travesaños; rival sin
      foto: su escudo entre rejas. «EXPULSIÓN · equipo», cuenta atrás grande (la sanción, corriendo deprisa) con barra naranja,
      nombre y «Motivo (COD)». Sin candado. */
-  function escenaFaltaHtml(ctx, e) {
-    const l = e.lado, estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8 ? ' estr' : '';
-    let dentro;
-    if (ctx.mp[l]) { const p = jugadorDe(ctx, l, e.id_player, e.dorsal); dentro = p && p.foto ? `<div class="f" style="background-image:url('${esc(p.foto)}')"></div>` : `<div class="i">${esc(p ? ini(p.nombre, p.apellidos) : iniDe(e.jugador_corto || e.jugador))}</div>`; }
-    else { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; dentro = `<div class="e" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>`; }
-    const sub = [motivoFalta(e), ordinal(e.periodo) + (e.t ? ' · ' + e.t : '')].filter(Boolean).join(' · ');
-    return `<div class="esc-falta${estr}" role="status" aria-label="Expulsión de ${esc(ctx.abr[l])}">
-      <div class="ef-foto"><div class="ef-caja">${dentro}<div class="velo"></div>
-        <div class="ef-rejas">${[0, 1, 2, 3, 4, 5].map(k => `<i style="animation-delay:${(0.45 + k * 0.07).toFixed(2)}s"></i>`).join('')}</div>
-        <div class="ef-trav a"></div><div class="ef-trav b"></div><div class="d">${esc(e.dorsal || '')}</div></div></div>
-      <div class="ef-tx"><div class="ef-pill">EXPULSIÓN · ${esc(ctx.abr[l])}</div><div class="ef-reloj">${mmssD((e.min_sancion || 2) * 60)}</div><div class="ef-barra"><i></i></div>
-        <div class="ef-quien">${esc(quienD(ctx, l, e.dorsal, e.jugador_corto, e.jugador))}</div><div class="ef-sub">${esc(sub)}</div></div>
-    </div>`;
-  }
-
   /* ── 10d · Penaltis a pantalla completa ─────────────────────────────────────────────────────────────────────────
      Rodillo de la tanda entre los escudos, la tarjeta de cada lanzador (foto a color si es nuestro; escudo si es rival) con
      «LANZA · RONDA n», el sello GOL / FALLA, las casillas de cada equipo y, al acabar, quién gana la tanda. El acta da los
      dos tiros de cada ronda a la vez: van por rondas, el local primero. */
-  function escenaPenaltis(ctx, e, alFin) {
-    const { sn } = ctx, tiros = e.tiros, estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8;
-    const rondas = Math.max(3, tiros.reduce((m, x) => Math.max(m, x.ronda || 0), 0));
-    const escP = l => { const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent'; return `background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}`; };
-    const resueltos = new Set(tiros.slice(0, e.desde).map(x => x.lado + x.ronda));
-    const goles = l => tiros.filter(x => x.lado === l && x.gol && resueltos.has(x.lado + x.ronda)).length;
-    const el = document.createElement('div');
-    el.className = 'escena esc-pen' + (estr ? ' estr' : ''); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Tanda de penaltis');
-    const rod = l => `<div class="pn-rod"><div data-rod="${l}" style="transform:translateY(-${goles(l)}em)">${Array.from({ length: 16 }, (_, d) => `<div>${d}</div>`).join('')}</div></div>`;
-    el.innerHTML = `<div class="esc-top"><div class="l">${sn._resumen ? 'RESUMEN' : '● EN DIRECTO'} · PENALTIS</div><div class="r">${sn.pista ? `<div class="pista"><i></i><span>PISTA</span><b>${esc(pistaBonita(sn.pista))}</b></div>` : ''}<button type="button" class="esc-saltar" data-esc-cierra>Saltar ›</button></div></div>
-      <div class="pn"><div class="pn-k">TANDA DE PENALTIS</div>
-        <div class="pn-marc"><i style="box-shadow:0 0 0 2px ${ctx.mp.L ? RED : '#FFFFFF'};${escP('L')}"></i><div class="pn-num">${rod('L')}<span>–</span>${rod('V')}</div><i style="box-shadow:0 0 0 2px ${ctx.mp.V ? RED : '#FFFFFF'};${escP('V')}"></i></div>
-        <div class="pn-stage"></div><div class="pn-filas" style="--n:${rondas}"></div></div>`;
-    document.body.appendChild(el);
-    const stage = el.querySelector('.pn-stage'), filas = el.querySelector('.pn-filas'), timers = [], luego = (ms, f) => timers.push(setTimeout(f, ms));
-    // casillas: gol (rojo si es nuestro, blanco si es del rival), fallo «×», el que tira ahora con el aro que late
-    const pintaFilas = (cur, recien) => { filas.innerHTML = ['L', 'V'].map(l => `<div class="pn-fila"><span>${esc(ctx.abr[l])}</span>${Array.from({ length: rondas }, (_, r) => {
-      const x = tiros.find(t => t.lado === l && t.ronda === r + 1), k = x && x.lado + x.ronda, hecho = k && resueltos.has(k);
-      const bg = hecho ? (x.gol ? (ctx.mp[l] ? RED : '#F4F4F5') : '#3A3A3F') : '', ink = hecho && x.gol && !ctx.mp[l] ? '#0D0D0E' : '';
-      return `<i class="${k && k === cur ? 'cur' : hecho && k === recien ? 'res' : ''}" style="${bg ? `background:${bg};` : ''}${ink ? `color:${ink}` : ''}">${hecho && !x.gol ? '×' : ''}</i>`; }).join('')}</div>`).join(''); };
-    pintaFilas(null, null);
-    e.nuevos.forEach((x, q) => {
-      const t0 = q * T_TIRO, k = x.lado + x.ronda, mp = ctx.mp[x.lado];
-      luego(t0, () => {
-        let card;
-        if (mp) { const p = jugadorDe(ctx, x.lado, x.id_player, x.dorsal); card = `<div class="pn-card mp">${p && p.foto ? `<div class="f" style="background-image:url('${esc(p.foto)}')"></div>` : `<div class="i">${esc(p ? ini(p.nombre, p.apellidos) : iniDe(x.jugador_corto || x.jugador))}</div>`}`; }
-        else card = `<div class="pn-card riv"><div class="e" style="${escP(x.lado)}"></div>`;
-        stage.innerHTML = card + `<div class="pie"><small>LANZA · RONDA ${x.ronda}</small><b>${esc(quienD(ctx, x.lado, x.dorsal, x.jugador_corto, x.jugador))}</b></div></div>`;
-        pintaFilas(k, null);
-      });
-      luego(t0 + 1300, () => {   // el sello y el rodillo
-        resueltos.add(k);
-        const bg = x.gol ? (mp ? RED : '#F4F4F5') : '#3A3A3F', ink = x.gol && !mp ? '#0D0D0E' : '#FFFFFF';
-        stage.insertAdjacentHTML('beforeend', `<div class="pn-sello"><b style="background:${bg};color:${ink}">${x.gol ? 'GOL' : 'FALLA'}</b></div>`);
-        const r = el.querySelector(`[data-rod="${x.lado}"]`); if (r) r.style.transform = `translateY(-${goles(x.lado)}em)`;
-        pintaFilas(null, k);
-      });
-    });
-    let t = e.nuevos.length * T_TIRO;
-    if (e.ganador) {   // quién gana la tanda: verde si somos nosotros
-      luego(t, () => { stage.innerHTML = `<div class="pn-gana" style="background:${ctx.mp[e.ganador] ? '#1E8A4C' : '#3A3A3F'}"><i style="${escP(e.ganador)}"></i><b>${esc(ctx.abr[e.ganador])} GANA LA TANDA</b></div>`; });
-      t += T_GANA;
-    } else t += 500;
-    let cerrada = false;
-    const cerrar = () => { if (cerrada) return; cerrada = true; timers.forEach(clearTimeout); el.classList.add('cierra'); setTimeout(() => el.remove(), 300); alFin(); };
-    el.querySelector('[data-esc-cierra]').addEventListener('click', cerrar);
-    luego(t, cerrar);
-  }
-
   /* ── 10e · Resumen final a pantalla completa ────────────────────────────────────────────────────────────────────
      Resultado (V/E/D, «… EN LOS PENALTIS»), marcador y penaltis, pista; goles con foto del goleador y del asistente (a color;
      rival con su escudo), porteros con sus paradas y la tanda. Se desplaza dentro de la escena; «Cerrar» o Esc la quitan. */
@@ -6127,13 +5702,6 @@
     ESC.abierta = { tipo: 'resumen', cerrar };
     return true;
   }
-  // al terminar la simulación (sin anuncios pendientes), una vez por pasada
-  function quizasResumen(ya) {   // ya: con «Saltar al final» (o sin animaciones), sin esperar
-    if (!RSM.activo || RSM.idp !== DV.idp || RSM.fase !== 'fin' || DV.pendientes || RSM.resumenVisto) return;
-    RSM.resumenVisto = true;
-    const idp = RSM.idp, gen = DV.gen;
-    setTimeout(() => { if (DV.idp === idp && DV.gen === gen && RSM.activo) escenaResumen(ctxDirecto(Object.assign({}, RSM.final, { _resumen: true }))); }, ya || !MOV ? 0 : 1800);
-  }
   // si se cambia de página con una escena abierta, se cierra
   window.addEventListener('hashchange', () => { if (ESC.abierta) ESC.abierta.cerrar(); if (location.hash.indexOf('#/video/') !== 0) pararTV(); });
   document.addEventListener('click', e => { if (!e.target.closest('[data-ver-resumen]')) return; const S = RSM.final || LIVE.snaps[DV.idp]; if (S) escenaResumen(ctxDirecto(Object.assign({}, S, { _resumen: true }))); });
@@ -6141,102 +5709,6 @@
   /* ── Cambio de portero a pantalla completa ─────────────────────────────────────────────────────────────────────
      «CAMBIO DE PORTERO · equipo»: la tarjeta del que sale se apaga y entra la del nuevo (fotos a color si son nuestros;
      del rival, su escudo). Si la hora se dedujo de los goles encajados, lo dice («momento aproximado»). */
-  function escenaCambioHtml(ctx, e) {
-    const l = e.lado, estr = innerWidth < 640 || innerWidth / Math.max(1, innerHeight) < .8 ? ' estr' : '';
-    const n = ctx.nombre[l], c = crest(n), bg = (A.crests[n] && A.crests[n].bg) || 'transparent';
-    const tarjeta = (cls, rotulo, id, dorsal, corto, largo) => {
-      let dentro;
-      if (ctx.mp[l]) { const p = jugadorDe(ctx, l, id, dorsal); dentro = p && p.foto ? `<div class="f" style="background-image:url('${esc(p.foto)}')"></div>` : `<div class="i">${esc(p ? ini(p.nombre, p.apellidos) : iniDe(corto || largo))}</div>`; }
-      else dentro = `<div class="e" style="background-color:${bg};${c ? `background-image:url('${esc(c)}')` : ''}"></div>`;
-      const ring = cls === 'entra' && ctx.mp[l] ? 'box-shadow:0 0 0 3px #D3202A, 0 20px 50px rgba(0,0,0,.5)' : '';
-      return `<div class="ec-card ${cls}" style="${ring}">${dentro}<div class="pie"><small>${rotulo}</small><b>${esc(quienD(ctx, l, dorsal, corto, largo))}</b></div></div>`;
-    };
-    const sub = [ordinal(e.periodo) + (e.t ? ' · ' + e.t : ''), e.aprox ? 'momento aproximado' : ''].filter(Boolean).join(' · ');
-    return `<div class="esc-cambio${estr}" role="status" aria-label="Cambio de portero de ${esc(ctx.abr[l])}"><div class="ec-k">CAMBIO DE PORTERO · ${esc(ctx.abr[l])}</div>
-      <div class="ec-fila">${tarjeta('sale', 'SALE', e.sale_id_player, e.sale_dorsal, e.sale_corto, e.sale)}<div class="ec-flecha">›</div>${tarjeta('entra', 'ENTRA', e.id_player, e.dorsal, e.jugador_corto, e.jugador)}</div>
-      <div class="ec-sub">${esc(sub)}</div></div>`;
-  }
-
-  // cola de goles: una cortina cada vez (2,8 s); al salir, el rodillo sube un número (con «reducir movimiento», directo)
-  function mostrarGol(e, ms) {
-    const gen = DV.gen;
-    return new Promise(res => {
-      const fin = () => { if (gen === DV.gen) { const m = /^(\d+)-(\d+)$/.exec(e.marcador || ''); if (m) DV.mostrado = { gl: +m[1], gv: +m[2] }; pintarMarcador();
-        DV.pendientes = Math.max(0, DV.pendientes - 1); DV.finCortina = Date.now();
-        if (!DV.pendientes) {   // sin anuncios pendientes: entra lo que esperaba (la franja final, quién gana la tanda…)
-          const s2 = snapDV(); if (s2 && $('[data-dv="caja"]')) { pintarFinal(); pintarListas(ctxDirecto(s2)); }
-          setTimeout(sincronizarMarcador, 1300); quizasResumen();
-        } } res(); };
-      const caja = $('[data-dv="caja"]'), sn = snapDV();
-      if ((!ms && (MOV || e.tipo !== 'GOL')) || !caja || !sn || gen !== DV.gen) return fin();
-      const ctx = ctxDirecto(sn), dur = durAnuncio(ctx, e), tmp = document.createElement('div');
-      if (e.tipo === 'TANDA') {   // 10d: la tanda a pantalla completa (espera a que acabe la pista o la presentación)
-        const mostrar = () => (gen !== DV.gen ? fin() : escenaPenaltis(ctx, e, fin));
-        if (ESC.abierta || ESC.cargando) document.addEventListener('mp-escena-fin', mostrar, { once: true }); else mostrar();
-        return;
-      }
-      if (e.tipo === 'GOL' || e.tipo === 'FALTA' || e.tipo === 'CAMBIO DE PORTERO') {   // gol en banda; 10f / cambio: a pantalla completa; se puede tocar para cerrarla antes
-        const mostrar = () => {
-          if (gen !== DV.gen) return fin();
-          tmp.innerHTML = e.tipo === 'GOL' ? escenaGolHtml(ctx, e) : e.tipo === 'FALTA' ? escenaFaltaHtml(ctx, e) : escenaCambioHtml(ctx, e);
-          const el = tmp.firstElementChild; document.body.appendChild(el);
-          if (e.tipo === 'GOL') {   // la banda nunca tapa el marcador: si caería encima, va justo debajo (o encima)
-            const m = $('[data-dv="rodL"]'), r = m && (m.closest('.dv-marcador') || m.parentElement).getBoundingClientRect(), h = el.offsetHeight, y = innerHeight / 2 - h / 2;
-            if (r && r.bottom > 0 && r.top < innerHeight && y < r.bottom + 12 && y + h > r.top - 12) {
-              const abajo = r.bottom + 24, arriba = r.top - 24 - h;
-              el.style.top = (abajo + h < innerHeight - 70 ? abajo : arriba > 70 ? arriba : y) + 'px'; el.style.marginTop = '0'; }
-            // reducir movimiento: el marcador cambia ya y el aviso «GOL» se queda quieto 2 s (sin hacer esperar al siguiente)
-            if (!MOV) { document.querySelectorAll('.gol-banda').forEach(x => { if (x !== el) x.remove(); }); el.addEventListener('click', () => el.remove()); setTimeout(() => el.remove(), 2000); return fin(); }
-          }
-          let hecho = false, tic = null;
-          if (e.tipo === 'FALTA') {   // la sanción corre deprisa (×4) desde el segundo 1,6, para que se vea el reloj bajar
-            const total = (e.min_sancion || 2) * 60, t0 = Date.now(), r = el.querySelector('.ef-reloj'), b = el.querySelector('.ef-barra i');
-            tic = setInterval(() => { const rem = Math.max(0, total - Math.max(0, Date.now() - t0 - 1600) / 1000 * 4); r.textContent = mmssD(rem); b.style.width = (rem / total * 100).toFixed(1) + '%'; }, 100);
-            setTimeout(() => el.classList.add('sale'), dur - 350);
-          }
-          if (e.tipo === 'CAMBIO DE PORTERO') setTimeout(() => el.classList.add('sale-ya'), dur - 350);
-          const acaba = () => { if (hecho) return; hecho = true; clearInterval(tic); el.remove(); fin(); };
-          el.addEventListener('click', acaba); setTimeout(acaba, dur);
-        };
-        if (ESC.abierta || ESC.cargando) document.addEventListener('mp-escena-fin', mostrar, { once: true }); else mostrar();
-        return;
-      }
-      fin();
-    });
-  }
-  function actualizarDirecto() {
-    const sn = snapDV();
-    if (!sn || !$('[data-dv="caja"]')) return;
-    const ctx = ctxDirecto(sn), ahora = Date.now();
-    const fuente = fuenteNuevos(), nuevos = fuente.slice(DV.visto).filter(x => x.idp === DV.idp).map(x => x.ev);
-    DV.visto = fuente.length;
-    // goles y faltas se anuncian (cortina) y su fila entra al acabar; la tanda, ronda a ronda
-    const turno = dur => { const ini0 = Math.max(ahora, DV.colaFin || 0), fin = ini0 + dur; DV.colaFin = fin + 1200; return fin; };
-    nuevos.forEach(e => { const anuncia = anunciable(e);
-      DV.aparece[e.id] = anuncia && MOV ? turno(durAnuncio(ctx, e)) : ahora; if (anuncia) { DV.pendientes++; DV.cola(e); } });
-    const tanda = (sn.penaltis && sn.penaltis.tanda) || [], nuevosT = tanda.filter(x => !DV.tanda.has(x.lado + x.ronda)), gan = sn.penaltis && sn.penaltis.ganador;
-    if (nuevosT.length || (gan && !DV.ganVisto)) {
-      nuevosT.forEach(x => DV.tanda.add(x.lado + x.ronda)); DV.ganVisto = !!gan;
-      const item = { tipo: 'TANDA', id: 'tanda-' + tanda.length, tiros: tanda, desde: nuevosT.length ? tanda.indexOf(nuevosT[0]) : tanda.length, nuevos: nuevosT, ganador: gan || null };
-      const fin = MOV ? turno(durAnuncio(ctx, item)) : ahora;
-      nuevosT.forEach(x => { DV.aparece['tanda-' + x.lado + x.ronda] = fin; });
-      DV.pendientes++; DV.cola(item);
-    }
-    itemsFeed(ctx).forEach(([k, id]) => { if (k === 'div' && !DV.claves.has(id)) { DV.claves.add(id); DV.aparece['div-' + id] = MOV && DV.pendientes ? DV.colaFin - 1200 : ahora; } });
-    contarTiros(ctx, nuevos.filter(e => e.tipo === 'GOL'));
-    pintarSituacion(ctx); pintarJuego(ctx); pintarHoy(); pintarFinal(); pintarFicha(ctx); presentarSiToca(ctx);
-    const ch = chipDirecto(sn), chip = $('[data-dv="chip"]');
-    if (chip) { chip.classList.toggle('vivo', ch.vivo); chip.innerHTML = chipHtml(ch); }
-    const [f1, f2] = rellenoDirecto(sn), e1 = $('[data-dv="f1"]'), e2 = $('[data-dv="f2"]');
-    if (e1) e1.style.width = f1 + '%';
-    if (e2) e2.style.width = f2 + '%';
-    pintarListas(ctx);
-    const lc = $('[data-dv="lcab"]');
-    if (lc) { const h = cabLista(sn); lc.className = /off/.test(h) ? 'off' : ''; lc.textContent = h.replace(/<[^>]+>/g, ''); }
-    if (!DV.pendientes) sincronizarMarcador();
-    const br = $('.dv-resumen');
-    if (br && RSM.fase === 'fin') { const sb = br.querySelector('[data-res="saltar"]'); if (sb) sb.remove(); }
-  }
   document.addEventListener('mp-directo', () => {
     const m = /^#\/directo\/([^/]+)/.exec(location.hash);
     if (!m) return;

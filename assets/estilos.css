@@ -3448,7 +3448,7 @@ html.galv-abierta { overflow: hidden; }
 
 /* Cómo lo calculamos · 08 nivel de las ligas: escalera de ligas de España y de Madrid y «Compara» */
 .nv-esc { display: grid; gap: 2px; max-width: 760px; margin-top: 14px; border-radius: 12px; overflow: hidden; background: #26262A; }
-.nv-f { display: grid; grid-template-columns: 28px minmax(118px, 190px) minmax(0, 1fr) 52px; gap: 12px; align-items: center; padding: 10px 14px; background: #18181B; }
+.nv-f { display: grid; grid-template-columns: 28px minmax(118px, 190px) minmax(0, 1fr) 72px; gap: 12px; align-items: center; padding: 10px 14px; background: #18181B; }
 .nv-f.mad { background: #1E1214; box-shadow: inset 3px 0 0 #D3202A; }
 .nv-n { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 18px; color: #55555B; text-align: right; }
 .nv-t b { display: block; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 19px; line-height: 1; text-transform: uppercase; }
@@ -3474,14 +3474,14 @@ html.galv-abierta { overflow: hidden; }
 .nv-res span { font-size: 14px; font-weight: 700; line-height: 1.15; }
 .nv-res small { display: block; font-size: 11px; font-weight: 600; color: #A6A6AD; }
 .nv-res b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 26px; font-variant-numeric: tabular-nums; }
-@media (max-width: 520px) { .nv-f { grid-template-columns: 20px minmax(0, 1fr) 46px; } .nv-b { grid-column: 2 / 4; grid-row: 2; } .nv-v { grid-row: 1; grid-column: 3; } }
+@media (max-width: 520px) { .nv-f { grid-template-columns: 20px minmax(0, 1fr) 64px; } .nv-b { grid-column: 2 / 4; grid-row: 2; } .nv-v { grid-row: 1; grid-column: 3; } }
 .nv-cat { max-width: 760px; margin-top: 16px; }
 .nv-ck { display: flex; align-items: baseline; gap: 10px; }
 .nv-ck b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; text-transform: uppercase; }
 .nv-ck span { font-size: 13px; color: #A6A6AD; }
 .nv-cat .nv-esc { margin-top: 8px; }
-.nv-cat .nv-f { grid-template-columns: 0 minmax(118px, 190px) minmax(0, 1fr) 52px; }
-@media (max-width: 520px) { .nv-cat .nv-f { grid-template-columns: 0 minmax(0, 1fr) 46px; } }
+.nv-cat .nv-f { grid-template-columns: 0 minmax(118px, 190px) minmax(0, 1fr) 72px; }
+@media (max-width: 520px) { .nv-cat .nv-f { grid-template-columns: 0 minmax(0, 1fr) 64px; } }
 
 /* Jugadores · Liga nacional: los nuestros en la nacional, el mapa de la Élite y a quién se parece cada uno */
 .nc-js { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 12px; }
@@ -3533,3 +3533,22 @@ html.galv-abierta { overflow: hidden; }
 .fi-ras.mas { box-shadow: none; background: #26262A; color: #C9C9CE; }
 .fi-perfil { margin-bottom: 12px; padding: 16px 20px; }
 .fi-perfil:empty { display: none; }
+.nv-v small { display: block; margin-top: 2px; font-family: 'IBM Plex Sans Condensed', sans-serif; font-size: 11px; font-weight: 600; color: #A6A6AD; white-space: nowrap; }
+.mt-leyenda { font-size: 14px; color: #C9C9CE; }
+
+/* mapa de la liga: ver por arquetipo o rasgo */
+.lg-mp-fil { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0 12px; font-size: 13px; font-weight: 700; letter-spacing: .06em; color: #A6A6AD; text-transform: uppercase; }
+.lg-mp-fil select { height: 40px; min-width: min(100%, 300px); padding: 0 10px; border: 1px solid #3A3A40; border-radius: 8px; background: #18181B; color: #F4F4F5; font: inherit; font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.lg-mp-fl { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.lg-mp-fl:empty { display: none; }
+.lg-mp-fl .pv-nota { flex-basis: 100%; }
+.lg-mp-c.filtrando .lg-mp-pt { opacity: .12; }
+.lg-mp-c.filtrando .lg-mp-pt.on { opacity: 1; border-radius: 50%; box-shadow: 0 0 0 3px rgba(244,244,245,.85); z-index: 3; }
+.lg-mp-c.filtrando .lg-mp-et { opacity: 0; }
+.lg-mp-ch.riv i { background: #6B6B70; }
+
+/* nacionalidades: en la ficha (todas las que ha tenido) y, en los cromos, la bandera si alguna no es España */
+.fi-nac { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 4px; background: #1E1E22; font-size: 12px; font-weight: 700; color: #F4F4F5; white-space: nowrap; }
+.cromo-nac { position: absolute; top: 6px; right: 6px; z-index: 2; padding: 1px 4px; border-radius: 4px; background: rgba(13,13,14,.7); font-size: 13px; line-height: 1.2; letter-spacing: 1px; }
+.bandera { display: inline-block; width: 20px; height: 15px; border-radius: 2px; object-fit: cover; vertical-align: middle; box-shadow: 0 0 0 1px rgba(255,255,255,.15); }
+.cromo-nac { display: flex; gap: 3px; }
