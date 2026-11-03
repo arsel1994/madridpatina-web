@@ -3401,8 +3401,8 @@
   const nomG = (nom, gen) => gen === 'femenina' && !/femen|women/i.test(nom) ? nom + ' femenina' : nom;
   const nivGrupo = amb => amb === 'Madrid' ? 'mad' : amb === 'España' ? 'esp' : NIV_FUERA.has(amb) ? 'fuera' : 'reg';
   // «dato curioso»: si un punto de Senior 1 midiera lo que una persona, cuánto mediría uno de cada liga
-  const NIV_COSAS = [['🐈', 'un gato', 0.3], ['🐕', 'un perro grande', 0.7], ['🧒', 'un niño de cuatro años', 1], ['🧍', 'una persona', 1.75], ['🏀', 'un pívot de la NBA', 2.15],
-    ['🐻', 'un oso pardo de pie', 2.7], ['🐘', 'un elefante', 3.5], ['🦒', 'una jirafa', 5.5], ['🦖', 'un tiranosaurio, de la cabeza a la cola', 12.5], ['🐋', 'una ballena azul', 29]];
+  const NIV_COSAS = [['🐈', 'un gato', 0.4], ['🐕', 'un perro grande', 0.75], ['🧍', 'una persona', 1.75], ['🐻', 'un oso pardo', 2.3], ['🐘', 'un elefante', 3.3],
+    ['🦒', 'una jirafa', 5.5], ['🦖', 'un tiranosaurio, de la cabeza a la cola', 12.3], ['🐋', 'una ballena azul', 29]];   // como scripts/reporte/infografia_niveles.py
   function vNiveles() {
     const R = A.rfepe || {}, fac = R.factores || {}, s1 = (fac.S1 || {}).f;
     if (!s1) return casoHtml('Ligas · Nivel de las ligas', 'Todavía no hay datos', 'El nivel de las ligas se calcula con los datos de las federaciones.', 'NIVEL', 'neutro', [['Volver a Ligas', '#/liga']]);
