@@ -3200,12 +3200,12 @@
             <div class="nv-v">${mad ? '1' : fx(x.f, 1)}</div></div>`; }).join('')}</div></div>`; }).join('')
       + `<p class="mt-nota">En Madrid, la liga de cada categoría cuenta con todos sus grupos juntos, porque el formato cambia casi cada temporada. De ${R.cantera_desde || '—'} a ${R.cantera_hasta || '—'}. Júnior no tiene liga nacional.</p>` : '';
     const opcN = filasN.map(([k, nom, amb, gen]) => `<option value="${k}"${k === 'S1' ? ' selected' : ''}>${nom} · ${amb}${gen === 'mixta' ? '' : ' · ' + gen}</option>`).join('');
-    const niveles = filasN.length ? sec('niveles', '08', 'NIVEL DE LAS LIGAS', 'Dónde está cada liga de España y de Madrid', 'Las ligas nacionales de la Real Federación Española de Patinaje, las de Madrid y las autonómicas que publican sus datos, masculinas, femeninas y mixtas, en una misma escala. Así se ve qué nivel tiene cada una frente a las demás. Más abajo, la cantera.', `
+    const niveles = filasN.length ? sec('niveles', '08', 'NIVEL DE LAS LIGAS', 'Dónde está cada liga de España y de Madrid', 'Las ligas nacionales de la Real Federación Española de Patinaje, las de Madrid, las autonómicas que publican sus datos y, de fuera, el campeonato de Norteamérica (NARCh), masculinas, femeninas y mixtas, en una misma escala. Así se ve qué nivel tiene cada una frente a las demás. Más abajo, la cantera.', `
       ${H('De más a menos nivel')}
       <p class="mt-p">La cifra de la derecha es cuántos puntos de Senior 1 vale un punto hecho en esa liga. Por ejemplo, un punto en la Liga Oro vale como ${fx(rfac.oro ? rfac.oro.f / s1 : 0, 1)} en Senior 1.</p>
       <div class="nv-esc">${escalera}</div>
       <div class="mt-leyenda"><span><i class="l1" style="background:#6B6B70"></i>liga nacional</span><span><i class="l1"></i>liga de Madrid</span><span><i class="l2"></i>margen: si repetimos la cuenta con otros jugadores sacados al azar, 8 de cada 10 veces cae en esta franja</span></div>
-      ${filasN.some(([, , amb]) => amb !== 'Madrid' && amb !== 'España') ? '<p class="mt-nota">Las ligas autonómicas son provisionales: no hay jugadores que las jueguen a la vez que las de Madrid, así que se comparan a través de las nacionales (quienes juegan también Plata o Challenger), con pocas temporadas y su margen es más ancho. Se irán afinando cada temporada.</p>' : ''}
+      ${filasN.some(([, , amb]) => amb !== 'Madrid' && amb !== 'España') ? `<p class="mt-nota">Las ligas autonómicas${filasN.some(([, , amb]) => amb === 'EE. UU.') ? ' y las de otros países' : ''} son provisionales: no hay jugadores que las jueguen a la vez que las de Madrid, así que se comparan a través de las nacionales (quienes juegan también Élite, Oro, Plata o Challenger), con pocas temporadas y su margen es más ancho.${filasN.some(([, , amb]) => amb === 'EE. UU.') ? ' NARCh, el campeonato de Norteamérica, son torneos de pocos partidos: cuenta cada año sus WinterNationals y sus finales juntas.' : ''} Se irán afinando cada temporada.</p>` : ''}
       ${rfac.S4 && rfac.S4.provisional ? '<p class="mt-nota">* Senior 4 empezó en 2026/27 y aún no tiene datos propios: usa el nivel de la antigua Senior 3, como en el FMPe.</p>' : ''}
       ${canteraN}
       ${H('Compara')}
@@ -3216,6 +3216,7 @@
       ${P(`Igual que el FMPe: con los jugadores de campo que han jugado en dos ligas, la misma temporada o en temporadas seguidas. Como es la misma persona, la diferencia entre sus puntos por partido en cada liga dice cuánto más difícil es una que otra. Usamos <b>${R.casos || '—'} casos de ${R.jugadores || '—'} jugadores</b>, de ${R.desde || '—'} a ${R.hasta || '—'}.`)}
       ${P('Los datos de las ligas nacionales salen de la web de la Real Federación Española de Patinaje. A cada jugador lo unimos con su ficha de Madrid por el nombre y la fecha de nacimiento.')}
       ${P('Las ligas autonómicas salen de la web de cada federación, y entran por quienes juegan también una liga nacional: los unimos por el nombre completo, solo cuando no hay duda. Solo sale una liga autonómica cuando tiene bastantes casos; de momento, la del País Vasco, que publica sus datos desde 2024/25.')}
+      ${P('De fuera de España, de momento, NARCh, el campeonato de Norteamérica (EE. UU.): sus divisiones Pro, masculina y femenina, desde 2015. Entra por los jugadores que juegan allí y en la Liga Élite. Allí suelen ir solo con su primer nombre y su apellido, y los unimos así cuando no hay otra persona que encaje.')}
       ${P('Las ligas femeninas entran en la misma escala gracias a las jugadoras que juegan también en las ligas de Madrid. Se puede comprobar por varios caminos: el nivel de la Senior Femenina sale igual frente a Senior 1, a Senior 2 y a Senior 3.')}
       <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['Quien juega una liga nacional y también en Madrid suele hacerlo en el equipo filial, donde tiene más peso en el juego. Eso puede agrandar algo la distancia entre las ligas nacionales y las de Madrid', 'Solo cuentan las ligas regulares: ni copas ni fases de ascenso', 'Mide puntos (goles y asistencias); no la defensa ni nada que no esté en el acta', 'No se calcula para porteros'], '!')}</div>`) : '';
 
@@ -3242,7 +3243,10 @@
     ['and', 'Liga andaluza', 'Andalucía', 'masculina'], ['and_f', 'Liga andaluza', 'Andalucía', 'femenina'],
     ['val', 'Liga valenciana', 'C. Valenciana', 'masculina'], ['val_f', 'Liga valenciana', 'C. Valenciana', 'femenina'],
     ['cat', 'Lliga catalana', 'Cataluña', 'masculina'], ['cat_f', 'Lliga catalana', 'Cataluña', 'femenina'],
-    ['cyl', 'Liga de Castilla y León', 'Castilla y León', 'masculina'], ['cyl_f', 'Liga de Castilla y León', 'Castilla y León', 'femenina']];
+    ['cyl', 'Liga de Castilla y León', 'Castilla y León', 'masculina'], ['cyl_f', 'Liga de Castilla y León', 'Castilla y León', 'femenina'],
+    // otros países (NARCh, EE. UU.: scripts/rfep/narch.py), también provisionales
+    ['narch_pro', 'NARCh Pro', 'EE. UU.', 'masculina'], ['narch_plat', "NARCh Men's Platinum", 'EE. UU.', 'masculina'],
+    ['narch_gold', "NARCh Men's Gold", 'EE. UU.', 'masculina'], ['narch_w_f', "NARCh Women's Pro", 'EE. UU.', 'femenina']];
   // «Compara»: los mismos puntos, pasados a cada liga
   function nivRes(fac, de, pts) {
     const f0 = (fac[de] || {}).f; if (!f0 || !(pts >= 0)) return '';
