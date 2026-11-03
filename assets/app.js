@@ -689,6 +689,10 @@
   });
   const arqDe = (k, lid) => { const L = MAPA && MAPA.ligas && MAPA.ligas[lid]; const x = L && (L.jug.find(j => j.k === k) || (L.por || []).find(j => j.k === k)); return x && ARQ[x.arq] ? { n: ARQ[x.arq][0], c: ARQ[x.arq][3], d: ARQ[x.arq][4], x } : null; };
   const colArq = c => (c || '').replace('#a8281f', '#FF6B63');
+  // «por encima de su liga» (ligas.py · por_encima): solo en positivo, cuando rinde al nivel de una liga más alta
+  const SNOM = { S1: 'Senior 1', S2: 'Senior 2', S3: 'Senior 3', S4: 'Senior 4' };
+  const nivChip = j => { const n = (((A.por_encima || {}).jugadores) || {})[j && j.k]; if (!n || n.nivel === n.liga) return '';
+    return `<a class="fi-nivel" href="#/niveles" title="Con sus puntos por partido, estaría por encima del ${n.pct[n.nivel]} % de los jugadores de ${SNOM[n.nivel]}">Nivel de ${SNOM[n.nivel]}</a>`; };
   // nacionalidades (ISO): bandera y nombre en español
   // imagen (en Windows los emojis de bandera salen como letras); flagcdn.com, por su código ISO
   const bandera = c => (/^[A-Z]{2}$/.test(c || '') ? `<img class="bandera" src="https://flagcdn.com/w20/${c.toLowerCase()}.png" srcset="https://flagcdn.com/w40/${c.toLowerCase()}.png 2x" width="20" height="15" alt="" loading="lazy">` : '');
@@ -965,7 +969,7 @@
     const roles = [j.capitan ? (j.fem ? 'CAPITANA' : 'CAPITÁN') : '', j.asistente ? 'ASISTENTE' : '', esPor ? (j.fem ? 'PORTERA' : 'PORTERO') : ''].filter(Boolean);
     const cab = `<div class="fi-cab"><div class="fi-foto${ok ? '' : ' sin'}"><span class="ini">${esc(ini(j.nombre, j.apellidos))}</span>${ok ? `<span class="ph" data-bg="${esc(j.foto)}"></span>` : ''}<span class="fi-dorsal cifra">${esc(j.dorsal || '')}</span></div>
       <div class="fi-t"><h1 class="h1 fi-n">${esc((j.nombre + ' ' + j.apellidos).toUpperCase())}</h1><div class="sub">${esc(eqs.map(nomEqLargo).join(' · ') || j.equipo || '')}${e0.liga ? ' · ' + esc(e0.liga.replace(/^Liga /, '')) : ''}</div>
-        <div class="fi-chips">${a ? `<span class="fi-arq" style="background:${a.c}" title="${esc(a.d)}">${esc(a.n.toUpperCase())}</span>` : ''}${rasChips(a)}${nacChips(j)}${roles.map(r => `<span class="fi-rol">${r}</span>`).join('')}${equiposDe(j).length ? favBoton(j.k) : ''}</div>
+        <div class="fi-chips">${a ? `<span class="fi-arq" style="background:${a.c}" title="${esc(a.d)}">${esc(a.n.toUpperCase())}</span>` : ''}${rasChips(a)}${nivChip(j)}${nacChips(j)}${roles.map(r => `<span class="fi-rol">${r}</span>`).join('')}${equiposDe(j).length ? favBoton(j.k) : ''}</div>
         <div class="fi-kpis">${kpis.map(([v, l]) => `<div><b class="cifra">${v}</b><span class="etq">${l}</span></div>`).join('')}</div>
         ${h0 ? `<div class="fi-hito"><b class="cifra">${h0.falta}</b><span>${UNI[h0.k][h0.falta === 1 ? 0 : 1]} para ${h0.k === 'a' || h0.k === 'par' ? 'las' : 'los'} ${h0.u} con el club</span></div>` : ''}</div></div>`;
     // Temporadas: barras de goles y asistencias (porteros: partidos y % de paradas)
@@ -3434,8 +3438,21 @@
     const tam = filas.map(([k, nom0, amb, gen]) => { const nom = nomG(nom0, gen); const h = 1.75 * fac[k].f / s1, c = cosa(h), px = Math.round(26 + 46 * Math.max(0, Math.min(1, (Math.log(h) - lh0) / (lh1 - lh0))));
       return `<div class="nvl-t ${nivGrupo(amb)}"><span class="nvl-e" style="font-size:${px}px" aria-hidden="true">${c[0]}</span><b class="cifra">${h >= 10 ? Math.round(h) : dec(h.toFixed(h < 1 ? 2 : 1))} m</b>
         <span class="nvl-tn">${nivLogo(k, iso[amb])}${esc(nom)}${nivGrupo(amb) === 'mad' || nivGrupo(amb) === 'esp' ? '' : ' · ' + esc(amb)}</span><span class="nvl-tc">como ${esc(c[1])}</span></div>`; }).join('');
-    const pTam = `<section class="mt-sec nvl-sec"><span class="etq">02 · DATO CURIOSO</span><h2 class="h2">Si un punto midiera…</h2>
+    const pTam = `<section class="mt-sec nvl-sec"><span class="etq">03 · DATO CURIOSO</span><h2 class="h2">Si un punto midiera…</h2>
       <p class="mt-p">Si un punto en Senior 1 midiera lo que una persona, 1,75 metros, esto es lo que mediría un punto en cada liga.</p><div class="nvl-tams">${tam}</div></section>`;
+    // 2b · por encima de su liga (ligas de Madrid)
+    const PE = A.por_encima || {}, nomJ = g => { const n = `${esc(g.nombre)} ${esc(g.apellidos)}`; return A.jugadores[g.k] ? `<a href="#/jugador/${esc(g.k)}">${n}</a>` : n; };
+    const dec2 = x => dec((+x).toFixed(2)), eqNom = n => /^MADRIDPATINA/i.test(n || '') ? n.replace(/^MADRIDPATINA/i, 'MP') : titulo(n);
+    const tarjPE = g => `<div class="nvl-pe${g.nuestro ? ' us' : ''}"><span class="nvl-pe-n"><b>${nomJ(g)}</b><i>${esc(eqNom(g.equipo))}</i></span>
+      <span class="nvl-pe-v"><b>${SNOM[g.nivel]}</b><i>por encima del ${g.pct[g.nivel]} %</i></span></div>`;
+    const grPE = [['S2', 'Juegan en Senior 2 · nivel de Senior 1'], ['S3', 'Juegan en Senior 3 · nivel de Senior 2 o más'], ['S4', 'Juegan en Senior 4 · nivel de Senior 2 o más']]
+      .filter(([L]) => ((PE.ligas || {})[L] || []).length).map(([L, t]) => `<div class="pl-t"><span class="h2" style="font-size:20px">${t}</span><span>${PE.ligas[L].length}</span></div><div class="nvl-pes">${PE.ligas[L].map(tarjPE).join('')}</div>`).join('');
+    const cerca = (PE.cerca_del_A || []).length && PE.mediana_A ? `<div class="nvl-cerca"><span class="etq">DE NUESTROS EQUIPOS · LOS MÁS CERCA DEL A</span>
+      <p class="mt-p">Sus puntos por partido, pasados a ${SNOM[PE.mediana_A[0]]}, la liga del MP A. La mitad del A hace más de ${dec2(PE.mediana_A[1])} por partido.</p>
+      <div class="nvl-pes">${PE.cerca_del_A.map(g => `<div class="nvl-pe us"><span class="nvl-pe-n"><b>${nomJ(g)}</b><i>${esc(eqNom(g.equipo))} · ${SNOM[g.liga]}</i></span><span class="nvl-pe-v"><b>${dec2(g.en_liga_A)}</b><i>por partido en ${SNOM[PE.mediana_A[0]]}</i></span></div>`).join('')}</div></div>` : '';
+    const pPE = grPE || cerca ? `<section class="mt-sec nvl-sec"><span class="etq">02 · EN MADRID</span><h2 class="h2">Por encima de su liga</h2>
+      <p class="mt-p">Jugadores de campo que, con sus puntos por partido de las dos últimas temporadas y lo que va de esta, rendirían al menos como la mitad de los jugadores de una liga más alta. El porcentaje es a cuántos jugadores de esa liga superan.</p>
+      ${cerca}${grPE}<p class="pv-nota">Cuenta goles y asistencias; no la defensa ni nada que no esté en el acta. Hacen falta 8 partidos. Senior 4 usa aún el nivel de la antigua Senior 3, así que sus jugadores se comparan con Senior 2.</p></section>` : '';
     // 3 · los puentes: por dónde entra cada liga en la escala
     const P = R.puentes || [], grp = {}; filas.forEach(([k, , amb]) => { grp[k] = nivGrupo(amb); });
     const entre = (g1, g2) => P.filter(([a, b]) => (grp[a] === g1 && grp[b] === g2) || (grp[a] === g2 && grp[b] === g1)).reduce((s, x) => s + x[2], 0);
@@ -3446,12 +3463,12 @@
       const b = P.filter(x => (x[0] === k || x[1] === k) && grp[x[0] === k ? x[1] : x[0]] !== grp[k]).sort((a, c) => c[2] - a[2])[0];
       if (!b) return ''; const o = b[0] === k ? b[1] : b[0];
       return `<div class="nvl-pu">${nivLogo(k, iso[amb])}<span><b>${esc(nom)}</b> · ${esc(amb)}</span><span class="nvl-fl">⇄</span>${nivLogo(o, iso[ambDe(o)])}<span><b>${esc(nomDe(o))}</b> · ${esc(ambDe(o))}</span><b class="cifra">${b[2]}</b></div>`; }).join('');
-    const pPu = P.length ? `<section class="mt-sec nvl-sec"><span class="etq">03 · CÓMO SE UNEN</span><h2 class="h2">Los puentes</h2>
+    const pPu = P.length ? `<section class="mt-sec nvl-sec"><span class="etq">04 · CÓMO SE UNEN</span><h2 class="h2">Los puentes</h2>
       <p class="mt-p">Cada comparación es un jugador que ha jugado en dos ligas la misma temporada o la siguiente. Así se encadenan: las ligas de Madrid se unen con las nacionales, y las nacionales con las de fuera.</p>
       <div class="nvl-cad">${cadena}</div>${ent ? `<div class="pl-t"><span class="h2" style="font-size:20px">Cómo entra cada liga de fuera de Madrid y de la nacional</span><span>casos</span></div><div class="nvl-pus">${ent}</div>` : ''}</section>` : '';
     // 4 · compara
     const opc = filas.map(([k, nom, amb, gen]) => `<option value="${k}"${k === 'S2' ? ' selected' : ''}>${nom} · ${amb}${gen === 'mixta' ? '' : ' · ' + gen}</option>`).join('');
-    const pComp = `<section class="mt-sec nvl-sec"><span class="etq">04 · HAZ LA CUENTA</span><h2 class="h2">Compara</h2>
+    const pComp = `<section class="mt-sec nvl-sec"><span class="etq">05 · HAZ LA CUENTA</span><h2 class="h2">Compara</h2>
       <p class="mt-p">Elige una liga y unos puntos: debajo sale cuántos serían, en los mismos partidos, en cada una de las demás.</p>
       <div class="nv-comp" data-nv><label><span>Liga</span><select data-nv="liga">${opc}</select></label><label><span>Puntos</span><input data-nv="pts" type="number" inputmode="numeric" min="0" max="999" value="20"></label></div>
       <div class="nv-res" data-nv-res>${nivRes(fac, 'S2', 20)}</div></section>`;
@@ -3460,11 +3477,11 @@
       .filter(([k]) => !fac[k]).map(([k, n, p, c]) => [k, n, p, c, 'Datos descargados; aún pocos jugadores en común'])
       .concat([['ws', 'Mundiales 2019 y 2024', 'World Skate · selecciones', null, 'Encontradas; están en la misma plataforma que la Federación Española y entrarán con las autonómicas'],
         ['cat', 'Cataluña, C. Valenciana, Galicia, Andalucía y Castilla y León', 'Autonómicas', 'ES', 'Pendientes de leer sus datos']]);
-    const pRad = `<section class="mt-sec nvl-sec"><span class="etq">05 · PRÓXIMAMENTE</span><h2 class="h2">En el radar</h2>
+    const pRad = `<section class="mt-sec nvl-sec"><span class="etq">06 · PRÓXIMAMENTE</span><h2 class="h2">En el radar</h2>
       <p class="mt-p">Ligas que ya seguimos pero que todavía no salen en la escala. Una liga entra cuando su nivel sale parecido 9 de cada 10 veces que repetimos la cuenta.</p>
       <div class="nvl-rad">${radar.map(([k, n, p, c, t]) => `<div>${nivLogo(k, c)}<span><b>${esc(n)}</b><span>${esc(p)}</span><i>${esc(t)}</i></span></div>`).join('')}</div>
       <a class="como-l" href="#/metodo/niveles">Cómo se calcula, con todos los detalles →</a></section>`;
-    return `<div class="nvl">${hero}${pEsc}${pTam}${pPu}${pComp}${pRad}</div>`;
+    return `<div class="nvl">${hero}${pEsc}${pPE}${pTam}${pPu}${pComp}${pRad}</div>`;
   }
   // «Compara»: los mismos puntos, pasados a cada liga
   function nivRes(fac, de, pts) {

@@ -3672,3 +3672,19 @@ html.galv-abierta { overflow: hidden; }
 .nvl-rad span span { color: #A6A6AD; font-weight: 600; font-size: 12px; }
 .nvl-rad i { font-style: normal; color: #8A8A8F; font-size: 12px; }
 .lg-pill.niv b { color: #5AB0FF; }
+
+/* «Por encima de su liga» (#/niveles) y su etiqueta en la ficha */
+.nvl-pes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; max-width: 900px; margin: 8px 0 14px; }
+.nvl-pe { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #18181B; }
+.nvl-pe.us { background: #2A1416; box-shadow: inset 0 0 0 1px #D3202A; }
+.nvl-pe-n, .nvl-pe-v { display: grid; gap: 2px; min-width: 0; }
+.nvl-pe-n b { font-size: 15px; line-height: 1.15; }
+.nvl-pe-n b a { color: inherit; text-decoration: underline; text-decoration-color: #3A3A40; text-underline-offset: 3px; }
+.nvl-pe-n i, .nvl-pe-v i { font-style: normal; font-size: 12px; font-weight: 600; color: #A6A6AD; }
+.nvl-pe-v { text-align: right; flex: none; }
+.nvl-pe-v b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; line-height: 1; color: #5AB0FF; }
+.nvl-pe.us .nvl-pe-v b { color: #FF6B63; }
+.nvl-cerca { margin: 14px 0 6px; padding: 14px; border-radius: 12px; background: #141416; border: 1px dashed #3A3A40; }
+.nvl-cerca .etq { color: #FF6B63; }
+.nvl-cerca .mt-p { margin-top: 6px; font-size: 14px; }
+.fi-nivel { display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 4px; background: #13263A; color: #5AB0FF; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
