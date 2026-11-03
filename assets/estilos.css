@@ -3552,3 +3552,58 @@ html.galv-abierta { overflow: hidden; }
 .cromo-nac { position: absolute; top: 6px; right: 6px; z-index: 2; padding: 1px 4px; border-radius: 4px; background: rgba(13,13,14,.7); font-size: 13px; line-height: 1.2; letter-spacing: 1px; }
 .bandera { display: inline-block; width: 20px; height: 15px; border-radius: 2px; object-fit: cover; vertical-align: middle; box-shadow: 0 0 0 1px rgba(255,255,255,.15); }
 .cromo-nac { display: flex; gap: 3px; }
+
+/* Ligas → Liga nacional (#/nacional): esta temporada y la historia de las ligas de la Federación Española */
+.lg-pill.nac { background: #1B1626; box-shadow: inset 0 0 0 1px #3A3150; }
+.nn-hero { margin: 8px 0 14px; }
+.nn-hero .pv-nota { margin-top: 6px; }
+.nn-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.nn-pill { padding: 7px 12px; border-radius: 999px; background: #18181B; color: #C9C9CE; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.nn-pill.on { background: #F4F4F5; color: #0D0D0E; }
+.nn-esc { display: inline-block; flex: none; object-fit: contain; vertical-align: middle; }
+.nn-esc.ini { display: inline-grid; place-items: center; border-radius: 50%; background: #26262A; color: #A6A6AD; font-size: 10px; font-weight: 800; }
+.nn-tabla { max-width: 860px; }
+.nn-tabla td { vertical-align: middle; }
+.nn-eq { display: inline-flex; align-items: center; gap: 8px; color: #F4F4F5; font-weight: 700; }
+.nn-sub { font-size: 12px; color: #A6A6AD; }
+.nn-ps { display: grid; gap: 6px; max-width: 760px; }
+.nn-p { display: grid; grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr); align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #18181B; }
+.nn-p > a { display: flex; align-items: center; gap: 8px; min-width: 0; color: #F4F4F5; font-size: 14px; font-weight: 700; }
+.nn-p > a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nn-p > a:nth-of-type(2) { justify-content: flex-end; text-align: right; }
+.nn-p > b { text-align: center; font-size: 20px; }
+.nn-vid, .nn-f { grid-column: 1 / -1; justify-self: center; font-size: 12px; color: #A6A6AD; }
+.nn-lids { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+.nn-lid { padding: 14px 16px; }
+.nn-lid > div { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid #26262A; }
+.nn-lid .n { color: #55555B; font-weight: 800; }
+.nn-lid .q { display: flex; flex-direction: column; min-width: 0; }
+.nn-lid .q b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nn-lid .q a { font-size: 12px; color: #A6A6AD; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nn-lid .cifra { font-size: 20px; }
+.nn-nacs { display: flex; flex-wrap: wrap; gap: 6px; }
+.nn-nac { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; background: #18181B; font-size: 13px; }
+.nn-nac i { font-style: normal; font-weight: 800; color: #A6A6AD; }
+.nn-fin { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 8px; }
+.nn-fin > div { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: 10px; background: #18181B; }
+.nn-fin > div.gana { box-shadow: inset 3px 0 0 #D4A73B; }
+.nn-fin b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 20px; text-transform: uppercase; }
+.nn-fin > div > span:last-child { font-size: 13px; color: #A6A6AD; }
+.nn-club { display: flex; align-items: center; gap: 16px; margin: 10px 0 14px; }
+.nn-club .sub { display: block; margin-top: 4px; font-size: 14px; color: #C9C9CE; }
+.nn-kpi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; max-width: 620px; margin-bottom: 16px; border-radius: 12px; overflow: hidden; background: #26262A; }
+.nn-kpi > div { display: flex; flex-direction: column; padding: 12px 14px; background: #18181B; }
+.nn-kpi b { font-size: 32px; line-height: 1; }
+.nn-temps { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 8px; }
+.nn-temps > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #18181B; }
+.nn-tl { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; }
+.nn-tl b { min-width: 34px; font-size: 22px; line-height: 1.1; }
+.nn-tl span { font-size: 13px; color: #C9C9CE; }
+.nn-tl.oro b { color: #D4A73B; }
+.nn-fmp { display: flex; flex-wrap: wrap; gap: 6px; }
+.nn-fmp > span { display: inline-flex; flex-direction: column; padding: 8px 12px; border-radius: 10px; background: #18181B; }
+.nn-fmp > span.mp { box-shadow: inset 3px 0 0 #D3202A; }
+.nn-fmp b { font-size: 14px; }
+.nn-fmp i { font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #FF6B63; }
+.nn-fmp small { font-size: 12px; color: #A6A6AD; }
+@media (max-width: 520px) { .nn-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } .nn-tabla th:nth-child(n+5):not(:last-child), .nn-tabla td:nth-child(n+5):not(:last-child) { display: none; } }

@@ -1118,7 +1118,7 @@
       ${usB ? `<div class="lg-uss">${usB}</div>` : ''}
       <div class="lg-prog"><div class="lg-prog-t"><span>Jornada ${ult} de ${L.total}</span><span>${L.total ? Math.round(ult / L.total * 100) + ' % jugado' : ''}</span></div><div class="lg-prog-b">${prog}</div></div></div>`;
     const pills = `<nav class="lg-pills" aria-label="Ligas">${A.ligas.map(l => { const on = l.id === L.id, p = (l.corto || l.nombre).split(' '), eqs = A.equipos.filter(e => e.ligaId === l.id).map(mpCorto).map(s => s.toUpperCase());
-      return `<a class="lg-pill" href="${hLg(l.id)}"${on ? ' aria-current="page"' : ''}><span class="etq">${esc(p.slice(0, -1).join(' ').toUpperCase())}</span><b>DIV. ${esc(p[p.length - 1])}</b><span class="lg-pill-us">${esc(eqs.join(' · '))}</span></a>`; }).join('')}</nav>`;
+      return `<a class="lg-pill" href="${hLg(l.id)}"${on ? ' aria-current="page"' : ''}><span class="etq">${esc(p.slice(0, -1).join(' ').toUpperCase())}</span><b>DIV. ${esc(p[p.length - 1])}</b><span class="lg-pill-us">${esc(eqs.join(' · '))}</span></a>`; }).join('')}<a class="lg-pill nac" href="#/nacional"><span class="etq">RFEP · ESPAÑA</span><b>NACIONAL</b><span class="lg-pill-us">Élite · Oro · Plata</span></a></nav>`;
     const hayPre = L.pre && L.pre.equipos && L.pre.equipos.length;
     const archivo = `<a class="archivo" href="${hPre(hayPre ? L.id : 'club')}"><div><div class="etq">Pretemporada ${esc(A.temporada)}</div><div class="h2">Antes de empezar</div><div class="sub">${hayPre ? (L.pre.equipos.some(e => e.tipo === 'sube' || e.tipo === 'baja' || e.tipo === 'nuevo') ? 'Ascensos, descensos y quién ha cambiado de equipo' : 'Quién ha llegado y quién se ha ido') : 'Cómo llegaba cada uno de nuestros equipos'}</div></div><span class="ir">Ver</span></a>`;
     const T = pestanas('liga', [['clas', 'Clasificación'], ['jor', 'Jornadas'], ['evo', 'Evolución'], ['mapa', 'Mapa'], ['ac', '¿Acertamos?']], 'clas');
@@ -1875,7 +1875,7 @@
     const pEl = nuestros.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">En la Élite se parecen a…</span><span>${nuestros.length} jugadores</span></div>
       <p class="pv-nota" style="margin-top:0">Por estilo, no por nivel: cada uno con el jugador de la Liga Élite que ocupa un sitio parecido en su liga. Se miran su puesto por puntos por partido, cuántos de sus puntos son goles, su parte en los goles de su equipo y la sanción. En el mapa, a la derecha los que más puntos hacen en su liga y arriba los más goleadores.</p>
       ${mapa}<div class="nc-pars">${nuestros.map(fila).join('')}</div></div>` : '';
-    return pNac + pEl;
+    return '<a class="como-l" href="#/nacional">Clasificaciones, equipos e historia de las ligas nacionales →</a>' + pNac + pEl;
   }
   function rellenarNac() {
     const el = view.querySelector('[data-nac]'); if (!el) return;
@@ -1891,6 +1891,82 @@
         <div class="pv-nota">Los dos en un sitio parecido de su liga: puesto por puntos por partido (${p.px} de 100 frente a ${r.px}), ${p.y != null ? p.y + ' % y ' + r.y + ' % de sus puntos son goles' : 'goles frente a asistencias'}, parte en los goles del equipo y sanción. No compara el nivel: para eso, el <a href="#/metodo/niveles">nivel de las ligas</a>.</div>`;
       fondos(el); };
     if (NAC) pon(); else cargarNac().then(pon);
+  }
+
+  /* ── Liga nacional (#/nacional/<liga>, #/nacional/club/<club>): esta temporada de cada liga de la Federación Española
+     (data/nacional.json, cada noche) y su historia desde 2016/17 (data/nacional_historia.json, scripts/rfep/historia_web.py) ── */
+  let HISTN = null, histP = null;
+  const cargarHistN = () => histP || (histP = fetch('data/nacional_historia.json?v=' + encodeURIComponent(A.actualizado || ''))
+    .then(r => (r.ok ? r.json() : null)).then(d => (HISTN = d)).catch(() => { histP = null; return null; }));
+  const NAC_ORDEN = ['elite', 'elite_f', 'oro', 'oro_f', 'plata', 'plata_f', 'challenger'];
+  let NAC_PEDIDO = false;
+  const escNac = (logo, nom, t = 26) => logo ? `<img class="nn-esc" src="${esc(logo)}" alt="" width="${t}" height="${t}" loading="lazy">` : `<span class="nn-esc ini" style="width:${t}px;height:${t}px">${esc((nom || '?').replace(/^(CP|HC|CH|CD|CE|UE|CDE|Club)\s+/i, '').slice(0, 2).toUpperCase())}</span>`;
+  const hClubN = k => '#/nacional/club/' + encodeURIComponent(k);
+  const nomClubN = (k, def) => ((HISTN && HISTN.clubes[k]) || {}).nombre || def || k;
+  function vNacional(sub, x) {
+    if (!NAC_PEDIDO && (!NAC || !HISTN)) { NAC_PEDIDO = true; const h = location.hash; Promise.all([cargarNac(), cargarHistN()]).then(() => { if (location.hash === h) render(); });
+      return '<div class="carga" role="status" aria-label="Cargando"><div class="sk" style="height:180px;margin-top:24px"></div><div class="carga-tarjetas"><div class="sk"></div><div class="sk"></div></div></div>'; }
+    if (!NAC || !NAC.ligas) return casoHtml('Ligas · Liga nacional', 'Todavía no hay datos de la liga nacional', 'Se actualizan cada noche desde la web de la Real Federación Española de Patinaje.', 'RFEP', 'neutro', [['Volver a Ligas', '#/liga']]);
+    if (sub === 'club') return vNacClub(decodeURIComponent(x || ''));
+    const disp = NAC_ORDEN.filter(k => NAC.ligas[k]), k = disp.includes(sub) ? sub : disp[0], L = NAC.ligas[k], Hk = HISTN && HISTN.ligas[k], fem = /_f$/.test(k);
+    const pills = `<nav class="nn-pills" aria-label="Ligas nacionales">${disp.map(q => `<a class="nn-pill${q === k ? ' on' : ''}" href="#/nacional/${q}"${q === k ? ' aria-current="page"' : ''}>${esc(NIV_NOM[q] || q)}</a>`).join('')}</nav>`;
+    const hero = `<div class="nn-hero"><span class="etq">LIGAS NACIONALES · REAL FEDERACIÓN ESPAÑOLA DE PATINAJE · ${esc(NAC.temporada || '')}</span><h1 class="h1">${esc(NIV_NOM[k] || L.nombre)}</h1>
+      <p class="pv-nota">Jornada ${L.jugadas || 0} de ${L.jornadas || '—'}. Se actualiza cada noche. Su nivel frente a nuestras ligas, en <a href="#/metodo/niveles">nivel de las ligas</a>.</p></div>`;
+    // clasificación
+    const fila = (t, i) => `<tr><td class="n">${i + 1}</td><td><a class="nn-eq" href="${hClubN(t.club)}">${escNac(t.logo, t.nombre)}<span>${esc(t.nombre)}</span></a></td>${['pj', 'g', 'e', 'p', 'gf', 'gc'].map(c => `<td class="n">${t[c]}</td>`).join('')}<td class="n"><b>${t.pts}</b></td></tr>`;
+    const pClas = `<div class="mt-tabla nn-tabla"><table><thead><tr><th></th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>Pts</th></tr></thead><tbody>${L.tabla.map(fila).join('')}</tbody></table></div>
+      <p class="pv-nota">Victoria, 3 puntos; empate, 2 al que gana los penaltis y 1 al otro. Calculada con los resultados del calendario de la Federación: si un partido se corrige o se sanciona a un equipo, puede no coincidir con la oficial.</p>`;
+    // jornadas
+    const eqN = id => L.equipos[id] || {};
+    const partido = q => { const a = eqN(q.l), b = eqN(q.v), jug = q.gl != null;
+      return `<div class="nn-p"><a href="${hClubN(a.club)}">${escNac(a.logo, a.nombre, 22)}<span>${esc(a.nombre || '')}</span></a><b class="cifra">${jug ? `${q.gl}${q.bl ? '<span class="b-pen">B</span>' : ''}–${q.gv}${q.bv ? '<span class="b-pen">B</span>' : ''}` : esc(q.h && q.h !== '_' ? q.h : '—')}</b><a href="${hClubN(b.club)}"><span>${esc(b.nombre || '')}</span>${escNac(b.logo, b.nombre, 22)}</a>
+        ${q.video ? `<a class="nn-vid" href="https://www.youtube.com/watch?v=${esc(q.video)}" target="_blank" rel="noopener">▶ Vídeo</a>` : ''}${!jug && q.f ? `<span class="nn-f">${esc(q.f)}</span>` : ''}</div>`; };
+    const jornada = (J, t) => J ? `<div class="pl-g"><div class="pl-t"><span class="h2">${t} · ${esc(J.n)}</span></div><div class="nn-ps">${J.p.map(partido).join('')}</div></div>` : '';
+    const pJor = (jornada(L.ultima, 'Última') + jornada(L.proxima, 'Próxima')) || '<div class="pv-nota">Sin partidos todavía.</div>';
+    // jugadores
+    const lid = (t, xs, f) => xs && xs.length ? `<div class="tarjeta nn-lid"><span class="etq">${t}</span>${xs.slice(0, 8).map((y, i) => `<div><span class="n">${i + 1}</span><span class="q"><b>${esc(y.n)}</b><a href="${hClubN(y.club)}">${esc(y.eqn || '')}</a></span><b class="cifra">${f(y)}</b></div>`).join('')}</div>` : '';
+    const nacs = Object.entries(L.nacionalidades || {}), totN = nacs.reduce((a, [, n]) => a + n, 0);
+    const pJug = `<div class="nn-lids">${lid('Puntos', L.lideres.pts, y => y.pts)}${lid('Goles', L.lideres.g, y => y.g)}${lid('Asistencias', L.lideres.a, y => y.a)}${lid('Porteros · % de paradas', L.porteros, y => dec((y.pct * 100).toFixed(1)) + '%')}</div>
+      ${nacs.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">Nacionalidades de la liga</span><span>${totN} jugadores</span></div><div class="nn-nacs">${nacs.map(([c, n]) => `<span class="nn-nac">${bandera(c)}<b>${esc(pais(c))}</b><i>${n}</i></span>`).join('')}</div>
+        <p class="pv-nota">Según la ficha de cada jugador en la Federación Española. Solo el recuento: no ponemos la bandera de cada uno porque de casi nadie sabemos si es mayor de edad.</p></div>` : ''}
+      ${k === 'elite' ? '<p class="pv-nota">¿A quién de la Élite se parece cada jugador nuestro? En <a href="#/jugadores">Jugadores → Liga nacional</a>.</p>' : ''}`;
+    // historia
+    const club = (q, d) => q ? `<a href="${hClubN(q)}">${esc(nomClubN(q, d))}</a>` : '—';
+    const histT = Hk ? `<div class="mt-tabla nn-tabla"><table><thead><tr><th>Temporada</th><th>1.º</th><th>2.º</th><th>3.º</th><th>Máximo anotador</th></tr></thead><tbody>${Hk.temporadas.map(t => `<tr><td>${esc(t.t)}</td>${[0, 1, 2].map(i => `<td>${t.tabla[i] ? club(t.tabla[i].club) : '—'}</td>`).join('')}<td>${t.max ? `${esc(t.max.n)} <span class="nn-sub">${club(t.max.club)} · ${t.max.pts} pts</span>` : '—'}</td></tr>`).join('')}</tbody></table></div>
+      <p class="pv-nota">Puesto en la liga regular, con los resultados del calendario de la Federación (sin fases finales).</p>` : '<div class="pv-nota">Sin historia de esta liga.</div>';
+    const copas = HISTN ? HISTN.copas.filter(c => k.startsWith('elite') && (fem ? /Reina|femenina/.test(c.copa) : /Rey|masculina/.test(c.copa))) : [];
+    const pal = {}; copas.forEach(c => { (pal[c.campeon] = pal[c.campeon] || { copa: 0, sup: 0 })[/Supercopa/.test(c.copa) ? 'sup' : 'copa']++; });
+    (Hk ? Hk.temporadas : []).forEach(t => { if (t.tabla[0]) (pal[t.tabla[0].club] = pal[t.tabla[0].club] || { copa: 0, sup: 0 }).liga = ((pal[t.tabla[0].club] || {}).liga || 0) + 1; });
+    const palm = Object.entries(pal).map(([q, v]) => [q, v.liga || 0, v.copa, v.sup]).sort((a, b) => (b[1] + b[2] + b[3]) - (a[1] + a[2] + a[3]) || b[1] - a[1]);
+    const lids = HISTN && HISTN.lideres[k];
+    const pHist = histT + (palm.length && k.startsWith('elite') ? `<div class="pl-g"><div class="pl-t"><span class="h2">Palmarés desde ${esc(HISTN.desde)}</span></div><div class="mt-tabla nn-tabla"><table><thead><tr><th>Club</th><th>1.º de la liga</th><th>${fem ? 'Copa de la Reina' : 'Copa del Rey'}</th><th>Supercopa</th></tr></thead><tbody>${palm.map(([q, a, b, c]) => `<tr><td>${club(q)}</td><td class="n">${a || '—'}</td><td class="n">${b || '—'}</td><td class="n">${c || '—'}</td></tr>`).join('')}</tbody></table></div></div>` : '')
+      + (copas.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">Finales</span></div><div class="nn-fin">${copas.map(c => `<div><span class="etq">${esc(c.t)} · ${esc(c.copa)}</span><b>${club(c.campeon)}</b><span>${esc(c.marcador)}${c.pen ? ' en los penaltis' : ''} a ${club(c.rival)}</span></div>`).join('')}</div></div>` : '')
+      + (lids && lids.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">Máximos anotadores desde ${esc(HISTN.desde)}</span><span>liga regular</span></div><div class="mt-tabla nn-tabla"><table><thead><tr><th></th><th>Jugador</th><th>Club</th><th>PJ</th><th>G</th><th>A</th><th>Pts</th></tr></thead><tbody>${lids.map((y, i) => `<tr><td class="n">${i + 1}</td><td>${esc(y.n)}</td><td>${y.clubes.map(q => club(q)).join(', ')}</td><td class="n">${y.pj}</td><td class="n">${y.g}</td><td class="n">${y.a}</td><td class="n"><b>${y.pts}</b></td></tr>`).join('')}</tbody></table></div></div>` : '');
+    const T = pestanas('nac', [['clas', 'Clasificación'], ['jor', 'Jornadas'], ['jug', 'Jugadores'], ['hist', 'Historia']], 'clas');
+    return `<div class="nn">${hero}${pills}${T.nav}${T.panel('clas', pClas)}${T.panel('jor', pJor)}${T.panel('jug', pJug)}${T.panel('hist', pHist)}</div>`;
+  }
+  function vNacClub(k) {
+    const C = HISTN && HISTN.clubes[k];
+    let ahora = null, ligaK = null;
+    NAC_ORDEN.forEach(q => { const L = NAC.ligas[q]; const t = L && L.tabla.findIndex(y => y.club === k); if (L && t >= 0 && !ahora) { ahora = { L, t, fila: L.tabla[t] }; ligaK = q; } });
+    const nombre = (C && C.nombre) || (ahora && ahora.fila.nombre) || k;
+    if (!C && !ahora) return casoHtml('Liga nacional', 'No encontramos este club', '', 'RFEP', 'neutro', [['Volver a la liga nacional', '#/nacional']]);
+    const logo = ahora && ahora.fila.logo;
+    const tit = C ? Object.entries(C.titulos || {}) : [], nTit = q => tit.filter(([t]) => q(t)).reduce((a, [, n]) => a + n, 0);
+    const cab = `<div class="nn-club">${escNac(logo, nombre, 72)}<div><span class="etq">LIGA NACIONAL · CLUB</span><h1 class="h1">${esc(nombre)}</h1>
+      ${ahora ? `<span class="sub">${esc(NIV_NOM[ligaK])} ${esc(NAC.temporada)} · ${ahora.t + 1}.º de ${ahora.L.tabla.length} · ${ahora.fila.pts} pts</span>` : ''}</div></div>
+      ${C ? `<div class="nn-kpi"><div><b class="cifra">${new Set(C.temporadas.map(t => t.t)).size}</b><span class="etq">temporadas</span></div><div><b class="cifra">${nTit(t => t.startsWith('liga_'))}</b><span class="etq">1.º de liga</span></div><div><b class="cifra">${nTit(t => t === 'copa')}</b><span class="etq">copas</span></div><div><b class="cifra">${nTit(t => t === 'supercopa')}</b><span class="etq">supercopas</span></div></div>` : ''}`;
+    const pl = ahora ? (ahora.L.plantillas[k] || []) : [];
+    const plant = pl.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">Plantilla ${esc(NAC.temporada)}</span><span>${pl.length} jugadores</span></div><div class="mt-tabla nn-tabla"><table><thead><tr><th>Jugador</th><th>PJ</th><th>G</th><th>A</th><th>Pts</th><th>Sanción</th></tr></thead><tbody>${pl.map(y => `<tr><td>${esc(y.n)}${y.por ? ' <span class="nn-sub">portero</span>' : ''}</td><td class="n">${y.pj}</td><td class="n">${y.por ? '' : y.g}</td><td class="n">${y.por ? '' : y.a}</td><td class="n">${y.por ? (y.pct != null ? dec((y.pct * 100).toFixed(1)) + '%' : '') : `<b>${y.pts}</b>`}</td><td class="n">${y.pim ? dec(y.pim) + "'" : ''}</td></tr>`).join('')}</tbody></table></div></div>` : '';
+    // temporada a temporada: una fila por temporada con cada equipo del club en su liga (masculinas y femeninas)
+    const porT = {}; (C ? C.temporadas : []).forEach(t => { (porT[t.t] = porT[t.t] || []).push(t); });
+    const temps = C ? `<div class="pl-g"><div class="pl-t"><span class="h2">Temporada a temporada</span><span>desde ${esc(HISTN.desde)}</span></div><div class="nn-temps">${Object.keys(porT).sort().reverse().map(t => `<div><span class="etq">${esc(t)}</span>${porT[t].sort((a, b) => NAC_ORDEN.indexOf(a.liga) - NAC_ORDEN.indexOf(b.liga)).map(x => `<span class="nn-tl${x.pos === 1 ? ' oro' : ''}"><b class="cifra">${x.pos}.º</b><span>${esc(NIV_NOM[x.liga] || x.liga)} · de ${x.de}</span></span>`).join('')}</div>`).join('')}</div></div>` : '';
+    const fin = HISTN ? HISTN.copas.filter(c => c.campeon === k || c.rival === k) : [];
+    const finales = fin.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">Finales</span></div><div class="nn-fin">${fin.map(c => `<div class="${c.campeon === k ? 'gana' : ''}"><span class="etq">${esc(c.t)} · ${esc(c.copa)}</span><b>${c.campeon === k ? 'Campeón' : 'Subcampeón'}</b><span>${esc(c.marcador)}${c.pen ? ' en los penaltis' : ''} ${c.campeon === k ? 'a' : 'ante'} <a href="${hClubN(c.campeon === k ? c.rival : c.campeon)}">${esc(nomClubN(c.campeon === k ? c.rival : c.campeon))}</a></span></div>`).join('')}</div></div>` : '';
+    const gol = C && C.goleadores.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">Sus máximos anotadores</span><span>liga regular, desde ${esc(HISTN.desde)}</span></div><div class="mt-tabla nn-tabla"><table><thead><tr><th>Jugador</th><th>Temp.</th><th>PJ</th><th>G</th><th>A</th><th>Pts</th></tr></thead><tbody>${C.goleadores.map(y => `<tr><td>${esc(y.n)}</td><td class="n">${y.temps}</td><td class="n">${y.pj}</td><td class="n">${y.g}</td><td class="n">${y.a}</td><td class="n"><b>${y.pts}</b></td></tr>`).join('')}</tbody></table></div></div>` : '';
+    const fmp = C && C.fmp.length ? `<div class="pl-g"><div class="pl-t"><span class="h2">Han pasado por la Federación Madrileña</span><span>${C.fmp.length} jugadores</span></div><div class="nn-fmp">${C.fmp.slice(0, 40).map(y => `<span class="${y.mp ? 'mp' : ''}"><b>${esc(y.n || '')}</b>${y.mp ? '<i>MADRIDPATINA</i>' : ''}<small>${esc((y.t || []).join(' · '))}</small></span>`).join('')}${C.fmp.length > 40 ? `<span><b>y ${C.fmp.length - 40} más</b></span>` : ''}</div>
+      <p class="pv-nota">Jugadores de este club en la liga nacional que también han jugado en alguna liga de Madrid. En rojo, los que han pasado por MADRIDPATINA.</p></div>` : '';
+    return `<div class="nn">${cab}${plant}${temps}${finales}${gol}${fmp}<a class="como-l" href="#/nacional${ligaK ? '/' + ligaK : ''}">← Volver a la liga nacional</a></div>`;
   }
 
   // «Se parece a» en la ficha: llega con mapa.json (se pide al abrir la ficha)
@@ -3389,14 +3465,15 @@
     jugadores: '<path d="M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M17.2 6.4a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2zM16.5 14.1c2.8.3 5 2.3 5 5.9"/>',
   };
   // a qué sección del menú pertenece cada página (Pretemporada vive en Ligas; el directo y los resúmenes, en Inicio)
-  const TOP = { inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', nuevo: 'metodo', club: 'ligas', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', admin: 'inicio', buzon: 'inicio' };
-  const TITLES = { inicio: 'Inicio', admin: 'Herramientas del club', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', nuevo: '¿Nuevo en el hockey línea?', club: 'Club rival', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
+  const TOP = { nacional: 'ligas', inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', nuevo: 'metodo', club: 'ligas', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', admin: 'inicio', buzon: 'inicio' };
+  const TITLES = { nacional: 'Liga nacional', inicio: 'Inicio', admin: 'Herramientas del club', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', nuevo: '¿Nuevo en el hockey línea?', club: 'Club rival', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
   // migas: el título de sección se toca para subir un nivel («EQUIPOS / MP A»); la última es la página en la que se está
   const migasHtml = xs => `<nav class="migas" aria-label="Estás en">${xs.map(([t, h], i) => (i ? '<i aria-hidden="true">/</i>' : '') + (h && i < xs.length - 1 ? `<a href="${h}">${esc(t)}</a>` : `<span class="act" aria-current="page">${esc(t)}</span>`)).join('')}</nav>`;
   const mpCorto = e => e.cantera ? (e.id === 'AL' ? 'MP Alevín' : 'MP Infantil') : 'MP ' + e.id;
   function migasDe(v, parts) {
     const ligaM = id => { const L = lgOf(id); return L ? [L.nombre, hLg(L.id)] : null; };
     if (v === 'equipo') { const e = A.equipos.find(x => x.id === parts[1]) || A.equipos[0]; return [['Equipos', hEq(e.id)], [mpCorto(e)]]; }
+    if (v === 'nacional') return parts[1] === 'club' ? [['Ligas', '#/liga'], ['Liga nacional', '#/nacional'], [((HISTN && HISTN.clubes[parts[2]]) || {}).nombre || 'Club']] : [['Ligas', '#/liga'], ['Liga nacional']];
     if (v === 'liga') {
       const L = lgOf(parts[1]) || A.ligas[0], sub = { evolucion: 'Evolución', mapa: 'Mapa', acertamos: '¿Acertamos?' }[parts[2]], j = parts[2] === 'j' && parts[3];
       return sub || j ? [['Ligas', hLg(L.id)], [L.nombre, hLg(L.id)], [sub || 'Jornada ' + j]] : null;
@@ -3467,6 +3544,7 @@
     let html;
     if (v === 'equipo') html = vEquipo2(parts[1]);
     else if (v === 'liga') html = vLiga2(parts[1], parts[2], parts[2] === 'j' ? parseInt(parts[3], 10) : null);
+    else if (v === 'nacional') html = vNacional(parts[1], parts[2]);
     else if (v === 'partido') html = rp ? (rp.c.mid && A.partidos[rp.c.mid] ? vPartido2(rp.c.mid) : vPrevia(rp.L, rp.c)) : vPartido2(parts[1]);
     else if (v === 'jugadores') html = vJugadores2(parts[1]);
     else if (v === 'jugador') html = vJugador2(parts[1]);
