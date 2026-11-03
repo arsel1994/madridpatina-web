@@ -1118,7 +1118,7 @@
       ${usB ? `<div class="lg-uss">${usB}</div>` : ''}
       <div class="lg-prog"><div class="lg-prog-t"><span>Jornada ${ult} de ${L.total}</span><span>${L.total ? Math.round(ult / L.total * 100) + ' % jugado' : ''}</span></div><div class="lg-prog-b">${prog}</div></div></div>`;
     const pills = `<nav class="lg-pills" aria-label="Ligas">${A.ligas.map(l => { const on = l.id === L.id, p = (l.corto || l.nombre).split(' '), eqs = A.equipos.filter(e => e.ligaId === l.id).map(mpCorto).map(s => s.toUpperCase());
-      return `<a class="lg-pill" href="${hLg(l.id)}"${on ? ' aria-current="page"' : ''}><span class="etq">${esc(p.slice(0, -1).join(' ').toUpperCase())}</span><b>DIV. ${esc(p[p.length - 1])}</b><span class="lg-pill-us">${esc(eqs.join(' · '))}</span></a>`; }).join('')}<a class="lg-pill nac" href="#/nacional"><span class="etq">RFEP · ESPAÑA</span><b>NACIONAL</b><span class="lg-pill-us">Élite · Oro · Plata</span></a></nav>`;
+      return `<a class="lg-pill" href="${hLg(l.id)}"${on ? ' aria-current="page"' : ''}><span class="etq">${esc(p.slice(0, -1).join(' ').toUpperCase())}</span><b>DIV. ${esc(p[p.length - 1])}</b><span class="lg-pill-us">${esc(eqs.join(' · '))}</span></a>`; }).join('')}<a class="lg-pill nac" href="#/nacional"><span class="etq">RFEP · ESPAÑA</span><b>NACIONAL</b><span class="lg-pill-us">Élite · Oro · Plata</span></a><a class="lg-pill nac niv" href="#/niveles"><span class="etq">MADRID · ESPAÑA · MUNDO</span><b>NIVELES</b><span class="lg-pill-us">¿Cuánto vale un punto?</span></a></nav>`;
     const hayPre = L.pre && L.pre.equipos && L.pre.equipos.length;
     const archivo = `<a class="archivo" href="${hPre(hayPre ? L.id : 'club')}"><div><div class="etq">Pretemporada ${esc(A.temporada)}</div><div class="h2">Antes de empezar</div><div class="sub">${hayPre ? (L.pre.equipos.some(e => e.tipo === 'sube' || e.tipo === 'baja' || e.tipo === 'nuevo') ? 'Ascensos, descensos y quién ha cambiado de equipo' : 'Quién ha llegado y quién se ha ido') : 'Cómo llegaba cada uno de nuestros equipos'}</div></div><span class="ir">Ver</span></a>`;
     const T = pestanas('liga', [['clas', 'Clasificación'], ['jor', 'Jornadas'], ['evo', 'Evolución'], ['mapa', 'Mapa'], ['ac', '¿Acertamos?']], 'clas');
@@ -3341,6 +3341,7 @@
     const niveles = filasN.length ? sec('niveles', '08', 'NIVEL DE LAS LIGAS', 'Dónde está cada liga: Madrid, España y fuera', 'Las ligas nacionales de la Real Federación Española de Patinaje, las de Madrid, las autonómicas que publican sus datos y, de fuera, la liga francesa y el campeonato de Norteamérica (NARCh), masculinas, femeninas y mixtas, en una misma escala. Así se ve qué nivel tiene cada una frente a las demás. Más abajo, la cantera.', `
       ${H('De más a menos nivel')}
       <p class="mt-p">La cifra de la derecha es cuántos puntos de Senior 1 vale un punto hecho en esa liga. Debajo, en pequeño, y en la línea blanca de cada barra, su <b>margen</b>: entre qué valores cae 8 de cada 10 veces si repetimos la cuenta con otros jugadores sacados al azar. Cuanto más corta la línea, más fiable el dato. Por ejemplo, un punto en la Liga Oro vale como ${fx(rfac.oro ? rfac.oro.f / s1 : 0, 1)} en Senior 1.</p>
+      <a class="como-l" href="#/niveles">Verlo en grande, con logos y comparaciones →</a>
       <div class="nv-esc">${escalera}</div>
       <div class="mt-leyenda"><span><i class="l1" style="background:#6B6B70"></i>liga nacional</span><span><i class="l1"></i>liga de Madrid</span><span><i class="l2"></i>margen: si repetimos la cuenta con otros jugadores sacados al azar, 8 de cada 10 veces cae en esta franja</span></div>
       ${filasN.some(([, , amb]) => amb !== 'Madrid' && amb !== 'España') ? `<p class="mt-nota">Las ligas autonómicas${filasN.some(([, , amb]) => NIV_FUERA.has(amb)) ? ' y las de otros países' : ''} son provisionales: no hay jugadores que las jueguen a la vez que las de Madrid, así que se comparan a través de las nacionales (quienes juegan también Élite, Oro, Plata o Challenger), con pocas temporadas y su margen es más ancho.${filasN.some(([, , amb]) => amb === 'EE. UU.') ? ' NARCh, el campeonato de Norteamérica, son torneos de pocos partidos: cuenta cada año sus WinterNationals y sus finales juntas.' : ''} Se irán afinando cada temporada.</p>` : ''}
@@ -3392,6 +3393,79 @@
     ['se', 'Serie A y SM', 'Suecia', 'masculina'],
     ['cz', 'Extraliga', 'Chequia', 'masculina'], ['cz1', '1. liga', 'Chequia', 'masculina'],
     ['ch', 'National League', 'Suiza', 'masculina'], ['ch1', '1. Liga', 'Suiza', 'masculina']];
+  /* ── Nivel de las ligas (#/niveles): la escala del RFEPe en una página para cualquier aficionado ── */
+  const NIV_LOGO = k => /^(elite|oro|plata|challenger)/.test(k) ? ['rfep', 'Real Federación Española de Patinaje'] : /^S/.test(k) ? ['fmp', 'Federación Madrileña de Patinaje']
+    : /^eus/.test(k) ? ['fvp', 'Federación Vasca de Patinaje'] : /^narch/.test(k) ? ['narch', 'NARCh'] : /^fr/.test(k) ? ['ffrs', 'Fédération Française Roller & Skateboard']
+    : /^ch/.test(k) ? ['ihs', 'Inline Hockey Schweiz'] : /^ws/.test(k) ? ['worldskate', 'World Skate'] : null;
+  const nivLogo = (k, iso) => { const l = NIV_LOGO(k); return `<span class="nvl-logo">${l ? `<img src="assets/federaciones/${l[0]}.webp" alt="${esc(l[1])}" title="${esc(l[1])}" loading="lazy">` : bandera(iso)}</span>`; };
+  const nomG = (nom, gen) => gen === 'femenina' && !/femen|women/i.test(nom) ? nom + ' femenina' : nom;
+  const nivGrupo = amb => amb === 'Madrid' ? 'mad' : amb === 'España' ? 'esp' : NIV_FUERA.has(amb) ? 'fuera' : 'reg';
+  // «dato curioso»: si un punto de Senior 1 midiera lo que una persona, cuánto mediría uno de cada liga
+  const NIV_COSAS = [['🐈', 'un gato', 0.3], ['🐕', 'un perro grande', 0.7], ['🧒', 'un niño de cuatro años', 1], ['🧍', 'una persona', 1.75], ['🏀', 'un pívot de la NBA', 2.15],
+    ['🐻', 'un oso pardo de pie', 2.7], ['🐘', 'un elefante', 3.5], ['🦒', 'una jirafa', 5.5], ['🦖', 'un tiranosaurio, de la cabeza a la cola', 12.5], ['🐋', 'una ballena azul', 29]];
+  function vNiveles() {
+    const R = A.rfepe || {}, fac = R.factores || {}, s1 = (fac.S1 || {}).f;
+    if (!s1) return casoHtml('Ligas · Nivel de las ligas', 'Todavía no hay datos', 'El nivel de las ligas se calcula con los datos de las federaciones.', 'NIVEL', 'neutro', [['Volver a Ligas', '#/liga']]);
+    const filas = NIV_LIGAS.filter(([k]) => fac[k]).sort((a, b) => fac[b[0]].f - fac[a[0]].f);
+    const vs = filas.map(([k]) => fac[k].f), lo = Math.log(Math.min(...vs)), hi = Math.log(Math.max(...vs));
+    const pos = v => Math.max(0, Math.min(100, 6 + 94 * (Math.log(v) - lo) / (hi - lo || 1)));
+    const n1 = v => { const x = v / s1; return x >= 10 ? Math.round(x).toString() : dec(x.toFixed(x < 1 ? 2 : 1)); };
+    const iso = { España: 'ES', Madrid: 'ES', 'EE. UU.': 'US', Francia: 'FR', Chequia: 'CZ', Suiza: 'CH', Suecia: 'SE' };
+    // nuestros equipos en cada liga de Madrid
+    const nuestros = {}; A.equipos.forEach(e => { const m = /^senior-(\d)$/.exec(e.ligaId || ''); if (m) (nuestros['S' + m[1]] = nuestros['S' + m[1]] || []).push('MP ' + e.id); });
+    const paises = new Set(filas.map(([, , amb]) => nivGrupo(amb) === 'fuera' ? amb : 'España'));
+    const hero = `<div class="nvl-hero"><span class="etq">HOCKEY LÍNEA · MADRID · ESPAÑA · EL MUNDO</span><h1 class="h1">¿Cuánto vale un punto en cada liga?</h1>
+      <p class="dest">No es lo mismo marcar en Senior 3 que en la Liga Élite. Con los jugadores que han jugado en dos ligas, ponemos todas en la misma escala.</p>
+      <div class="nvl-kpis"><div><b class="cifra">${filas.length}</b><span>ligas en la escala</span></div><div><b class="cifra">${paises.size}</b><span>países</span></div><div><b class="cifra">${R.jugadores || '—'}</b><span>jugadores que han jugado en dos ligas</span></div><div><b class="cifra">${R.casos || '—'}</b><span>comparaciones</span></div></div></div>`;
+    // 1 · la escalera
+    const leyenda = [['mad', 'Madrid'], ['esp', 'España'], ['reg', 'Autonómicas'], ['fuera', 'Otros países']].filter(([g]) => filas.some(([, , amb]) => nivGrupo(amb) === g))
+      .map(([g, t]) => `<span><i class="nvl-c ${g}"></i>${t}</span>`).join('');
+    const escalera = filas.map(([k, nom, amb, gen]) => { const F = fac[k], g = nivGrupo(amb), us = nuestros[k];
+      return `<div class="nvl-f ${g}${us ? ' us' : ''}">${nivLogo(k, iso[amb])}
+        <div class="nvl-q"><b>${esc(nom)}</b><span>${esc(amb)}${gen === 'mixta' ? '' : ' · ' + gen}${g === 'reg' || g === 'fuera' || F.provisional ? ' · provisional' : ''}${us ? ` · <em>aquí jugamos: ${esc(us.join(', '))}</em>` : ''}</span>
+          <div class="nvl-barra"><i style="width:${pos(F.f).toFixed(1)}%"></i>${F.p10 && F.p90 ? `<u style="left:${pos(F.p10).toFixed(1)}%;width:${Math.max(0.6, pos(F.p90) - pos(F.p10)).toFixed(1)}%"></u>` : ''}</div></div>
+        <div class="nvl-v"><b class="cifra">${n1(F.f)}</b><span>${k === 'S1' ? 'referencia' : 'de Senior 1'}</span></div></div>`; }).join('');
+    const pEsc = `<section class="mt-sec nvl-sec"><span class="etq">01 · DE MÁS A MENOS NIVEL</span><h2 class="h2">La escalera</h2>
+      <p class="mt-p">La cifra es cuántos puntos de Senior 1 vale un punto hecho en esa liga. La barra va en escala de veces: cada tramo igual es multiplicar por lo mismo. La raya fina es el margen: entre qué valores cae 8 de cada 10 veces si repetimos la cuenta con otros jugadores.</p>
+      <div class="nvl-ley">${leyenda}</div><div class="nvl-esc">${escalera}</div></section>`;
+    // 2 · dato curioso: tamaños
+    const cosa = h => NIV_COSAS.reduce((m, c) => Math.abs(Math.log(h / c[2])) < Math.abs(Math.log(h / m[2])) ? c : m);
+    const lh0 = Math.log(0.3), lh1 = Math.log(29);
+    const tam = filas.map(([k, nom0, amb, gen]) => { const nom = nomG(nom0, gen); const h = 1.75 * fac[k].f / s1, c = cosa(h), px = Math.round(26 + 46 * Math.max(0, Math.min(1, (Math.log(h) - lh0) / (lh1 - lh0))));
+      return `<div class="nvl-t ${nivGrupo(amb)}"><span class="nvl-e" style="font-size:${px}px" aria-hidden="true">${c[0]}</span><b class="cifra">${h >= 10 ? Math.round(h) : dec(h.toFixed(h < 1 ? 2 : 1))} m</b>
+        <span class="nvl-tn">${nivLogo(k, iso[amb])}${esc(nom)}${nivGrupo(amb) === 'mad' || nivGrupo(amb) === 'esp' ? '' : ' · ' + esc(amb)}</span><span class="nvl-tc">como ${esc(c[1])}</span></div>`; }).join('');
+    const pTam = `<section class="mt-sec nvl-sec"><span class="etq">02 · DATO CURIOSO</span><h2 class="h2">Si un punto midiera…</h2>
+      <p class="mt-p">Si un punto en Senior 1 midiera lo que una persona, 1,75 metros, esto es lo que mediría un punto en cada liga.</p><div class="nvl-tams">${tam}</div></section>`;
+    // 3 · los puentes: por dónde entra cada liga en la escala
+    const P = R.puentes || [], grp = {}; filas.forEach(([k, , amb]) => { grp[k] = nivGrupo(amb); });
+    const entre = (g1, g2) => P.filter(([a, b]) => (grp[a] === g1 && grp[b] === g2) || (grp[a] === g2 && grp[b] === g1)).reduce((s, x) => s + x[2], 0);
+    const cad = [['mad', 'Madrid'], ['esp', 'España'], ['fuera', 'Otros países']].filter(([g]) => filas.some(([, , amb]) => nivGrupo(amb) === g));
+    const cadena = cad.map(([g, t], i) => `${i ? `<span class="nvl-enl"><b class="cifra">${entre(cad[i - 1][0], g)}</b><span>casos</span></span>` : ''}<span class="nvl-nodo ${g}">${t}</span>`).join('');
+    const nomDe = k => { const f = filas.find(x => x[0] === k); return f ? nomG(f[1], f[3]) : k; }, ambDe = k => (filas.find(f => f[0] === k) || [])[2] || '';
+    const ent = filas.filter(([, , amb]) => nivGrupo(amb) === 'reg' || nivGrupo(amb) === 'fuera').map(([k, nom0, amb, gen]) => { const nom = nomG(nom0, gen);
+      const b = P.filter(x => (x[0] === k || x[1] === k) && grp[x[0] === k ? x[1] : x[0]] !== grp[k]).sort((a, c) => c[2] - a[2])[0];
+      if (!b) return ''; const o = b[0] === k ? b[1] : b[0];
+      return `<div class="nvl-pu">${nivLogo(k, iso[amb])}<span><b>${esc(nom)}</b> · ${esc(amb)}</span><span class="nvl-fl">⇄</span>${nivLogo(o, iso[ambDe(o)])}<span><b>${esc(nomDe(o))}</b> · ${esc(ambDe(o))}</span><b class="cifra">${b[2]}</b></div>`; }).join('');
+    const pPu = P.length ? `<section class="mt-sec nvl-sec"><span class="etq">03 · CÓMO SE UNEN</span><h2 class="h2">Los puentes</h2>
+      <p class="mt-p">Cada comparación es un jugador que ha jugado en dos ligas la misma temporada o la siguiente. Así se encadenan: las ligas de Madrid se unen con las nacionales, y las nacionales con las de fuera.</p>
+      <div class="nvl-cad">${cadena}</div>${ent ? `<div class="pl-t"><span class="h2" style="font-size:20px">Cómo entra cada liga de fuera de Madrid y de la nacional</span><span>casos</span></div><div class="nvl-pus">${ent}</div>` : ''}</section>` : '';
+    // 4 · compara
+    const opc = filas.map(([k, nom, amb, gen]) => `<option value="${k}"${k === 'S2' ? ' selected' : ''}>${nom} · ${amb}${gen === 'mixta' ? '' : ' · ' + gen}</option>`).join('');
+    const pComp = `<section class="mt-sec nvl-sec"><span class="etq">04 · HAZ LA CUENTA</span><h2 class="h2">Compara</h2>
+      <p class="mt-p">Elige una liga y unos puntos: debajo sale cuántos serían, en los mismos partidos, en cada una de las demás.</p>
+      <div class="nv-comp" data-nv><label><span>Liga</span><select data-nv="liga">${opc}</select></label><label><span>Puntos</span><input data-nv="pts" type="number" inputmode="numeric" min="0" max="999" value="20"></label></div>
+      <div class="nv-res" data-nv-res>${nivRes(fac, 'S2', 20)}</div></section>`;
+    // 5 · en el radar: ligas que seguimos y aún no tienen nivel
+    const radar = [['fr1', 'Nationale 1', 'Francia', 'FR'], ['fr_w_f', 'Ligue Féminine N1', 'Francia', 'FR'], ['cz', 'Extraliga', 'Chequia', 'CZ'], ['ch', 'National League', 'Suiza', 'CH'], ['se', 'Serie A', 'Suecia', 'SE']]
+      .filter(([k]) => !fac[k]).map(([k, n, p, c]) => [k, n, p, c, 'Datos descargados; aún pocos jugadores en común'])
+      .concat([['ws', 'Mundiales 2019 y 2024', 'World Skate · selecciones', null, 'Encontradas; están en la misma plataforma que la Federación Española y entrarán con las autonómicas'],
+        ['cat', 'Cataluña, C. Valenciana, Galicia, Andalucía y Castilla y León', 'Autonómicas', 'ES', 'Pendientes de leer sus datos']]);
+    const pRad = `<section class="mt-sec nvl-sec"><span class="etq">05 · PRÓXIMAMENTE</span><h2 class="h2">En el radar</h2>
+      <p class="mt-p">Ligas que ya seguimos pero que todavía no salen en la escala. Una liga entra cuando su nivel sale parecido 9 de cada 10 veces que repetimos la cuenta.</p>
+      <div class="nvl-rad">${radar.map(([k, n, p, c, t]) => `<div>${nivLogo(k, c)}<span><b>${esc(n)}</b><span>${esc(p)}</span><i>${esc(t)}</i></span></div>`).join('')}</div>
+      <a class="como-l" href="#/metodo/niveles">Cómo se calcula, con todos los detalles →</a></section>`;
+    return `<div class="nvl">${hero}${pEsc}${pTam}${pPu}${pComp}${pRad}</div>`;
+  }
   // «Compara»: los mismos puntos, pasados a cada liga
   function nivRes(fac, de, pts) {
     const f0 = (fac[de] || {}).f; if (!f0 || !(pts >= 0)) return '';
@@ -3472,14 +3546,15 @@
     jugadores: '<path d="M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M17.2 6.4a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2zM16.5 14.1c2.8.3 5 2.3 5 5.9"/>',
   };
   // a qué sección del menú pertenece cada página (Pretemporada vive en Ligas; el directo y los resúmenes, en Inicio)
-  const TOP = { nacional: 'ligas', inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', nuevo: 'metodo', club: 'ligas', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', admin: 'inicio', buzon: 'inicio' };
-  const TITLES = { nacional: 'Liga nacional', inicio: 'Inicio', admin: 'Herramientas del club', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', nuevo: '¿Nuevo en el hockey línea?', club: 'Club rival', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
+  const TOP = { niveles: 'ligas', nacional: 'ligas', inicio: 'inicio', jornada: 'inicio', calendario: 'calendario', banquillo: 'inicio', directo: 'inicio', equipo: 'equipos', liga: 'ligas', partido: 'ligas', jugadores: 'jugadores', jugador: 'jugadores', historico: 'legado', legado: 'legado', pretemporada: 'ligas', metodo: 'metodo', nuevo: 'metodo', club: 'ligas', sincronizar: 'inicio', video: 'inicio', apodo: 'inicio', admin: 'inicio', buzon: 'inicio' };
+  const TITLES = { niveles: 'Nivel de las ligas', nacional: 'Liga nacional', inicio: 'Inicio', admin: 'Herramientas del club', banquillo: 'Banquillo', directo: 'En directo', jornada: 'Inicio', calendario: 'Calendario', equipo: 'Equipos', liga: 'Ligas', partido: 'Partido', jugadores: 'Jugadores', jugador: 'Jugador', historico: 'Legado', legado: 'Legado', pretemporada: 'Pretemporada', metodo: 'Cómo lo calculamos', nuevo: '¿Nuevo en el hockey línea?', club: 'Club rival', sincronizar: 'Sincronizar vídeo', video: 'Vídeo del partido', apodo: '¿Eres jugador?', buzon: 'Buzón de apodos' };
   // migas: el título de sección se toca para subir un nivel («EQUIPOS / MP A»); la última es la página en la que se está
   const migasHtml = xs => `<nav class="migas" aria-label="Estás en">${xs.map(([t, h], i) => (i ? '<i aria-hidden="true">/</i>' : '') + (h && i < xs.length - 1 ? `<a href="${h}">${esc(t)}</a>` : `<span class="act" aria-current="page">${esc(t)}</span>`)).join('')}</nav>`;
   const mpCorto = e => e.cantera ? (e.id === 'AL' ? 'MP Alevín' : 'MP Infantil') : 'MP ' + e.id;
   function migasDe(v, parts) {
     const ligaM = id => { const L = lgOf(id); return L ? [L.nombre, hLg(L.id)] : null; };
     if (v === 'equipo') { const e = A.equipos.find(x => x.id === parts[1]) || A.equipos[0]; return [['Equipos', hEq(e.id)], [mpCorto(e)]]; }
+    if (v === 'niveles') return [['Ligas', '#/liga'], ['Nivel de las ligas']];
     if (v === 'nacional') return parts[1] === 'club' ? [['Ligas', '#/liga'], ['Liga nacional', '#/nacional'], [((HISTN && HISTN.clubes[parts[2]]) || {}).nombre || 'Club']] : [['Ligas', '#/liga'], ['Liga nacional']];
     if (v === 'liga') {
       const L = lgOf(parts[1]) || A.ligas[0], sub = { evolucion: 'Evolución', mapa: 'Mapa', acertamos: '¿Acertamos?' }[parts[2]], j = parts[2] === 'j' && parts[3];
@@ -3554,6 +3629,7 @@
     if (v === 'equipo') html = vEquipo2(parts[1]);
     else if (v === 'liga') html = vLiga2(parts[1], parts[2], parts[2] === 'j' ? parseInt(parts[3], 10) : null);
     else if (v === 'nacional') html = vNacional(parts[1], parts[2]);
+    else if (v === 'niveles') html = vNiveles();
     else if (v === 'partido') html = rp ? (rp.c.mid && A.partidos[rp.c.mid] ? vPartido2(rp.c.mid) : vPrevia(rp.L, rp.c)) : vPartido2(parts[1]);
     else if (v === 'jugadores') html = vJugadores2(parts[1]);
     else if (v === 'jugador') html = vJugador2(parts[1]);
