@@ -3047,6 +3047,7 @@
           <div class="mt-paso"><div class="t"><b>Pasados a Senior 1</b><small>${d2(ppg)} × ${fx(f2, 3)}</small></div><div class="r">${fx(ppg * f2, 3)}</div></div>
           <div class="mt-paso fin"><div class="t"><b>Una temporada de Senior 1</b><small>${fx(ppg * f2, 3)} × ${PJ}</small></div><div class="r">${d1(ppg * f2 * PJ)}<small>FMPe</small></div></div></div>` : ''}
       <div class="mt-dos">
+        ${(A.rfepe || {}).factores ? '<a class="como-l" href="#/metodo/niveles">¿Y frente a las ligas nacionales? Nivel de las ligas de España y de Madrid</a>' : ''}
         <div class="mt-caja"><h3 style="color:#3DD27E">DÓNDE SALE</h3>${lista(['En el mapa de cada liga y en «Comparar» de la ficha, para juntar puntos de ligas senior distintas', 'En la pretemporada: la fuerza de cada plantilla y «A vigilar»', 'En la presentación del directo, para elegir a los rivales peligrosos'], '→', '#3DD27E')}</div>
         <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['No mide la defensa ni nada que no esté en el acta', 'Con pocos partidos, el dato es poco fiable', 'No se calcula para porteros'], '!')}</div>
       </div>`);
@@ -3121,18 +3122,60 @@
       ${lista(['<b>Hitos a la vista</b>: a quién le faltan como mucho 3 goles, 3 asistencias, 2 partidos o 40 paradas para una cifra redonda con el club, contando todas sus temporadas. Goles y asistencias: 10, 25, 50, 75, 100, 150…; partidos: 25, 50, 100, 150…; paradas: 100, 250, 500…', '<b>Lo mejor de la semana</b>: lo más destacado de nuestros partidos de la semana. Para el portero o la portera de la semana, el mejor % de paradas en un partido, con 10 tiros o más.', '<b>Pista de cada partido</b>: la que pone el calendario de la FMP.', '<b>Calendarios para el móvil</b>: los mismos partidos, en un enlace que Google Calendar, el iPhone u Outlook vuelven a leer cada pocas horas.'])}
       <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['Las opciones de ganar dicen lo que pasó otras veces con ese marcador; el pronóstico, lo que sale con los goles de esta temporada. Ninguno es seguro', 'No saben de bajas, lesiones ni fichajes', 'Con pocos partidos jugados, los números de cada equipo se mueven mucho'], '!')}</div>`);
 
+    // 8 · nivel de las ligas de España y de Madrid en una sola escala (RFEPe)
+    const R = A.rfepe || {}, rfac = R.factores || {}, s1 = (rfac.S1 || {}).f;
+    const filasN = s1 ? NIV_LIGAS.filter(([k]) => rfac[k]).sort((a, b) => rfac[b[0]].f - rfac[a[0]].f) : [];
+    const maxN = filasN.length ? rfac[filasN[0][0]].f : 1;
+    const escalera = filasN.map(([k, nom, amb, gen], i) => { const x = rfac[k], w = Math.max(1.2, x.f / maxN * 100);
+      return `<div class="nv-f${amb === 'Madrid' ? ' mad' : ''}"><span class="nv-n">${i + 1}</span><div class="nv-t"><b>${nom}${x.provisional ? '*' : ''}</b><span><i class="nv-c ${amb === 'Madrid' ? 'm' : 'e'}">${amb}</i>${gen}</span></div>
+        <div class="nv-b"><i style="width:${w}%" data-anim="mpWipe .7s cubic-bezier(.2,.8,.2,1)"></i>${x.p10 != null && x.p90 != null && !x.provisional && k !== filasN[0][0] ? `<i class="rg" style="left:${x.p10 / maxN * 100}%;width:${(x.p90 - x.p10) / maxN * 100}%"></i>` : ''}</div>
+        <div class="nv-v">${k === 'S1' ? '1' : fx(x.f / s1, x.f / s1 >= 10 ? 0 : x.f / s1 >= 1 ? 1 : 2)}</div></div>`; }).join('');
+    const opcN = filasN.map(([k, nom, amb, gen]) => `<option value="${k}"${k === 'S1' ? ' selected' : ''}>${nom} · ${amb === 'Madrid' ? 'Madrid' : 'España'}${gen === 'mixta' ? '' : ' · ' + gen}</option>`).join('');
+    const niveles = filasN.length ? sec('niveles', '08', 'NIVEL DE LAS LIGAS', 'Dónde está cada liga de España y de Madrid', 'Las ligas nacionales de la Real Federación Española de Patinaje y las de Madrid, masculinas, femeninas y mixtas, en una misma escala. Así se ve qué nivel tiene cada una frente a las demás.', `
+      ${H('De más a menos nivel')}
+      <p class="mt-p">La cifra de la derecha es cuántos puntos de Senior 1 vale un punto hecho en esa liga. Por ejemplo, un punto en la Liga Oro vale como ${fx(rfac.oro ? rfac.oro.f / s1 : 0, 1)} en Senior 1.</p>
+      <div class="nv-esc">${escalera}</div>
+      <div class="mt-leyenda"><span><i class="l1" style="background:#6B6B70"></i>liga nacional</span><span><i class="l1"></i>liga de Madrid</span><span><i class="l2"></i>margen: si repetimos la cuenta con otros jugadores sacados al azar, 8 de cada 10 veces cae en esta franja</span></div>
+      ${rfac.S4 && rfac.S4.provisional ? '<p class="mt-nota">* Senior 4 empezó en 2026/27 y aún no tiene datos propios: usa el nivel de la antigua Senior 3, como en el FMPe.</p>' : ''}
+      ${H('Compara')}
+      <p class="mt-p">Elige una liga y unos puntos: debajo sale cuántos serían, en los mismos partidos, en cada una de las demás.</p>
+      <div class="nv-comp" data-nv><label><span>Liga</span><select data-nv="liga">${opcN}</select></label><label><span>Puntos</span><input data-nv="pts" type="number" inputmode="numeric" min="0" max="999" value="20"></label></div>
+      <div class="nv-res" data-nv-res>${nivRes(rfac, 'S1', 20)}</div>
+      ${H('Cómo se calcula')}
+      ${P(`Igual que el FMPe: con los jugadores de campo que han jugado en dos ligas, la misma temporada o en temporadas seguidas. Como es la misma persona, la diferencia entre sus puntos por partido en cada liga dice cuánto más difícil es una que otra. Usamos <b>${R.casos || '—'} casos de ${R.jugadores || '—'} jugadores</b>, de ${R.desde || '—'} a ${R.hasta || '—'}.`)}
+      ${P('Los datos de las ligas nacionales salen de la web de la Real Federación Española de Patinaje. A cada jugador lo unimos con su ficha de Madrid por el nombre y la fecha de nacimiento.')}
+      ${P('Las ligas femeninas entran en la misma escala gracias a las jugadoras que juegan también en las ligas de Madrid. Se puede comprobar por varios caminos: el nivel de la Senior Femenina sale igual frente a Senior 1, a Senior 2 y a Senior 3.')}
+      <div class="mt-caja"><h3 style="color:#FF6B63">LÍMITES</h3>${lista(['Quien juega una liga nacional y también en Madrid suele hacerlo en el equipo filial, donde tiene más peso en el juego. Eso puede agrandar algo la distancia entre las ligas nacionales y las de Madrid', 'Solo cuentan las ligas regulares: ni copas ni fases de ascenso', 'Mide puntos (goles y asistencias); no la defensa ni nada que no esté en el acta', 'No se calcula para porteros'], '!')}</div>`) : '';
+
     const indice = [['datos', '01', 'Los datos', 'De dónde sale cada número'], ['fmpe', '02', 'FMPe', 'Los puntos de cada liga, en la misma escala'],
       ['pretemporada', '03', 'Pretemporada', 'Fuerza de cada plantilla, a quién vigilar y porteros'], ['directo', '04', 'En directo', 'Avisos del directo, hitos y rivales peligrosos'],
       ['ficha', '05', 'Ficha del jugador', 'Su parte en los goles del equipo y con quién combina'], ['mapa', '06', 'Mapa y arquetipos', 'Dónde está cada uno, su arquetipo y con quién se compara'],
-      ['probabilidad', '07', 'Pronósticos y análisis', 'Pronósticos, opciones de ganar y cómo juega cada equipo']]
+      ['probabilidad', '07', 'Pronósticos y análisis', 'Pronósticos, opciones de ganar y cómo juega cada equipo'], ...(niveles ? [['niveles', '08', 'Nivel de las ligas', 'Dónde está cada liga de España y de Madrid']] : [])]
       .map(([id, n, t, x]) => `<a class="blk" href="#/metodo/${id}"><span class="n">${n}</span><b>${t}</b><span class="x">${x}</span></a>`).join('');
     return `<div class="mt-hero"><div class="lab" style="color:#FF6B63">MADRIDPATINA · MÉTODO</div><h1>Cómo lo calculamos</h1>
         <p>Qué mide cada número de la web y cómo lo calculamos. Casi todo sale de las actas de la Federación Madrileña de Patinaje; lo que no, lo decimos en su sitio.</p>
         <a class="como-l" href="#/nuevo">¿Nuevo en el hockey línea? Lo básico para seguir un partido</a>
         <div class="mt-corto"><span class="etq">En pocas palabras</span>${lista(['Los números salen de las actas de la federación, desde 2016/17, y la web se actualiza cada noche.', 'El FMPe pone los puntos de todas las ligas senior en la misma escala, para poder compararlos.', 'Las opciones de ganar salen de lo que pasó otras veces con el mismo marcador; los pronósticos, de los goles de esta temporada.', 'Nada de esto sabe de bajas, lesiones ni de cómo llega cada uno ese día.'])}</div></div>
       <nav class="mt-indice" aria-label="Apartados">${indice}</nav>
-      ${datos}${fmpe}${pre}${directo}${ficha}${mapaM}${probM}`;
+      ${datos}${fmpe}${pre}${directo}${ficha}${mapaM}${probM}${niveles}`;
   }
+  // ligas de la guía de niveles: clave del RFEPe, nombre, ámbito y tipo
+  const NIV_LIGAS = [['elite', 'Liga Élite', 'España', 'masculina'], ['oro', 'Liga Oro', 'España', 'masculina'], ['plata', 'Liga Plata', 'España', 'masculina'],
+    ['challenger', 'Challenger League', 'España', 'masculina'], ['elite_f', 'Liga Élite', 'España', 'femenina'], ['oro_f', 'Liga Oro', 'España', 'femenina'],
+    ['plata_f', 'Liga Plata', 'España', 'femenina'], ['S1', 'Senior 1', 'Madrid', 'mixta'], ['S2', 'Senior 2', 'Madrid', 'mixta'], ['S3', 'Senior 3', 'Madrid', 'mixta'],
+    ['S4', 'Senior 4', 'Madrid', 'mixta'], ['SF', 'Senior Femenina', 'Madrid', 'femenina']];
+  // «Compara»: los mismos puntos, pasados a cada liga
+  function nivRes(fac, de, pts) {
+    const f0 = (fac[de] || {}).f; if (!f0 || !(pts >= 0)) return '';
+    const fx = x => (x >= 100 ? Math.round(x) : x >= 10 ? x.toFixed(0) : x.toFixed(1)).toString().replace('.', ',');
+    return NIV_LIGAS.filter(([k]) => fac[k]).sort((a, b) => fac[b[0]].f - fac[a[0]].f).map(([k, nom, amb, gen]) =>
+      `<div class="${k === de ? 'yo' : ''}${amb === 'Madrid' ? ' mad' : ''}"><span>${nom}<small>${amb}${gen === 'mixta' ? '' : ' · ' + gen}</small></span><b>${fx(pts * f0 / fac[k].f)}</b></div>`).join('');
+  }
+  document.addEventListener('input', e => {
+    const c = e.target.closest && e.target.closest('[data-nv]'); if (!c || !(A.rfepe || {}).factores) return;
+    const caja = c.closest('.mt-sec'), v = n => caja.querySelector(`[data-nv="${n}"]`).value, r = caja.querySelector('[data-nv-res]');
+    if (r) r.innerHTML = nivRes(A.rfepe.factores, v('liga'), Math.max(0, +v('pts') || 0));
+  });
 
   /* ── 7. Histórico ───────────────────────────────────────── */
   function prepH(Hx) {

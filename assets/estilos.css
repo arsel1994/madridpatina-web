@@ -3445,3 +3445,33 @@ html.galv-abierta { overflow: hidden; }
 .lz-f .esc { display: block; border-radius: 0; box-shadow: none; }
 .lz-pres .ct { align-items: stretch; padding: 0 0 10px; border-radius: 0; border-left: 0; background: none; }
 .lz-pres .lab { font-size: inherit; font-weight: inherit; letter-spacing: normal; color: inherit; }
+
+/* Cómo lo calculamos · 08 nivel de las ligas: escalera de ligas de España y de Madrid y «Compara» */
+.nv-esc { display: grid; gap: 2px; max-width: 760px; margin-top: 14px; border-radius: 12px; overflow: hidden; background: #26262A; }
+.nv-f { display: grid; grid-template-columns: 28px minmax(118px, 190px) minmax(0, 1fr) 52px; gap: 12px; align-items: center; padding: 10px 14px; background: #18181B; }
+.nv-f.mad { background: #1E1214; box-shadow: inset 3px 0 0 #D3202A; }
+.nv-n { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 18px; color: #55555B; text-align: right; }
+.nv-t b { display: block; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 19px; line-height: 1; text-transform: uppercase; }
+.nv-t span { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; color: #A6A6AD; }
+.nv-c { padding: 1px 6px; border-radius: 4px; font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.nv-c.e { background: #26262A; color: #F4F4F5; }
+.nv-c.m { background: #D3202A; color: #FFFFFF; }
+.nv-b { position: relative; height: 22px; }
+.nv-b > i:first-child { position: absolute; left: 0; top: 4px; bottom: 4px; border-radius: 0 4px 4px 0; background: #6B6B70; transform-origin: left; }
+.nv-f.mad .nv-b > i:first-child { background: #D3202A; }
+.nv-b .rg { position: absolute; top: 50%; height: 2px; background: #F4F4F5; opacity: .8; transform: translateY(-50%); }
+.nv-b .rg::before, .nv-b .rg::after { content: ''; position: absolute; top: -5px; width: 2px; height: 12px; background: #F4F4F5; }
+.nv-b .rg::before { left: 0; } .nv-b .rg::after { right: 0; }
+.nv-v { text-align: right; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; font-variant-numeric: tabular-nums; }
+.nv-comp { display: flex; flex-wrap: wrap; gap: 10px; max-width: 760px; margin-top: 12px; }
+.nv-comp label { display: grid; gap: 4px; flex: 1 1 110px; font-size: 12px; font-weight: 700; letter-spacing: .1em; color: #A6A6AD; text-transform: uppercase; }
+.nv-comp label:first-child { flex: 2 1 220px; }
+.nv-comp select, .nv-comp input { height: 42px; padding: 0 12px; border: 1px solid #3A3A40; border-radius: 8px; background: #18181B; color: #F4F4F5; font: inherit; font-size: 16px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.nv-res { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1px; max-width: 760px; margin-top: 12px; border-radius: 12px; overflow: hidden; background: #26262A; }
+.nv-res div { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; background: #18181B; }
+.nv-res div.mad { background: #1E1214; }
+.nv-res div.yo { box-shadow: inset 0 0 0 2px #F4F4F5; }
+.nv-res span { font-size: 14px; font-weight: 700; line-height: 1.15; }
+.nv-res small { display: block; font-size: 11px; font-weight: 600; color: #A6A6AD; }
+.nv-res b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 26px; font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .nv-f { grid-template-columns: 20px minmax(0, 1fr) 46px; } .nv-b { grid-column: 2 / 4; grid-row: 2; } .nv-v { grid-row: 1; grid-column: 3; } }
