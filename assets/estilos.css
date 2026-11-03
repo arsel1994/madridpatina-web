@@ -3518,10 +3518,18 @@ html.galv-abierta { overflow: hidden; }
 .nc-yo, .nc-el { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .nc-yo b, .nc-el b { font-weight: 700; font-size: 15px; line-height: 1.15; }
 .nc-yo span, .nc-el > span { font-size: 12px; color: #A6A6AD; }
-.nc-el > span:last-child { align-self: flex-start; }
+.nc-el > span:not(:nth-child(2)) { align-self: flex-start; }
+.nc-el { gap: 4px; }
 .nc-ficha { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; margin: 8px 0; }
 .nc-ficha div { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
 .nc-ficha b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 22px; line-height: 1; text-transform: uppercase; }
 .nc-ficha span { font-size: 13px; color: #A6A6AD; }
 .nv-c.r { background: #2E2A3F; color: #D9D2F5; }
 .nv-c.p { background: transparent; box-shadow: inset 0 0 0 1px #55555B; color: #A6A6AD; }
+
+/* ficha: los rasgos junto al arquetipo, y el bloque «Arquetipo y rasgos» de «En el equipo» */
+.fi-ras { display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 4px; background: #1E1E22; box-shadow: inset 3px 0 0 var(--c, #6B6B70);
+  font-size: 12px; font-weight: 700; letter-spacing: .04em; color: #F4F4F5; white-space: nowrap; cursor: help; }
+.fi-ras.mas { box-shadow: none; background: #26262A; color: #C9C9CE; }
+.fi-perfil { margin-bottom: 12px; padding: 16px 20px; }
+.fi-perfil:empty { display: none; }
