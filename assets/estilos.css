@@ -3711,3 +3711,19 @@ html.galv-abierta { overflow: hidden; }
 .nvl-tip { position: absolute; z-index: 5; display: grid; gap: 2px; padding: 8px 10px; border-radius: 8px; background: #F4F4F5; color: #0D0D0E; font-size: 12px; font-weight: 600; pointer-events: none; box-shadow: 0 6px 18px rgba(0,0,0,.4); white-space: nowrap; }
 .nvl-tip b { font-size: 13px; }
 .nvl-graf.m .g-liga { font-size: 17px; } .nvl-graf.m .g-tick, .nvl-graf.m .g-eje { font-size: 13px; } .nvl-graf.m .g-ut { font-size: 12px; }
+
+/* mapa de goles y asistencias con las zonas de cada liga (#/niveles) */
+.nvl-mapa { max-width: 620px; }
+.nvl-mpills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.nvl-mpills .nn-pill { cursor: pointer; font: inherit; }
+.nvl-graf.mapa .z { stroke: none; }
+.nvl-graf.mapa .z1 { fill: #1B3A5C; } .nvl-graf.mapa .z2 { fill: #16304B; } .nvl-graf.mapa .z3 { fill: #13263A; } .nvl-graf.mapa .z4 { fill: #111C29; }
+.nvl-graf.mapa .zb { fill: none; stroke: #5B87B5; stroke-width: 1.5; stroke-dasharray: 5 4; }
+.nvl-graf.mapa .zt { fill: #8FB4DA; font: 800 13px Figtree, sans-serif; letter-spacing: .1em; text-anchor: middle; }
+.nvl-graf .g-tick.y { text-anchor: end; }
+.nvl-graf .gs { fill: #E8E8EA; } .nvl-graf .gf { fill: #3A3A40; stroke: none; }
+.nvl-graf .g2.up { stroke: #3F9BE8; stroke-width: 2.5; }
+.nvl-gley i.gs { background: #E8E8EA; }
+.nvl-graf.mapa .zs { fill: #BFD6EE; font: 800 11px Figtree, sans-serif; text-anchor: middle; }
+.nvl-graf.mapa .zt.fin { text-anchor: end; }
+@media (max-width: 640px) { .nvl-graf.mapa .g-tick { font-size: 19px; } .nvl-graf.mapa .g-eje { font-size: 18px; } .nvl-graf.mapa .zs { font-size: 16px; } .nvl-graf.mapa .zt { font-size: 18px; } }

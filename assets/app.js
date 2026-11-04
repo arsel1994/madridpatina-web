@@ -3440,22 +3440,14 @@
         <span class="nvl-tn">${nivLogo(k, iso[amb])}${esc(nom)}${nivGrupo(amb) === 'mad' || nivGrupo(amb) === 'esp' ? '' : ' · ' + esc(amb)}</span><span class="nvl-tc">como ${esc(c[1])}</span></div>`; }).join('');
     const pTam = `<section class="mt-sec nvl-sec"><span class="etq">03 · DATO CURIOSO</span><h2 class="h2">Si un punto midiera…</h2>
       <p class="mt-p">Si un punto en Senior 1 midiera lo que una persona, 1,75 metros, esto es lo que mediría un punto en cada liga.</p><div class="nvl-tams">${tam}</div></section>`;
-    // 2a · el gráfico: X = nivel (puntos por partido en la escala de Senior 1, logarítmica), Y = la liga en la que juega
-    const grafPE = PE => { const P = PE.puntos || [], M = PE.medianas || {}; if (P.length < 20) return '';
-      const filasY = ['S1', 'S2', 'S3', 'S4'].filter(L => P.some(x => x[0] === L)), mov = innerWidth < 640, W = mov ? 420 : 900, IZ = mov ? 70 : 92, DE = 12, BH = mov ? 80 : 74, AR = 10, H = AR + filasY.length * BH + 34;
-      const lo = Math.log(0.02), hi = Math.log(Math.max(...P.map(x => x[1])) * 1.05), X = v => IZ + (W - IZ - DE) * (Math.log(Math.max(v, 0.02)) - lo) / (hi - lo);
-      const meta = L => L === 'S2' ? 'S1' : L === 'S3' || L === 'S4' ? 'S2' : null;   // con quién se compara (Senior 4, aún con el nivel de la antigua Senior 3, desde Senior 2)
-      const ticks = (mov ? [0.05, 0.25, 1, 4] : [0.05, 0.1, 0.25, 0.5, 1, 2, 4]).filter(t => X(t) <= W - DE);
-      let h = `<svg class="nvl-graf${mov ? ' m' : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Nivel de cada jugador de las ligas senior de Madrid">`;
-      h += ticks.map(t => `<line x1="${X(t).toFixed(1)}" x2="${X(t).toFixed(1)}" y1="${AR}" y2="${H - 30}" class="g-grid"/><text x="${X(t).toFixed(1)}" y="${H - 12}" class="g-tick">${dec(t)}</text>`).join('');
-      filasY.forEach((L, f) => { const y0 = AR + f * BH, yc = y0 + BH / 2, mt = meta(L);
-        h += `<rect x="${IZ}" y="${y0 + 3}" width="${W - IZ - DE}" height="${BH - 6}" rx="6" class="g-banda"/><text x="${IZ - 8}" y="${yc + 5}" class="g-liga">${mov ? SNOM[L].replace('Senior ', 'S') : SNOM[L]}</text>`;
-        if (M[L]) h += `<line x1="${X(M[L]).toFixed(1)}" x2="${X(M[L]).toFixed(1)}" y1="${y0 + 8}" y2="${y0 + BH - 8}" class="g-med"/>`;
-        if (mt && M[mt]) h += `<line x1="${X(M[mt]).toFixed(1)}" x2="${X(M[mt]).toFixed(1)}" y1="${y0 + 4}" y2="${y0 + BH - 4}" class="g-umbral"/><text x="${(X(M[mt]) + 5).toFixed(1)}" y="${y0 + 15}" class="g-ut">mitad de ${SNOM[mt]} →</text>`;
-        P.forEach((x, i) => { if (x[0] !== L) return; const j = ((i * 37) % 29) / 28 - 0.5, cy = yc + j * (BH - 22);
-          h += `<circle cx="${X(x[1]).toFixed(1)}" cy="${cy.toFixed(1)}" r="${x[2] === 2 ? 6 : 4.5}" class="g-p g${x[2]}" data-pe-i="${i}"><title>${esc(x[3])} · ${esc(x[4])} · ${dec(x[1].toFixed(2))}</title></circle>`; }); });
-      h += `<text x="${(IZ + W - DE) / 2}" y="${H}" class="g-eje">Puntos por partido, pasados a Senior 1 →</text></svg>`;
-      return `<div class="nvl-grafw"><div class="nvl-gley"><span><i class="g2"></i>MADRIDPATINA</span><span><i class="g1"></i>Por encima de su liga</span><span><i class="g0"></i>Resto</span><span><i class="gl"></i>La mitad de su liga</span><span><i class="gu"></i>La mitad de la liga de arriba</span></div>${h}<div class="nvl-tip" hidden></div></div>`; };
+    // 2a · el mapa: X = goles por partido, Y = asistencias por partido (los dos en la escala de Senior 1, en raíz cuadrada).
+    //      Goles + asistencias = nivel, así que cada liga ocupa un anillo: su borde es la mitad de los jugadores de esa liga.
+    const pPEmapa = PE => { const P = PE.puntos || [], M = PE.medianas || {}; if (P.length < 20 || !M.S1) return '';
+      const ligas = ['S1', 'S2', 'S3', 'S4'].filter(L => P.some(x => x[0] === L)), sel = ligas.includes(PE_SEL) ? PE_SEL : (ligas.includes('S2') ? 'S2' : ligas[0]);
+      const pills = `<div class="nvl-mpills" role="group" aria-label="Liga">${ligas.map(L => `<button type="button" class="nn-pill${L === sel ? ' on' : ''}" data-pe-liga="${L}" aria-pressed="${L === sel}">${SNOM[L]}</button>`).join('')}</div>`;
+      return `<p class="mt-p">Cada punto es un jugador: cuanto más a la derecha, más goles por partido; cuanto más arriba, más asistencias. Los dos van pasados a la escala de Senior 1. Los anillos marcan dónde empieza cada liga: entrar en un anillo es rendir al menos como la mitad de los jugadores de esa liga. Elige una liga para ver a sus jugadores.</p>
+        <div class="nvl-grafw nvl-mapa">${pills}<div class="nvl-gley"><span><i class="g2"></i>MADRIDPATINA</span><span><i class="g1"></i>En la zona de una liga más alta</span><span><i class="gs"></i>${SNOM[sel]}</span><span><i class="g0"></i>Resto de ligas</span></div>${mapaSVG(P, M, sel)}<div class="nvl-tip" hidden></div></div>`; };
+    // 2b · por encima de su liga (ligas de Madrid)
     // 2b · por encima de su liga (ligas de Madrid)
     const PE = A.por_encima || {}, nomJ = g => { const n = `${esc(g.nombre)} ${esc(g.apellidos)}`; return A.jugadores[g.k] ? `<a href="#/jugador/${esc(g.k)}">${n}</a>` : n; };
     const dec2 = x => dec((+x).toFixed(2)), eqNom = n => /^MADRIDPATINA/i.test(n || '') ? n.replace(/^MADRIDPATINA/i, 'MP') : titulo(n);
@@ -3468,7 +3460,7 @@
       <div class="nvl-pes">${PE.cerca_del_A.map(g => `<div class="nvl-pe us"><span class="nvl-pe-n"><b>${nomJ(g)}</b><i>${esc(eqNom(g.equipo))} · ${SNOM[g.liga]}</i></span><span class="nvl-pe-v"><b>${dec2(g.en_liga_A)}</b><i>por partido en ${SNOM[PE.mediana_A[0]]}</i></span></div>`).join('')}</div></div>` : '';
     const pPE = grPE || cerca ? `<section class="mt-sec nvl-sec"><span class="etq">02 · EN MADRID</span><h2 class="h2">Por encima de su liga</h2>
       <p class="mt-p">Jugadores de campo que, con sus puntos por partido de las dos últimas temporadas y lo que va de esta, rendirían al menos como la mitad de los jugadores de una liga más alta. El porcentaje es a cuántos jugadores de esa liga superan.</p>
-      ${grafPE(PE)}${cerca}${grPE}<p class="pv-nota">Cuenta goles y asistencias; no la defensa ni nada que no esté en el acta. Hacen falta 8 partidos. Senior 4 usa aún el nivel de la antigua Senior 3, así que sus jugadores se comparan con Senior 2.</p></section>` : '';
+      ${pPEmapa(PE)}${cerca}${grPE}<p class="pv-nota">Cuenta goles y asistencias; no la defensa ni nada que no esté en el acta. Hacen falta 8 partidos. Senior 4 usa aún el nivel de la antigua Senior 3, así que sus jugadores se comparan con Senior 2.</p></section>` : '';
     // 3 · los puentes: por dónde entra cada liga en la escala
     const P = R.puentes || [], grp = {}; filas.forEach(([k, , amb]) => { grp[k] = nivGrupo(amb); });
     const entre = (g1, g2) => P.filter(([a, b]) => (grp[a] === g1 && grp[b] === g2) || (grp[a] === g2 && grp[b] === g1)).reduce((s, x) => s + x[2], 0);
@@ -3499,11 +3491,41 @@
       <a class="como-l" href="#/metodo/niveles">Cómo se calcula, con todos los detalles →</a></section>`;
     return `<div class="nvl">${hero}${pEsc}${pPE}${pTam}${pPu}${pComp}${pRad}</div>`;
   }
+  let PE_SEL = 'S2';
+  function mapaSVG(P, M, sel) {
+    const S = 520, IZ = 46, AB = 62, AR = 10, DE = 12, w = S - IZ - DE, hh = S - AB - AR, H = S + 4;
+    const R = Math.sqrt(Math.max(...P.map(x => Math.max(x[5], x[1] - x[5])))) * 1.04, sx = v => IZ + w * Math.sqrt(Math.max(v, 0)) / R, sy = v => S - AB - hh * Math.sqrt(Math.max(v, 0)) / R;
+    const r = c => w * Math.sqrt(c) / R, x0 = IZ, y0 = S - AB;
+    const zonas = [['S1', null], ['S2', M.S1], ['S3', M.S2], ['S4', M.S3]].filter(([L]) => L === 'S1' || M[L] || P.some(x => x[0] === L));
+    let h = `<svg class="nvl-graf mapa" viewBox="0 0 ${S} ${H}" role="img" aria-label="Mapa de goles y asistencias por partido de los jugadores de ${SNOM[sel]}"><defs><clipPath id="pe-clip"><rect x="${IZ}" y="${AR}" width="${w}" height="${hh}"/></clipPath></defs><g clip-path="url(#pe-clip)">`;
+    h += `<rect x="${IZ}" y="${AR}" width="${w}" height="${hh}" class="z z1"/>`;
+    [['S2', M.S1, 'z2'], ['S3', M.S2, 'z3'], ['S4', M.S3, 'z4']].forEach(([L, c, z]) => { if (c) h += `<circle cx="${x0}" cy="${y0}" r="${r(c).toFixed(1)}" class="z ${z}"/>`; });
+    const bordes = [M.S1, M.S2, M.S3].filter(Boolean);
+    bordes.forEach(c => { h += `<circle cx="${x0}" cy="${y0}" r="${r(c).toFixed(1)}" class="zb"/>`; });
+    // puntos: primero el resto de ligas, luego la elegida
+    P.forEach((x, i) => { if (x[0] !== sel) h += `<circle cx="${sx(x[5]).toFixed(1)}" cy="${sy(x[1] - x[5]).toFixed(1)}" r="2.6" class="g-p gf" data-pe-i="${i}"/>`; });
+    P.forEach((x, i) => { if (x[0] !== sel) return; const c = x[2] === 2 ? 'g2' : x[6] ? 'g1' : 'gs';
+      h += `<circle cx="${sx(x[5]).toFixed(1)}" cy="${sy(x[1] - x[5]).toFixed(1)}" r="${x[2] === 2 ? 6 : 4.6}" class="g-p ${c}${x[2] === 2 && x[6] ? ' up' : ''}" data-pe-i="${i}"><title>${esc(x[3])}</title></circle>`; });
+    h += `<text x="${IZ + w - 10}" y="${AR + 20}" class="zt fin">ZONA ${SNOM.S1.toUpperCase()}</text></g>`;
+    // franja bajo el eje: dónde empieza cada liga (en el eje, el radio es la distancia al origen)
+    const cortes = [[0, M.S3, 'S4', 'z4'], [M.S3, M.S2, 'S3', 'z3'], [M.S2, M.S1, 'S2', 'z2'], [M.S1, null, 'S1', 'z1']].filter(q => q[0] != null && (q[1] == null || q[1]));
+    cortes.forEach(([a, b, L, z]) => { const xa = IZ + r(a), xb = b == null ? IZ + w : Math.min(IZ + w, IZ + r(b)); if (xb <= xa) return;
+      h += `<rect x="${xa.toFixed(1)}" y="${y0 + 4}" width="${(xb - xa - 1).toFixed(1)}" height="18" class="z ${z}"/><text x="${((xa + xb) / 2).toFixed(1)}" y="${y0 + 17}" class="zs">${xb - xa > 62 ? SNOM[L] : L}</text>`; });
+    [0.1, 0.25, 0.5, 1, 2].forEach(t => { if (Math.sqrt(t) > R) return;
+      h += `<text x="${sx(t).toFixed(1)}" y="${S - AB + 38}" class="g-tick">${dec(t)}</text><text x="${IZ - 6}" y="${(sy(t) + 4).toFixed(1)}" class="g-tick y">${dec(t)}</text>`; });
+    h += `<text x="${IZ + w / 2}" y="${H - 4}" class="g-eje">Goles por partido →</text><text x="12" y="${AR + hh / 2}" class="g-eje" transform="rotate(-90 12 ${AR + hh / 2})">Asistencias por partido →</text></svg>`;
+    return h;
+  }
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-pe-liga]'); if (!b) return;
+    PE_SEL = b.dataset.peLiga; const w = b.closest('.nvl-mapa'), PE = A.por_encima || {};
+    w.querySelectorAll('[data-pe-liga]').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+    w.querySelector('svg').outerHTML = mapaSVG(PE.puntos || [], PE.medianas || {}, PE_SEL);
+    const ley = w.querySelector('.nvl-gley i.gs'); if (ley) ley.parentNode.lastChild.textContent = SNOM[PE_SEL]; });
   // gráfico de «Por encima de su liga»: ficha emergente al pasar o tocar un punto
   const tipPE = e => { const c = e.target.closest && e.target.closest('[data-pe-i]'), w = e.target.closest && e.target.closest('.nvl-grafw'); if (!w) return;
     const t = w.querySelector('.nvl-tip'); if (!c) { t.hidden = true; return; }
     const x = ((A.por_encima || {}).puntos || [])[+c.dataset.peI]; if (!x) return;
-    t.innerHTML = `<b>${esc(x[3])}</b><span>${esc(/^MADRIDPATINA/i.test(x[4]) ? x[4].replace(/^MADRIDPATINA/i, 'MP') : titulo(x[4]))} · ${SNOM[x[0]]}</span><span>${dec(x[1].toFixed(2))} por partido en Senior 1</span>`;
+    t.innerHTML = `<b>${esc(x[3])}</b><span>${esc(/^MADRIDPATINA/i.test(x[4]) ? x[4].replace(/^MADRIDPATINA/i, 'MP') : titulo(x[4]))} · ${SNOM[x[0]]}</span><span>${dec(x[5].toFixed(2))} goles y ${dec((x[1] - x[5]).toFixed(2))} asistencias por partido, en Senior 1</span>`;
     const r = w.getBoundingClientRect(), p = c.getBoundingClientRect(); t.hidden = false;
     t.style.left = Math.min(r.width - t.offsetWidth - 4, Math.max(4, p.left - r.left + p.width / 2 - t.offsetWidth / 2)) + 'px'; t.style.top = (p.top - r.top - t.offsetHeight - 8) + 'px'; };
   document.addEventListener('mouseover', tipPE); document.addEventListener('click', tipPE);
