@@ -653,7 +653,7 @@
         <span class="pv-cr-p"><b class="pv-cr-n">${esc(y.n + ' ' + y.a)}</b><span class="pv-cr-t">${esc(d)}</span><span class="pv-cr-v"><b class="cifra">${v}</b><span>${u}</span></span></span></div>`; }).join('')}</div></div>` : '';
     // en otras ligas: los suyos que juegan además otra liga de Madrid esta temporada o han pasado por la liga nacional
     const ol = derbi || !OTR ? [] : otrasDe(lid, them);
-    const otras = ol.length ? `<div class="tarjeta pv-b"><div class="etq">En otras ligas</div><div class="dest">${esc(otrasFrase(ol))}</div>${otrasLista(ol)}</div>` : '';
+    const otras = ol.length ? `<div class="tarjeta pv-b"><div class="etq">En otras ligas</div><div class="dest">${esc(otrasFrase(ol))}</div>${otrasLista(ol, lid, them)}</div>` : '';
     // ese día en esta pista: solo si juega otro equipo nuestro
     const dia =AGE && ag.pista ? AGE.dias.find(d => d.fecha === c.fecha && d.pista === ag.pista) : null;
     const visto = new Set();   // un derbi está en el calendario de los dos equipos: una sola vez
@@ -3145,13 +3145,28 @@
     const uno = (k, s, p) => k + ' ' + (k === 1 ? s : p);
     return [f ? uno(f, 'juega', 'juegan') + ' además otra liga de Madrid esta temporada.' : '',
       n ? uno(n, 'ha jugado', 'han jugado') + ' en la liga nacional' + (ya ? ', y ' + uno(ya, 'sigue', 'siguen') + ' este año.' : ', pero ninguno este año.') : 'Nadie ha jugado en la liga nacional.'].filter(Boolean).join(' '); };
-  const otrasFila = j => { const tA = OTR.temporada, ya = j.nac.filter(x => x[0] === tA), antes = j.nac.filter(x => x[0] !== tA);
-    const nac = x => `${esc(x[1])} con ${esc(x[2])} (${x[0] === tA ? '' : esc(x[0]) + ', '}${nPart(x[3])})`;
-    return `<div class="ol-j"><b>${esc(j.n + ' ' + j.a)}</b>
+  // cada uno en su cromo (foto solo de adultos, si no las iniciales, y su dorsal), por peligrosidad: los de campo por puntos por
+  // partido (los del mapa de la liga, como «A vigilar»; si no sale en el mapa, los suyos con este equipo) y después los porteros
+  const ga = (g, a) => g || a ? [g ? g + (g === 1 ? ' gol' : ' goles') : '', a ? a + (a === 1 ? ' asistencia' : ' asistencias') : ''].filter(Boolean).join(' y ') : 'sin puntos';
+  const otrasNum = (pj, g, a, pct) => nPart(pj) + ', ' + (pct != null ? dec(pct.toFixed(1)) + ' % de paradas' : ga(g, a));
+  const otrasPel = (j, lid) => { const ML = MAPA && MAPA.ligas && MAPA.ligas[lid], k = kOf(j.n, j.a);
+    const mp = ML && (ML.por || []).find(y => y.k === k), mj = !mp && ML && (ML.jug || []).find(y => y.k === k);
+    if (mp || j.pct != null) return { por: true, v: mp ? mp.pct : j.pct };
+    return { por: false, v: mj ? mj.x : j.pj ? ((j.g || 0) + (j.as || 0)) / j.pj : 0 }; };
+  const otrasOrden = (js, lid) => js.map(j => ({ j, p: otrasPel(j, lid) })).sort((x, y) => (x.p.por - y.p.por) || (y.p.v - x.p.v) || (y.j.pj - x.j.pj));
+  const otrasFila = ({ j, p }, eq) => { const tA = OTR.temporada, ya = j.nac.filter(x => x[0] === tA), antes = j.nac.filter(x => x[0] !== tA), FKx = idxFK(), k = kOf(j.n, j.a), f = FKx.f[k], dr = FKx.d[k];
+    const pu = (x, pasado) => x ? ` (${pasado ? 'quedaron' : 'van'} ${x[0]}.º de ${x[1]})` : '';
+    const nac = x => `${esc(x[1])} con ${esc(x[2])}${x[0] === tA ? '' : ', ' + esc(x[0])}${pu(x[6] ? [x[6], x[7]] : null, x[0] !== tA)}: ${otrasNum(x[3], x[4], x[5], x[8])}`;
+    const h = hP(k), tag = h ? 'a' : 'div';
+    return `<${tag}${h ? ` href="${h}"` : ''} class="ol-j"><span class="ol-f${f ? '' : ' sin'}">${f ? `<span class="ph" data-bg="${esc(f)}"></span>` : `<span class="ol-i">${esc(ini(j.n, j.a))}</span>`}${dr ? `<b class="cifra ol-d">${esc(dr)}</b>` : ''}</span>
+      <span class="ol-t"><b>${esc(j.n + ' ' + j.a)}</b>
+      <span class="ol-v"><b class="cifra">${dec(p.v.toFixed(1))}${p.por ? ' %' : ''}</b> ${p.por ? 'de paradas · portero' : 'puntos por partido'}</span>
+      <span><i>Con ${esc(eq)} esta temporada</i>${otrasNum(j.pj, j.g || 0, j.as || 0, j.pct)}</span>
       ${ya.length ? `<span class="ol-ya"><i>Liga nacional este año</i>${ya.map(nac).join(' · ')}</span>` : ''}
-      ${j.fmp.length ? `<span><i>En Madrid esta temporada</i>${j.fmp.map(([l, e, pj]) => `${esc(l)} con ${esc(e)} (${nPart(pj)})`).join(' · ')}</span>` : ''}
-      ${antes.length ? `<span><i>Liga nacional antes</i>${antes.slice(0, 3).map(nac).join(' · ')}${antes.length > 3 ? ` y ${antes.length - 3} más` : ''}</span>` : ''}</div>`; };
-  const otrasLista = js => js.slice(0, 6).map(otrasFila).join('') + (js.length > 6 ? `<details class="cl-mas"><summary>Ver ${js.length - 6} más</summary>${js.slice(6).map(otrasFila).join('')}</details>` : '');
+      ${j.fmp.length ? `<span><i>En Madrid esta temporada</i>${j.fmp.map(x => `${esc(x[0])} con ${esc(x[1])}${pu(x[5] ? [x[5], x[6]] : null, false)}: ${otrasNum(x[2], x[3], x[4], x[7])}`).join(' · ')}</span>` : ''}
+      ${antes.length ? `<span><i>Liga nacional antes</i>${antes.slice(0, 3).map(nac).join(' · ')}${antes.length > 3 ? ` · ${antes.length - 3 === 1 ? 'otra liga más' : antes.length - 3 + ' ligas más'}` : ''}</span>` : ''}</span></${tag}>`; };
+  const otrasLista = (js, lid, eq) => { const o = otrasOrden(js, lid), fila = x => otrasFila(x, eq);
+    return o.slice(0, 6).map(fila).join('') + (o.length > 6 ? `<details class="cl-mas"><summary>Ver ${o.length - 6} más</summary>${o.slice(6).map(fila).join('')}</details>` : ''); };
   const slugClub = n => (n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   let clubBase = null;
   const clubDeEq = n => { if (!n || ours(n) || !H || !H.clubes) return null;
@@ -3202,7 +3217,7 @@
     // en otras ligas: por cada equipo suyo de nuestras ligas, quién juega además otra liga o ha pasado por la nacional
     const olEq = Object.entries((OTR && OTR.equipos) || {}).filter(([k]) => deEste(k.slice(k.indexOf('|') + 1)));
     const otrasCl = olEq.length ? `<section class="cl-sec"><h2 class="h2">En otras ligas</h2>${olEq.map(([k, js]) => { const lid = k.slice(0, k.indexOf('|')), eq = k.slice(k.indexOf('|') + 1);
-      return `<div class="tarjeta ol-eq"><div class="etq">${esc(eq)} · ${esc((lgOf(lid) || {}).corto || '')}</div><div class="dest">${esc(otrasFrase(js))}</div>${otrasLista(js)}</div>`; }).join('')}</section>` : '';
+      return `<div class="tarjeta ol-eq"><div class="etq">${esc(eq)} · ${esc((lgOf(lid) || {}).corto || '')}</div><div class="dest">${esc(otrasFrase(js))}</div>${otrasLista(js, lid, eq)}</div>`; }).join('')}</section>` : '';
     // jugadores en común: los que jugaron con nosotros y ahora están allí, y los nuestros que vienen de allí
     const comun = [], actuales = new Set(Object.values(A.jugadores).filter(j => equiposDe(j).length).map(j => H.tok(j.nombre + ' ' + j.apellidos)));
     (H.jugadores || []).forEach(j => { const a = (j.ahora || []).find(x => deEste(x.equipo)); if (!a || actuales.has(j.tok)) return;

@@ -3729,9 +3729,18 @@ html.galv-abierta { overflow: hidden; }
 @media (max-width: 640px) { .nvl-graf.mapa .g-tick { font-size: 19px; } .nvl-graf.mapa .g-eje { font-size: 18px; } .nvl-graf.mapa .zs { font-size: 16px; } .nvl-graf.mapa .zt { font-size: 18px; } }
 
 /* En otras ligas (previa y club rival): quién juega además otra liga o ha pasado por la nacional */
-.ol-j { display: flex; flex-direction: column; gap: 3px; padding: 10px 0; border-top: 1px solid #26262A; font-size: 13px; line-height: 1.4; color: #A6A6AD; }
-.ol-j b { font-size: 15px; color: #F4F4F5; }
+.ol-j { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid #26262A; font-size: 13px; line-height: 1.4; color: #A6A6AD; text-decoration: none; }
+.ol-f { position: relative; flex: 0 0 72px; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: #1F1F23; }
+.ol-f .ph { background-position: 50% 18%; }
+.ol-f::after { content: ''; position: absolute; inset: 0 0 55% 0; background: linear-gradient(rgba(13,13,14,.55), transparent); }
+.ol-i { position: absolute; left: 8px; bottom: 6px; font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 26px; line-height: 1; color: #55555B; }
+.ol-d { position: absolute; right: 6px; top: 4px; z-index: 1; font-size: 24px !important; line-height: 1; color: #F4F4F5 !important; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+.ol-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ol-t > b { font-size: 15px; color: #F4F4F5; }
+.ol-v { color: #C9C9CE; }
+.ol-v .cifra { font-size: 20px; color: #F4F4F5; }
 .ol-j i { font-style: normal; font-weight: 700; color: #C9C9CE; margin-right: 6px; }
 .ol-j .ol-ya, .ol-j .ol-ya i { color: #FF6B63; }
+a.ol-j:hover .ol-t > b { text-decoration: underline; }
 .ol-eq + .ol-eq { margin-top: 10px; }
 .ol-eq .dest { margin-bottom: 4px; }
