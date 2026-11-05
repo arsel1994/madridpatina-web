@@ -573,9 +573,9 @@
   }
   let PREV_PEDIDO = false;
   function vPrevia(L, c) {
-    if (!PREV_PEDIDO && (!AGE || !PRON || !ANA || !MAPA || !CLB)) {
+    if (!PREV_PEDIDO && (!AGE || !PRON || !ANA || !MAPA || !CLB || !OTR)) {
       PREV_PEDIDO = true; const h = location.hash;
-      Promise.all([cargarAgenda(), cargarPron(), cargarAnalisis(), cargarMapa(), cargarClubes()]).then(() => { if (location.hash === h) render(); });
+      Promise.all([cargarAgenda(), cargarPron(), cargarAnalisis(), cargarMapa(), cargarClubes(), cargarOtras()]).then(() => { if (location.hash === h) render(); });
       return '<div class="carga" role="status" aria-label="Cargando"><div class="sk" style="height:180px;margin-top:32px"></div><div class="carga-tarjetas"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></div>';
     }
     const lid = L.id, derbi = ours(c.local) && ours(c.visitante), us = ours(c.local) ? c.local : c.visitante, them = us === c.local ? c.visitante : c.local;
@@ -651,8 +651,11 @@
     const vigilar = vig.length ? `<div class="tarjeta pv-b"><div class="etq">A vigilar</div><div class="pv-crs">${vig.map(([y, d, v, u]) => { const f = FKx.f[y.k], dr = FKx.d[y.k];
       return `<div class="pv-cr${f ? '' : ' sin'}">${f ? `<span class="ph" data-bg="${esc(f)}"></span>` : `<span class="pv-cr-i">${esc(ini(y.n, y.a))}</span>`}${dr ? `<b class="cifra pv-cr-d">${esc(dr)}</b>` : ''}
         <span class="pv-cr-p"><b class="pv-cr-n">${esc(y.n + ' ' + y.a)}</b><span class="pv-cr-t">${esc(d)}</span><span class="pv-cr-v"><b class="cifra">${v}</b><span>${u}</span></span></span></div>`; }).join('')}</div></div>` : '';
+    // en otras ligas: los suyos que juegan además otra liga de Madrid esta temporada o han pasado por la liga nacional
+    const ol = derbi || !OTR ? [] : otrasDe(lid, them);
+    const otras = ol.length ? `<div class="tarjeta pv-b"><div class="etq">En otras ligas</div><div class="dest">${esc(otrasFrase(ol))}</div>${otrasLista(ol)}</div>` : '';
     // ese día en esta pista: solo si juega otro equipo nuestro
-    const dia = AGE && ag.pista ? AGE.dias.find(d => d.fecha === c.fecha && d.pista === ag.pista) : null;
+    const dia =AGE && ag.pista ? AGE.dias.find(d => d.fecha === c.fecha && d.pista === ag.pista) : null;
     const visto = new Set();   // un derbi está en el calendario de los dos equipos: una sola vez
     const nos = dia ? dia.nuestros.map(i => AGE.partidos[i]).filter(q => q && !visto.has(q.local + '|' + q.visitante + '|' + q.hora) && visto.add(q.local + '|' + q.visitante + '|' + q.hora))
       .map(q => ({ q, actual: q.local === c.local && q.visitante === c.visitante })) : [];
@@ -665,7 +668,7 @@
       const frase = luego ? `Quédate: a las ${luego.q.hora || 'hora por fijar'} juega ${quien(luego.q)} aquí.` : antes ? `Ven antes: a las ${antes.q.hora || 'hora por fijar'} juega ${quien(antes.q)} aquí.` : '';
       diaHtml2 = `<div class="tarjeta pv-b"><div class="etq">Ese día en esta pista</div>${frase ? `<div class="dest">${frase}</div>` : ''}${nos.map(({ q, actual }) => `<div class="pv-dia-f${actual ? ' act' : ''}"><span class="cifra">${esc(q.hora || '—')}</span><span>${esc(nm(q)(q.local) + ' – ' + nm(q)(q.visitante))}${actual ? ' · este partido' : ''}</span></div>`).join('')}</div>`;
     }
-    return `<div class="previa">${cab}<div class="pv-grid"><div class="pv-col">${juego}${comp}${pron}${h2h}</div><div class="pv-col">${llegan}${vigilar}${diaHtml2}</div></div></div>`;
+    return `<div class="previa">${cab}<div class="pv-grid"><div class="pv-col">${juego}${comp}${pron}${h2h}</div><div class="pv-col">${llegan}${vigilar}${otras}${diaHtml2}</div></div></div>`;
   }
 
   /* ── Pestañas dentro de una página (rediseño, fase 4): todas las vistas se pintan y se enseña una; la elegida se
@@ -3131,6 +3134,24 @@
   let CLB = null, clbP = null, CLB_PEDIDO = false;
   const cargarClubes = () => clbP || (clbP = fetch('data/clubes.json?v=' + encodeURIComponent(A.actualizado || ''))
     .then(r => r.json()).then(d => (CLB = d)).catch(() => { clbP = null; return null; }));
+  // en otras ligas (data/otras_ligas.json, scripts/reporte/otras_ligas.py): de cada rival de nuestras ligas, quién juega además
+  // otra liga de la FMP esta temporada y quién ha pasado por la liga nacional (la de esta temporada, delante)
+  let OTR = null, otrP = null;
+  const cargarOtras = () => otrP || (otrP = fetch('data/otras_ligas.json?v=' + encodeURIComponent(A.actualizado || ''))
+    .then(r => r.json()).then(d => (OTR = d)).catch(() => { otrP = null; return null; }));
+  const otrasDe = (lid, eq) => (OTR && OTR.equipos && OTR.equipos[lid + '|' + eq]) || [];
+  const nPart = n => n + (n === 1 ? ' partido' : ' partidos');
+  const otrasFrase = js => { const tA = OTR.temporada, f = js.filter(j => j.fmp.length).length, n = js.filter(j => j.nac.length).length, ya = js.filter(j => j.nac.some(x => x[0] === tA)).length;
+    const uno = (k, s, p) => k + ' ' + (k === 1 ? s : p);
+    return [f ? uno(f, 'juega', 'juegan') + ' además otra liga de Madrid esta temporada.' : '',
+      n ? uno(n, 'ha jugado', 'han jugado') + ' en la liga nacional' + (ya ? ', y ' + uno(ya, 'sigue', 'siguen') + ' este año.' : ', pero ninguno este año.') : 'Nadie ha jugado en la liga nacional.'].filter(Boolean).join(' '); };
+  const otrasFila = j => { const tA = OTR.temporada, ya = j.nac.filter(x => x[0] === tA), antes = j.nac.filter(x => x[0] !== tA);
+    const nac = x => `${esc(x[1])} con ${esc(x[2])} (${x[0] === tA ? '' : esc(x[0]) + ', '}${nPart(x[3])})`;
+    return `<div class="ol-j"><b>${esc(j.n + ' ' + j.a)}</b>
+      ${ya.length ? `<span class="ol-ya"><i>Liga nacional este año</i>${ya.map(nac).join(' · ')}</span>` : ''}
+      ${j.fmp.length ? `<span><i>En Madrid esta temporada</i>${j.fmp.map(([l, e, pj]) => `${esc(l)} con ${esc(e)} (${nPart(pj)})`).join(' · ')}</span>` : ''}
+      ${antes.length ? `<span><i>Liga nacional antes</i>${antes.slice(0, 3).map(nac).join(' · ')}${antes.length > 3 ? ` y ${antes.length - 3} más` : ''}</span>` : ''}</div>`; };
+  const otrasLista = js => js.slice(0, 6).map(otrasFila).join('') + (js.length > 6 ? `<details class="cl-mas"><summary>Ver ${js.length - 6} más</summary>${js.slice(6).map(otrasFila).join('')}</details>` : '');
   const slugClub = n => (n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   let clubBase = null;
   const clubDeEq = n => { if (!n || ours(n) || !H || !H.clubes) return null;
@@ -3138,8 +3159,8 @@
     return H.clubes[n] || clubBase[n.replace(/ [A-Z]$/, '')] || clubBase[n] || null; };
   const hClub = n => { const c = clubDeEq(n); return c ? '#/club/' + slugClub(c) : null; };
   function vClub(sl) {
-    if (!CLB_PEDIDO && (!CLB || !MAPA)) { CLB_PEDIDO = true; const h = location.hash;
-      Promise.all([cargarClubes(), cargarMapa()]).then(() => { if (location.hash === h) render(); });
+    if (!CLB_PEDIDO && (!CLB || !MAPA || !OTR)) { CLB_PEDIDO = true; const h = location.hash;
+      Promise.all([cargarClubes(), cargarMapa(), cargarOtras()]).then(() => { if (location.hash === h) render(); });
       return '<div class="carga" role="status" aria-label="Cargando"><div class="sk" style="height:140px;margin-top:24px"></div><div class="carga-tarjetas"><div class="sk"></div><div class="sk"></div></div></div>'; }
     const C = CLB && CLB.clubes[sl];
     if (!C) return casoHtml('Club', 'No encontramos este club', 'Puede que todavía no hayamos jugado contra él.', '?', 'neutro', [['Ir a Inicio', '#/']]);
@@ -3178,6 +3199,10 @@
     const vigilar = vig.length ? `<section class="cl-sec"><h2 class="h2">A quién vigilar</h2>
         <div class="cl-vig">${vig.map(([y, lid, val, u]) => `<div class="tarjeta"><span class="cl-ini">${esc(ini(y.n, y.a))}</span><span><b>${esc(y.n + ' ' + y.a)}</b><span>${esc(y.eq)} · ${esc((lgOf(lid) || {}).corto || '')}</span></span><span class="cl-val"><b class="cifra">${val}</b><span>${u}</span></span></div>`).join('')}</div>
         <p class="pv-nota">De sus equipos que juegan en nuestras ligas, con 3 partidos o más.</p></section>` : '';
+    // en otras ligas: por cada equipo suyo de nuestras ligas, quién juega además otra liga o ha pasado por la nacional
+    const olEq = Object.entries((OTR && OTR.equipos) || {}).filter(([k]) => deEste(k.slice(k.indexOf('|') + 1)));
+    const otrasCl = olEq.length ? `<section class="cl-sec"><h2 class="h2">En otras ligas</h2>${olEq.map(([k, js]) => { const lid = k.slice(0, k.indexOf('|')), eq = k.slice(k.indexOf('|') + 1);
+      return `<div class="tarjeta ol-eq"><div class="etq">${esc(eq)} · ${esc((lgOf(lid) || {}).corto || '')}</div><div class="dest">${esc(otrasFrase(js))}</div>${otrasLista(js)}</div>`; }).join('')}</section>` : '';
     // jugadores en común: los que jugaron con nosotros y ahora están allí, y los nuestros que vienen de allí
     const comun = [], actuales = new Set(Object.values(A.jugadores).filter(j => equiposDe(j).length).map(j => H.tok(j.nombre + ' ' + j.apellidos)));
     (H.jugadores || []).forEach(j => { const a = (j.ahora || []).find(x => deEste(x.equipo)); if (!a || actuales.has(j.tok)) return;
@@ -3197,7 +3222,7 @@
         ${(Hc.fuentes || []).length ? `<p class="pv-nota">Según lo publicado en ${Hc.fuentes.filter((u, i, a) => a.findIndex(x => dom(x) === dom(u)) === i).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(dom(u))}</a>`).join(', ')}.</p>` : ''}</section>` : '';
     return `<div class="club"><div class="cl-cab">${escudo(unEq, 72)}<div><div class="lab" style="color:#FF6B63">CLUB RIVAL</div><h1 class="h1">${esc(club)}</h1>
         <div class="sub">${C.equipos.length ? C.equipos.length + (C.equipos.length === 1 ? ' equipo' : ' equipos') + ' esta temporada' : 'Sin equipos esta temporada'}${ps.length ? ' · ' + ps.length + (ps.length === 1 ? ' partido' : ' partidos') + ' contra nosotros' : ''}</div></div></div>
-      ${balance}${vigilar}${equipos}${pista}${historia}${comunH}</div>`;
+      ${balance}${vigilar}${otrasCl}${equipos}${pista}${historia}${comunH}</div>`;
   }
 
   function vMetodo() {

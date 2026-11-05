@@ -3727,3 +3727,11 @@ html.galv-abierta { overflow: hidden; }
 .nvl-graf.mapa .zs { fill: #BFD6EE; font: 800 11px Figtree, sans-serif; text-anchor: middle; }
 .nvl-graf.mapa .zt.fin { text-anchor: end; }
 @media (max-width: 640px) { .nvl-graf.mapa .g-tick { font-size: 19px; } .nvl-graf.mapa .g-eje { font-size: 18px; } .nvl-graf.mapa .zs { font-size: 16px; } .nvl-graf.mapa .zt { font-size: 18px; } }
+
+/* En otras ligas (previa y club rival): quién juega además otra liga o ha pasado por la nacional */
+.ol-j { display: flex; flex-direction: column; gap: 3px; padding: 10px 0; border-top: 1px solid #26262A; font-size: 13px; line-height: 1.4; color: #A6A6AD; }
+.ol-j b { font-size: 15px; color: #F4F4F5; }
+.ol-j i { font-style: normal; font-weight: 700; color: #C9C9CE; margin-right: 6px; }
+.ol-j .ol-ya, .ol-j .ol-ya i { color: #FF6B63; }
+.ol-eq + .ol-eq { margin-top: 10px; }
+.ol-eq .dest { margin-bottom: 4px; }
